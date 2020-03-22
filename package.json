@@ -1,0 +1,67 @@
+{
+  "name": "onlinejudge3-be",
+  "version": "3.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "build": "midway-bin build -c",
+    "ci": "npm run cov",
+    "clean": "midway-bin clean",
+    "cov": "midway-bin cov --ts",
+    "debug": "cross-env NODE_ENV=local midway-bin debug --ts",
+    "dev": "cross-env NODE_ENV=local midway-bin dev --ts",
+    "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json midway-bin test --ts",
+    "lint": "eslint --fix {src,test}/**/*.ts",
+    "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be --framework=midway --ts",
+    "start_build": "npm run build && cross-env NODE_ENV=development midway-bin dev",
+    "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be",
+    "test": "npm run lint && npm run devtest"
+  },
+  "dependencies": {
+    "egg-redis": "^2.4.0",
+    "egg-scripts": "^2.10.0",
+    "egg-sequelize": "^5.2.1",
+    "midway": "^1.0.0",
+    "mysql2": "^2.1.0",
+    "sequelize-typescript": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^10.5.5",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "cross-env": "^6.0.0",
+    "egg-ci": "^1.8.0",
+    "eslint": "^6.8.0",
+    "eslint-config-alloy": "^3.6.0",
+    "eslint-plugin-react": "^7.19.0",
+    "midway-bin": "1",
+    "midway-mock": "1",
+    "mocha": "^6.2.0",
+    "ts-node": "^8.3.0",
+    "tslib": "^1.8.1",
+    "typescript": "^3.8.3"
+  },
+  "engines": {
+    "node": ">=10.16.0"
+  },
+  "ci": {
+    "version": "10, 12"
+  },
+  "midway-bin-clean": [
+    ".vscode/.tsbuildinfo",
+    "dist"
+  ],
+  "midway-bin-build": {
+    "include": [
+      "app/public",
+      "app/view"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "bLue",
+  "license": ""
+}
