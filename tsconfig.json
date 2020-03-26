@@ -4,19 +4,17 @@
     "declaration": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "incremental": true,
     "inlineSourceMap": true,
     "module": "commonjs",
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "outDir": "dist",
     "pretty": true,
     "skipLibCheck": true,
     "strict": true,
     "stripInternal": true,
-    "target": "ES2018",
-    "tsBuildInfoFile": ".vscode/.tsbuildinfo"
+    "target": "ES2018"
   },
   "include": [
     "src/**/*.ts"

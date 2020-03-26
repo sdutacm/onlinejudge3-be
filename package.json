@@ -53,8 +53,7 @@
   ],
   "midway-bin-build": {
     "include": [
-      "app/public",
-      "app/view"
+      "app/public"
     ]
   },
   "repository": {
