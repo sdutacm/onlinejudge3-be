@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ['alloy', 'alloy/react', 'alloy/typescript'],
+  extends: ['alloy', 'alloy/typescript'],
   env: {
     // 你的环境变量（包含多个预定义的全局变量）
     //
@@ -77,15 +77,5 @@ module.exports = {
     '@typescript-eslint/consistent-type-assertions': 'off',
     '@typescript-eslint/member-ordering': 'off',
     '@typescript-eslint/no-parameter-properties': 'off',
-
-    // React
-    // 'react/jsx-indent': 'off',
-    // 'react/jsx-indent-props': 'off',
-    // 'react/jsx-closing-bracket-location': 'off',
-    // 'react/sort-comp': 'off',
-    // 'react/jsx-curly-newline': 'off',
-    'react/no-unsafe': 'off',
-    'react/no-deprecated': 'off',
-    'react/no-unescaped-entities': 'off',
   },
 };

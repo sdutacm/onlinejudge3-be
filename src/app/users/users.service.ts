@@ -1,11 +1,9 @@
-import { provide } from 'midway'
+import { provide } from 'midway';
 
-import { GetUserOpts, UserInfo } from './user.model'
-
+import { GetUserOpts, UserInfo } from './users.model';
 
 @provide()
 export class UserService {
-
   /**
    * 读取用户信息
    */
@@ -15,7 +13,6 @@ export class UserService {
       user_name: 'mockedName',
       phone: '12345678901',
       email: 'xxx.xxx@xxx.com',
-    }
+    };
   }
-
 }
