@@ -29,3 +29,10 @@ $ npm stop
 
 
 [midway]: https://midwayjs.org
+
+### TypeScript 类型命名规范
+
+- `I` 开头：Interface
+- `T` 开头：Type
+- `E` 开头：Enum
+- `C` 开头：Class

@@ -1,21 +1,41 @@
-import { Context, controller, get, inject, provide } from 'midway';
+import { Context, controller, get, inject, provide, Middleware } from 'midway';
+import { CUserService } from './users.service';
+import { requireDetail } from '@/lib/decorators/controller.decorator';
 
-import { UserService } from './users.service';
+const mw: Middleware = async (ctx, next) => {
+  ctx.home = '123';
+  await next();
+};
 
 @provide()
 @controller('/user')
 export class UserController {
-  constructor(@inject() private userService: UserService) {}
+  @inject()
+  private userService: CUserService;
 
-  @get('/:id')
+  @get('/:userId', { middleware: [mw] })
+  @requireDetail((ctx) => +ctx.params.userId, 'userService')
+  // @requireSelf('userService')
+  // @fLimit(LIMIT.Frequency.detail)
+  // @traceReport
   public async getUser(ctx: Context): Promise<void> {
     const id = +ctx.params.id;
-    const user = await this.userService.getUser({ id });
+    console.log('detail', ctx.detail);
+    // const user = await this.userService.getDetail(id);
+    // const list = await this.userService.getList({
+    //   offset: 0,
+    //   limit: 10,
+    //   nickname: 'jk',
+    //   // @ts-ignore
+    //   avatar: undefined,
+    //   grade: '2015',
+    // });
+    const res = await this.userService._test();
 
     ctx.body = {
       success: true,
-      message: 'OK',
-      data: user,
+      // message: 'OK',
+      data: res,
     };
   }
 }

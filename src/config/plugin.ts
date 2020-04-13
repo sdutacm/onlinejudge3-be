@@ -1,3 +1,5 @@
+import 'tsconfig-paths/register';
+
 // export const cors = {
 //   enable: false,
 //   package: 'egg-cors',

@@ -13,8 +13,14 @@
     "pretty": true,
     "skipLibCheck": true,
     "strict": true,
+    "strictPropertyInitialization": false,
     "stripInternal": true,
-    "target": "ES2018"
+    "target": "ES2018",
+    "resolveJsonModule": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": [
     "src/**/*.ts"
@@ -25,7 +31,6 @@
     "dist",
     "node_modules*",
     "test",
-    "**/*.d.ts",
     "**/*.spec.ts"
   ]
 }

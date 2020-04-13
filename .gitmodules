@@ -1,0 +1,3 @@
+[submodule "src/common"]
+	path = src/common
+	url = https://git.sdutacm.cn/sdutacm/onlinejudge3-common.git
