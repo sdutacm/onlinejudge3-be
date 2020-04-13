@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "build": "midway-bin build -c && gulp dist:postprocess",
-    "build:webpack": "webpack-cli --progress --config webpack.prod.js",
     "ci": "npm run cov",
     "clean": "midway-bin clean",
     "cov": "midway-bin cov --ts",
