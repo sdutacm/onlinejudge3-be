@@ -1,6 +1,7 @@
 import { Context, controller, get, inject, provide, Middleware } from 'midway';
 import { CUserService } from './users.service';
 import { requireDetail } from '@/lib/decorators/controller.decorator';
+import { IMUserDetail } from './users.interface';
 
 const mw: Middleware = async (ctx, next) => {
   ctx.home = '123';
@@ -15,12 +16,14 @@ export class UserController {
 
   @get('/:userId', { middleware: [mw] })
   @requireDetail((ctx) => +ctx.params.userId, 'userService')
+  // TODO @id({ userId: 'userId' })
   // @requireSelf('userService')
   // @fLimit(LIMIT.Frequency.detail)
   // @traceReport
   public async getUser(ctx: Context): Promise<void> {
-    const id = +ctx.params.id;
-    console.log('detail', ctx.detail);
+    const id = ctx.id!;
+    const detail = ctx.detail! as IMUserDetail;
+    console.log('getUser', id, detail);
     // const user = await this.userService.getDetail(id);
     // const list = await this.userService.getList({
     //   offset: 0,
@@ -32,10 +35,6 @@ export class UserController {
     // });
     const res = await this.userService._test();
 
-    ctx.body = {
-      success: true,
-      // message: 'OK',
-      data: res,
-    };
+    ctx.body = ctx.helper.rSuc(detail);
   }
 }

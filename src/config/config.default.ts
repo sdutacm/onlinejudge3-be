@@ -1,6 +1,6 @@
 import { EggAppInfo, Context } from 'midway';
-
 import { DefaultConfig } from './config.interface';
+import { Codes } from '@/common/codes';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;
@@ -39,7 +39,7 @@ export default (appInfo: EggAppInfo) => {
       // ctx.helper.report(ctx, 'error', 1);
     },
     json(_err: Error, ctx: Context) {
-      ctx.body = { success: false, msg: 'Internal Server Error' };
+      ctx.body = ctx.helper.rFail(Codes.GENERAL_INTERNAL_SERVER_ERROR);
       ctx.status = 500;
       // ctx.helper.report(ctx, 'error', 1);
     },

@@ -93,15 +93,20 @@ export class UserService {
   async getList(
     options: IMUserServiceGetListOpts,
     scope: TUserModelScopes = 'available',
-  ): Promise<model.ListModel<IMUserLite>> {
-    return this.userModel.scope(scope).findAndCountAll({
-      attributes: userLiteFields,
-      where: this._formatQuery(options),
-      limit: 10,
-      offset: 0,
-      order: [['userId', 'DESC']],
-      raw: true,
-    });
+  ): Promise<model.ListModelRes<IMUserLite>> {
+    return this.userModel
+      .scope(scope)
+      .findAndCountAll({
+        attributes: userLiteFields,
+        where: this._formatQuery(options),
+        limit: options.limit,
+        offset: options.offset,
+        order: options.order,
+      })
+      .then((r) => ({
+        ...r,
+        rows: r.rows.map((d) => d.get({ plain: true }) as IMUserLite),
+      }));
   }
 
   /**
@@ -112,14 +117,16 @@ export class UserService {
   async getDetail(
     userId: IUserModel['userId'],
     scope: TUserModelScopes = 'available',
-  ): Promise<model.DetailModel<IMUserDetail>> {
-    return this.userModel.scope(scope).findOne({
-      attributes: userDetailFields,
-      where: {
-        userId,
-      },
-      raw: true,
-    });
+  ): Promise<model.DetailModelRes<IMUserDetail>> {
+    return this.userModel
+      .scope(scope)
+      .findOne({
+        attributes: userDetailFields,
+        where: {
+          userId,
+        },
+      })
+      .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
   }
 
   async create(data: IMUserServiceCreateOpts) {
@@ -151,6 +158,9 @@ export class UserService {
   }
 
   async _test() {
+    const x = await this.getList({
+      nickname: 'root',
+    });
     // const x = await this.getDetail(1);
     // const x = await this.create({
     //   username: '_test1',
@@ -158,10 +168,10 @@ export class UserService {
     //   password: '123',
     //   email: '123@qq.com',
     // });
-    const x = await this.update(44413, {
-      school: 'SDUT',
-      site: 'http://qq.com',
-    });
+    // const x = await this.update(41521, {
+    //   school: 'SDUT',
+    //   site: 'http://qq.com',
+    // });
     console.log('_test done', x);
     return x;
   }

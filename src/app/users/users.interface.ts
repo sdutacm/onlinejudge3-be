@@ -1,3 +1,16 @@
+interface IUserModelRatingHistoryItem {
+  contest: {
+    contestId: number;
+    title: string;
+  };
+  rank: number;
+  rating: number;
+  ratingChange: number;
+  date: string;
+}
+
+type IUserModelRatingHistory = IUserModelRatingHistoryItem[];
+
 export interface IUserModel {
   userId: number;
   username: string;
@@ -24,7 +37,7 @@ export interface IUserModel {
   settings: string;
   coin: number;
   rating: number;
-  ratingHistory: string;
+  ratingHistory: IUserModelRatingHistory | null;
 }
 
 export type TUserModelFields = keyof IUserModel;

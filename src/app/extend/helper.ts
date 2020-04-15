@@ -1,3 +1,5 @@
+import { codeMsgs, Codes } from '@/common/codes';
+
 export default {
   /**
    * 格式化为成功返回
@@ -6,7 +8,6 @@ export default {
   rSuc(data?: any) {
     return {
       success: true,
-      code: 0,
       data,
     };
   },
@@ -16,11 +17,11 @@ export default {
    * @param code
    * @param data
    */
-  rFail(code: number, data?: any) {
+  rFail(code: Codes, data?: any) {
     return {
       success: false,
       code,
-      msg: 'N/A',
+      msg: codeMsgs[code],
       data,
     };
   },

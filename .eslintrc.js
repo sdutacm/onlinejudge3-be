@@ -77,5 +77,6 @@ module.exports = {
     '@typescript-eslint/consistent-type-assertions': 'off',
     '@typescript-eslint/member-ordering': 'off',
     '@typescript-eslint/no-parameter-properties': 'off',
+    '@typescript-eslint/prefer-optional-chain': 'off',
   },
 };

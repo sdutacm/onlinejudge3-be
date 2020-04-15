@@ -1,8 +1,8 @@
 declare namespace model {
-  interface ListModel<T> {
+  interface ListModelRes<T> {
     count: number;
     rows: T[];
   }
 
-  type DetailModel<T> = T | null;
+  type DetailModelRes<T> = T | null;
 }

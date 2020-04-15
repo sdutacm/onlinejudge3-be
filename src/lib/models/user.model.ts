@@ -241,7 +241,23 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
     field: 'rating_history',
     type: DataType.TEXT({ length: 'long' }),
   })
-  ratingHistory: string;
+  get ratingHistory(): IUserModel['ratingHistory'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('ratingHistory'));
+    } catch (e) {
+      return null;
+    }
+  }
+  set ratingHistory(value: IUserModel['ratingHistory']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('ratingHistory', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('ratingHistory', '');
+    }
+  }
 }
 
 export type TUserModel = typeof UserModel;
