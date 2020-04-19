@@ -11,7 +11,7 @@ export function ignoreUndefined<T = any>(obj: T): Partial<T> {
 
 type TLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
-const consoleColorMap: Record<TLogLevel, chalk.Chalk> = {
+export const consoleColors: Record<TLogLevel, chalk.Chalk> = {
   DEBUG: chalk.blue,
   INFO: chalk.green,
   WARN: chalk.yellow,
@@ -25,7 +25,7 @@ const consoleColorMap: Record<TLogLevel, chalk.Chalk> = {
  */
 export function formatLoggerHelper(meta: any, customContent = '') {
   const level = meta.level as TLogLevel;
-  const color: chalk.Chalk = consoleColorMap[level];
+  const color: chalk.Chalk = consoleColors[level];
   let formattedLevel = `[${level}]`;
   if (formattedLevel.length < 7) {
     formattedLevel += ' ';

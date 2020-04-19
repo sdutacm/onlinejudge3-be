@@ -41,10 +41,9 @@ export function detail(): MethodDecorator {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
         return;
       }
-      const { module } = getMeta.call(this);
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
-      const service = this[`${module}Service`];
+      const service = this.service;
       const detail = await service.getDetail(ctx.id);
       if (!detail) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
@@ -61,7 +60,7 @@ export function detail(): MethodDecorator {
  * 从 Contract 中的 JSON Schema 验证表单。
  * @param contract 要使用的 Contract Schema，如 `getUserDetailReq`
  */
-export function validateReq<T>(contractSchema: keyof T): MethodDecorator {
+export function validate<T>(contractSchema: keyof T): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 

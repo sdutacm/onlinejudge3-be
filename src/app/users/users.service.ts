@@ -1,4 +1,4 @@
-import { provide, inject } from 'midway';
+import { provide, inject, Context } from 'midway';
 import { Op } from 'sequelize';
 import {
   TMUserDetailFields,
@@ -50,6 +50,9 @@ export default class UserService {
 
   @inject()
   utils: IUtils;
+
+  @inject()
+  ctx: Context;
 
   private _formatQuery(opts: Partial<IUserModel>) {
     const q: any = this.utils.misc.ignoreUndefined({
@@ -161,6 +164,7 @@ export default class UserService {
     const x = await this.getList({
       nickname: 'root',
     });
+    await this.ctx.helper.getRedisKey('456:%s', ['aaa']);
     // const x = await this.getDetail(1);
     // const x = await this.create({
     //   username: '_test1',
@@ -172,7 +176,7 @@ export default class UserService {
     //   school: 'SDUT',
     //   site: 'http://qq.com',
     // });
-    console.log('_test done', x);
+    // console.log('_test done', x);
     return x;
   }
 }

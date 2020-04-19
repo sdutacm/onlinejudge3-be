@@ -1,4 +1,16 @@
 import { codeMsgs, Codes } from '@/common/codes';
+import * as util from 'util';
+import { Context } from 'midway';
+import { consoleColors } from '@/utils/misc';
+
+/**
+ * 获取带类型的 this（ctx）。
+ * 调用时需要绑定 this。
+ */
+function getThis(): Context {
+  // @ts-ignore
+  return this;
+}
 
 export default {
   /**
@@ -68,5 +80,77 @@ export default {
         rows,
       },
     };
+  },
+
+  /**
+   * 获取 Redis key。
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   */
+  async getRedisKey<T = any>(key: string, args: any[] = []): Promise<T | null> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const redisRet = await redis.get(k);
+    let ret = null;
+    try {
+      if (redisRet) {
+        ret = JSON.parse(redisRet);
+      }
+    } catch (e) {
+      ret = null;
+    }
+    console.log(
+      consoleColors.DEBUG(`[redis.get](${Date.now() - _start}ms)`),
+      consoleColors.INFO(`[${k}]`),
+      ret,
+    );
+    return ret;
+  },
+
+  /**
+   * 设置 Redis key。
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param value 要设置的值
+   * @param expires 过期时间，单位为秒，不传则不过期
+   */
+  async setRedisKey<T = any>(key: string, args: any[], value: T, expires?: number): Promise<void> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    if (expires) {
+      await redis.set(k, JSON.stringify(value), 'EX', expires);
+    } else {
+      await redis.set(k, JSON.stringify(value));
+    }
+    console.log(
+      consoleColors.DEBUG(`[redis.set](${Date.now() - _start}ms)`),
+      consoleColors.INFO(`[${k}]`),
+      value,
+      expires,
+    );
+  },
+
+  /**
+   * 删除 Redis key。
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   */
+  async delRedisKey(key: string, args: any[] = []): Promise<void> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    await redis.del(k);
+    console.log(
+      consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
+      consoleColors.INFO(`[${k}]`),
+    );
   },
 };
