@@ -29,4 +29,6 @@ module.exports = (app: Application) => {
 
     console.log('✅ App launched');
   });
+
+  app.logger.info('App start...');
 };

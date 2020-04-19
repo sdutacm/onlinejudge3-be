@@ -20,6 +20,7 @@ export class DB {
       port: config.port || 3306,
       dialect: config.dialect || 'mysql',
       timezone: config.timezone || '+08:00',
+      pool: config.pool,
       logQueryParameters: true,
       // operatorsAliases: false,
     });

@@ -1,6 +1,7 @@
 import { EggAppInfo, Context } from 'midway';
 import { DefaultConfig } from './config.interface';
 import { Codes } from '@/common/codes';
+import { formatLoggerHelper } from '@/utils/misc';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;
@@ -13,13 +14,20 @@ export default (appInfo: EggAppInfo) => {
 
   config.welcomeMsg = 'Hello midwayjs!';
 
+  config.security = {
+    csrf: false,
+  };
+
   config.sequelize = {
     host: '127.0.0.1',
     port: 3306,
     username: 'blue',
-    password: 'test',
+    password: '>_<.test',
     database: 'oj',
     dialect: 'mysql',
+    pool: {
+      max: 2,
+    },
   };
 
   config.redis = {
@@ -43,6 +51,17 @@ export default (appInfo: EggAppInfo) => {
       ctx.status = 500;
       // ctx.helper.report(ctx, 'error', 1);
     },
+  };
+
+  config.logger = {
+    // @ts-ignore
+    formatter(meta: any) {
+      return formatLoggerHelper(meta);
+    },
+    contextFormatter(meta: any) {
+      return formatLoggerHelper(meta, `${meta.paddingMessage}`);
+    },
+    consoleLevel: 'DEBUG',
   };
 
   return config;
