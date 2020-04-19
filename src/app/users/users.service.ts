@@ -44,7 +44,7 @@ const userDetailFields: Array<TMUserDetailFields> = [
 ];
 
 @provide()
-export class UserService {
+export default class UserService {
   @inject()
   userModel: TUserModel;
 
@@ -93,7 +93,7 @@ export class UserService {
   async getList(
     options: IMUserServiceGetListOpts,
     scope: TUserModelScopes = 'available',
-  ): Promise<model.ListModelRes<IMUserLite>> {
+  ): Promise<defModel.ListModelRes<IMUserLite>> {
     return this.userModel
       .scope(scope)
       .findAndCountAll({
@@ -117,7 +117,7 @@ export class UserService {
   async getDetail(
     userId: IUserModel['userId'],
     scope: TUserModelScopes = 'available',
-  ): Promise<model.DetailModelRes<IMUserDetail>> {
+  ): Promise<defModel.DetailModelRes<IMUserDetail>> {
     return this.userModel
       .scope(scope)
       .findOne({

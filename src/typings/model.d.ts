@@ -1,4 +1,4 @@
-declare namespace model {
+declare namespace defModel {
   interface ListModelRes<T> {
     count: number;
     rows: T[];

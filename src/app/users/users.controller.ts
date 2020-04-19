@@ -1,7 +1,9 @@
-import { Context, controller, get, inject, provide, Middleware } from 'midway';
+import { Context, controller, inject, provide, Middleware, post } from 'midway';
 import { CUserService } from './users.service';
-import { requireDetail } from '@/lib/decorators/controller.decorator';
+import { id, detail, validateReq } from '@/lib/decorators/controller.decorator';
 import { IMUserDetail } from './users.interface';
+import { IUserContract } from './users.contract';
+import { IUserMeta } from './users.meta';
 
 const mw: Middleware = async (ctx, next) => {
   ctx.home = '123';
@@ -9,21 +11,25 @@ const mw: Middleware = async (ctx, next) => {
 };
 
 @provide()
-@controller('/user')
-export class UserController {
+@controller('/')
+export default class UserController {
+  @inject('userMeta')
+  private meta: IUserMeta;
+
   @inject()
   private userService: CUserService;
 
-  @get('/:userId', { middleware: [mw] })
-  @requireDetail((ctx) => +ctx.params.userId, 'userService')
-  // TODO @id({ userId: 'userId' })
+  @post('/getUserDetail', { middleware: [mw] })
+  @validateReq<IUserContract>('getUserDetailReq')
+  @id()
+  @detail()
   // @requireSelf('userService')
   // @fLimit(LIMIT.Frequency.detail)
   // @traceReport
-  public async getUser(ctx: Context): Promise<void> {
+  public async getUserDetail(ctx: Context) {
     const id = ctx.id!;
     const detail = ctx.detail! as IMUserDetail;
-    console.log('getUser', id, detail);
+
     // const user = await this.userService.getDetail(id);
     // const list = await this.userService.getList({
     //   offset: 0,
@@ -34,6 +40,7 @@ export class UserController {
     //   grade: '2015',
     // });
     const res = await this.userService._test();
+    ctx.logger.info('done', res);
 
     ctx.body = ctx.helper.rSuc(detail);
   }
