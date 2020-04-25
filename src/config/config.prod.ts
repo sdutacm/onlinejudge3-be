@@ -5,6 +5,12 @@ import { formatLoggerHelper } from '@/utils/misc';
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;
 
+  config.security = {
+    csrf: {
+      headerName: 'x-csrf-token',
+    },
+  };
+
   // config.sequelize = {
   //   host: '127.0.0.1',
   //   port: 3306,

@@ -45,6 +45,7 @@ module.exports = {
     // 'function-paren-newline': 'off',
     // 'no-useless-constructor': 'off',
     // 'no-undefined': 'off',
+    'no-undef': 'off',
     // 'implicit-arrow-linebreak': 'off',
     // 'no-confusing-arrow': 'off',
     'no-param-reassign': 'off',

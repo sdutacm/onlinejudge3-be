@@ -45,17 +45,7 @@ export default {
    * @param count
    * @param rows
    */
-  rList({
-    page = 0,
-    limit = 0,
-    count = 0,
-    rows = [],
-  }: {
-    page: number;
-    limit: number;
-    count: number;
-    rows: any[];
-  }) {
+  rList({ page, limit, count, rows }: { page: number; limit: number; count: number; rows: any[] }) {
     return {
       success: true,
       data: {
@@ -72,7 +62,7 @@ export default {
    * @param count
    * @param rows
    */
-  rFullList({ count = 0, rows = [] }: { count: number; rows: any[] }) {
+  rFullList({ count, rows }: { count: number; rows: any[] }) {
     return {
       success: true,
       data: {

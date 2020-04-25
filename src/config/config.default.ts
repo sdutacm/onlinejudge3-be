@@ -1,6 +1,6 @@
 import { EggAppInfo, Context } from 'midway';
 import { DefaultConfig } from './config.interface';
-import { Codes } from '@/common/codes';
+import { Codes, codeMsgs } from '@/common/codes';
 import { formatLoggerHelper } from '@/utils/misc';
 
 export default (appInfo: EggAppInfo) => {
@@ -22,7 +22,7 @@ export default (appInfo: EggAppInfo) => {
     host: '127.0.0.1',
     port: 3306,
     username: 'blue',
-    password: '>_<.test',
+    password: 'test',
     database: 'oj',
     dialect: 'mysql',
     pool: {
@@ -41,12 +41,24 @@ export default (appInfo: EggAppInfo) => {
   };
 
   config.onerror = {
-    html(_err: Error, ctx: Context) {
+    html(err: Error, ctx: Context) {
+      switch (err.message) {
+        case 'invalid csrf token':
+          ctx.body = codeMsgs[Codes.GENERAL_ILLEGAL_REQUEST];
+          ctx.status = 403;
+          return;
+      }
       ctx.body = 'Internal Server Error';
       ctx.status = 500;
       // ctx.helper.report(ctx, 'error', 1);
     },
-    json(_err: Error, ctx: Context) {
+    json(err: Error, ctx: Context) {
+      switch (err.message) {
+        case 'invalid csrf token':
+          ctx.body = ctx.helper.rFail(Codes.GENERAL_ILLEGAL_REQUEST, { reason: err.message });
+          ctx.status = 403;
+          return;
+      }
       ctx.body = ctx.helper.rFail(Codes.GENERAL_INTERNAL_SERVER_ERROR);
       ctx.status = 500;
       // ctx.helper.report(ctx, 'error', 1);

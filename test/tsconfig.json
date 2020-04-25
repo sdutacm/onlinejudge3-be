@@ -1,21 +1,22 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "declaration": false, 
-    "inlineSourceMap": false,
-    "module": "commonjs",
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "noUnusedLocals": false,
-    "target": "ESNEXT"
+    // "declaration": false,
+    // "inlineSourceMap": false,
+    // "module": "commonjs",
+    // "noImplicitAny": false,
+    // "noImplicitThis": false,
+    // "noUnusedLocals": false,
+    // "target": "ESNEXT"
+    // "typeRoots": ["../src/typings"]
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "asset/",
-    "node_modules*",
-    "**/*.d.ts",
-    "**/*.spec.ts"
-  ]
+  // "include": [
+  //   "**/*.ts"
+  // ],
+  // "exclude": [
+  //   "asset/",
+  //   "node_modules*",
+  //   "**/*.d.ts",
+  //   "**/*.spec.ts"
+  // ]
 }
