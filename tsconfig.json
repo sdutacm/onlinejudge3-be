@@ -23,14 +23,15 @@
     }
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "app/public",
     "app/views",
     "dist",
     "node_modules*",
-    "test",
+    // "test",
     "**/*.spec.ts"
   ]
 }

@@ -8,15 +8,18 @@
     // "noImplicitThis": false,
     // "noUnusedLocals": false,
     // "target": "ESNEXT"
-    // "typeRoots": ["../src/typings"]
+    // "baseUrl": "./",
+    // "typeRoots": ["./typings", "../node_modules"]
   },
   // "include": [
-  //   "**/*.ts"
+  //   "./**/*.test.ts",
+  //   "./**/*.ts",
+  //   "./**/*.d.ts"
   // ],
   // "exclude": [
-  //   "asset/",
-  //   "node_modules*",
-  //   "**/*.d.ts",
-  //   "**/*.spec.ts"
+  //   // "asset/",
+  //   "../node_modules",
+  //   // "**/*.d.ts",
+  //   // "**/*.spec.ts"
   // ]
 }

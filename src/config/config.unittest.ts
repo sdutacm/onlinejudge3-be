@@ -27,15 +27,5 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
-  config.logger = {
-    // @ts-ignore
-    formatter(meta: any) {
-      return formatLoggerHelper(meta);
-    },
-    contextFormatter(meta: any) {
-      return formatLoggerHelper(meta, `${meta.paddingMessage}`);
-    },
-  };
-
   return config;
 };

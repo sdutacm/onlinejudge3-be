@@ -10,7 +10,7 @@
     "cov": "midway-bin cov --ts",
     "debug": "cross-env NODE_ENV=local midway-bin debug --ts",
     "dev": "cross-env NODE_ENV=local midway-bin dev --ts",
-    "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json midway-bin test --ts",
+    "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test midway-bin test --ts",
     "lint": "eslint --fix {src,test}/**/*.ts",
     "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be --framework=midway --ts",
     "start_build": "npm run build && cross-env NODE_ENV=development midway-bin dev",
@@ -25,7 +25,8 @@
     "egg-sequelize": "^5.2.1",
     "midway": "^1.0.0",
     "mysql2": "^2.1.0",
-    "sequelize-typescript": "^1.1.0"
+    "sequelize-typescript": "^1.1.0",
+    "sleep-promise": "^8.0.1"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.30",

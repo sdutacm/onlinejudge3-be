@@ -3,6 +3,8 @@ import * as util from 'util';
 import { Context } from 'midway';
 import { consoleColors } from '@/utils/misc';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 /**
  * 获取带类型的 this（ctx）。
  * 调用时需要绑定 this。
@@ -90,13 +92,14 @@ export default {
         ret = JSON.parse(redisRet);
       }
     } catch (e) {
-      ret = null;
+      ret = redisRet || null;
     }
-    console.log(
-      consoleColors.DEBUG(`[redis.get](${Date.now() - _start}ms)`),
-      consoleColors.INFO(`[${k}]`),
-      ret,
-    );
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.get](${Date.now() - _start}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ret,
+      );
     return ret;
   },
 
@@ -113,17 +116,22 @@ export default {
       app: { redis },
     } = getThis.call(this);
     const k = util.format(key, ...args);
-    if (expires) {
-      await redis.set(k, JSON.stringify(value), 'EX', expires);
-    } else {
-      await redis.set(k, JSON.stringify(value));
+    let v: any = value;
+    if (typeof value === 'object') {
+      v = JSON.stringify(value);
     }
-    console.log(
-      consoleColors.DEBUG(`[redis.set](${Date.now() - _start}ms)`),
-      consoleColors.INFO(`[${k}]`),
-      value,
-      expires,
-    );
+    if (expires) {
+      await redis.set(k, v, 'EX', expires);
+    } else {
+      await redis.set(k, v);
+    }
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.set](${Date.now() - _start}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        value,
+        expires,
+      );
   },
 
   /**
@@ -138,9 +146,10 @@ export default {
     } = getThis.call(this);
     const k = util.format(key, ...args);
     await redis.del(k);
-    console.log(
-      consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
-      consoleColors.INFO(`[${k}]`),
-    );
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
+        consoleColors.INFO(`[${k}]`),
+      );
   },
 };
