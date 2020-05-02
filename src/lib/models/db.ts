@@ -22,6 +22,7 @@ export class DB {
       timezone: config.timezone || '+08:00',
       pool: config.pool,
       logQueryParameters: true,
+      logging: config.logging ?? console.log,
       // operatorsAliases: false,
     });
 

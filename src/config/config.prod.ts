@@ -21,6 +21,7 @@ export default (appInfo: EggAppInfo) => {
   //   pool: {
   //     max: 2,
   //   },
+  //   logging: false,
   // };
 
   // config.redis = {

@@ -1,6 +1,5 @@
 import { EggAppInfo } from 'midway';
 import { DefaultConfig } from './config.interface';
-import { formatLoggerHelper } from '@/utils/misc';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;
@@ -15,6 +14,7 @@ export default (appInfo: EggAppInfo) => {
     pool: {
       max: 2,
     },
+    logging: false,
   };
 
   config.redis = {

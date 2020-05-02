@@ -56,6 +56,10 @@ export type TMUserDetailFields = Extract<
   | 'email'
   | 'avatar'
   | 'bannerImage'
+  | 'school'
+  | 'college'
+  | 'major'
+  | 'class'
   | 'accepted'
   | 'submitted'
   | 'rating'
@@ -73,7 +77,8 @@ export type IMUserDetail = Pick<IUserModel, TMUserDetailFields>;
 //   permission: IUserModel['permission'];
 // }
 
-export interface IMUserServiceGetListOpts extends IServiceListOpts<TUserModelFields> {
+// #region service.getList
+export interface IMUserServiceGetListOpt extends IServiceListOpt<TUserModelFields> {
   userId?: IUserModel['userId'];
   username?: IUserModel['username'];
   nickname?: IUserModel['nickname'];
@@ -81,19 +86,35 @@ export interface IMUserServiceGetListOpts extends IServiceListOpts<TUserModelFie
   college?: IUserModel['college'];
   major?: IUserModel['major'];
   class?: IUserModel['class'];
+  grade?: IUserModel['grade'];
 }
 
-export interface IMUserServiceCreateOpts {
+export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;
+// #endregion
+
+// #region service.getDetail
+export type IMUserServiceGetDetailRes = defModel.DetailModelRes<IMUserDetail>;
+// #endregion
+
+// #region service.create
+export interface IMUserServiceCreateOpt {
   username: IUserModel['username'];
   nickname: IUserModel['nickname'];
   password: IUserModel['password'];
   email?: IUserModel['email'];
 }
 
-export interface IMUserServiceUpdateOpts {
+export type IMUserServiceCreateRes = IUserModel['userId'];
+// #endregion
+
+// #region service.update
+export interface IMUserServiceUpdateOpt {
   school?: IUserModel['school'];
   college?: IUserModel['college'];
   major?: IUserModel['major'];
   class?: IUserModel['class'];
   site?: IUserModel['site'];
 }
+
+export type IMUserServiceUpdateRes = boolean;
+// #endregion

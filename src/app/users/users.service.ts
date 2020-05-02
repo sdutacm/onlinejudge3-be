@@ -5,10 +5,14 @@ import {
   IMUserDetail,
   TMUserLiteFields,
   IMUserLite,
-  IMUserServiceGetListOpts,
-  IMUserServiceCreateOpts,
+  IMUserServiceGetListOpt,
+  IMUserServiceCreateOpt,
   IUserModel,
-  IMUserServiceUpdateOpts,
+  IMUserServiceUpdateOpt,
+  IMUserServiceGetDetailRes,
+  IMUserServiceCreateRes,
+  IMUserServiceUpdateRes,
+  IMUserServiceGetListRes,
 } from './users.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -38,6 +42,10 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'permission',
   'avatar',
   'bannerImage',
+  'school',
+  'college',
+  'major',
+  'class',
   'rating',
   'ratingHistory',
   'createdAt',
@@ -91,14 +99,14 @@ export default class UserService {
   /**
    * 获取用户列表
    * @param options 查询参数
-   * @param scope 查询 scope，如查询全部则传 undefined
+   * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getList(
-    options: IMUserServiceGetListOpts,
-    scope: TUserModelScopes = 'available',
-  ): Promise<defModel.ListModelRes<IMUserLite>> {
+    options: IMUserServiceGetListOpt,
+    scope: TUserModelScopes | null = 'available',
+  ): Promise<IMUserServiceGetListRes> {
     return this.userModel
-      .scope(scope)
+      .scope(scope || undefined)
       .findAndCountAll({
         attributes: userLiteFields,
         where: this._formatQuery(options),
@@ -115,14 +123,14 @@ export default class UserService {
   /**
    * 获取用户详情
    * @param userId 用户 ID
-   * @param scope 查询 scope，如查询全部则传 undefined
+   * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getDetail(
     userId: IUserModel['userId'],
-    scope: TUserModelScopes = 'available',
-  ): Promise<defModel.DetailModelRes<IMUserDetail>> {
+    scope: TUserModelScopes | null = 'available',
+  ): Promise<IMUserServiceGetDetailRes> {
     return this.userModel
-      .scope(scope)
+      .scope(scope || undefined)
       .findOne({
         attributes: userDetailFields,
         where: {
@@ -132,7 +140,7 @@ export default class UserService {
       .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
   }
 
-  async create(data: IMUserServiceCreateOpts) {
+  async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
     const res = await this.userModel.create({
       username: data.username,
       nickname: data.nickname,
@@ -142,7 +150,10 @@ export default class UserService {
     return res.userId;
   }
 
-  async update(userId: IUserModel['userId'], data: IMUserServiceUpdateOpts) {
+  async update(
+    userId: IUserModel['userId'],
+    data: IMUserServiceUpdateOpt,
+  ): Promise<IMUserServiceUpdateRes> {
     const res = await this.userModel.update(
       {
         school: data.school,

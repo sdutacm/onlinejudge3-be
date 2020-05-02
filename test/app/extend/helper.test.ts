@@ -1,6 +1,5 @@
 import { basename } from 'path';
-import * as assert from 'power-assert';
-import { app } from 'midway-mock/bootstrap';
+import { app, assert } from 'midway-mock/bootstrap';
 import * as sleep from 'sleep-promise';
 
 describe(basename(__filename), () => {
@@ -171,9 +170,5 @@ describe(basename(__filename), () => {
       await ctx.helper.delRedisKey('test:helper:del_%s', ['1']);
       assert.strictEqual(await app.redis.get('test:helper:del_1'), null);
     });
-  });
-
-  after(async () => {
-    await app.redis.flushdb();
   });
 });
