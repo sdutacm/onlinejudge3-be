@@ -1,9 +1,10 @@
 import { Context, controller, inject, provide, Middleware, post } from 'midway';
 import { CUserService } from './users.service';
-import { id, detail, validate } from '@/lib/decorators/controller.decorator';
+import { id, detail, validate, pagination } from '@/lib/decorators/controller.decorator';
 import { IMUserDetail } from './users.interface';
 import { IUserContract } from './users.contract';
 import { IUserMeta } from './users.meta';
+import { routesBe } from '@/common/routes';
 
 const mw: Middleware = async (ctx, next) => {
   ctx.home = '123';
@@ -19,7 +20,7 @@ export default class UserController {
   @inject('userService')
   private service: CUserService;
 
-  @post('/getUserDetail', { middleware: [mw] })
+  @post(routesBe.users.getUserDetail)
   @validate<IUserContract>('getUserDetailReq')
   @id()
   @detail()

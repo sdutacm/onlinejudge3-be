@@ -13,6 +13,7 @@ import {
   IMUserServiceCreateRes,
   IMUserServiceUpdateRes,
   IMUserServiceGetListRes,
+  IMUserListPagination,
 } from './users.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -99,10 +100,12 @@ export default class UserService {
   /**
    * 获取用户列表
    * @param options 查询参数
+   * @param pagination 分页参数
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getList(
     options: IMUserServiceGetListOpt,
+    pagination: IMUserListPagination = {},
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceGetListRes> {
     return this.userModel
@@ -110,9 +113,9 @@ export default class UserService {
       .findAndCountAll({
         attributes: userLiteFields,
         where: this._formatQuery(options),
-        limit: options.limit,
-        offset: options.offset,
-        order: options.order,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: pagination.order,
       })
       .then((r) => ({
         ...r,
@@ -141,12 +144,7 @@ export default class UserService {
   }
 
   async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
-    const res = await this.userModel.create({
-      username: data.username,
-      nickname: data.nickname,
-      password: data.password,
-      email: data.email,
-    });
+    const res = await this.userModel.create(data);
     return res.userId;
   }
 
@@ -154,20 +152,11 @@ export default class UserService {
     userId: IUserModel['userId'],
     data: IMUserServiceUpdateOpt,
   ): Promise<IMUserServiceUpdateRes> {
-    const res = await this.userModel.update(
-      {
-        school: data.school,
-        college: data.college,
-        major: data.major,
-        class: data.class,
-        site: data.site,
+    const res = await this.userModel.update(data, {
+      where: {
+        userId,
       },
-      {
-        where: {
-          userId,
-        },
-      },
-    );
+    });
     return res[0] > 0;
   }
 

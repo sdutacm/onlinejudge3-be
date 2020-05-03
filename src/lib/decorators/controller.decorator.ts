@@ -93,3 +93,31 @@ export function validate<T>(contractSchema: keyof T): MethodDecorator {
     };
   };
 }
+
+/**
+ * 解析 post 参数中的分页参数并挂载到 `ctx.pagination`。
+ * @param default 默认分页参数
+ */
+export function pagination({
+  limit: defaultLimit = 0,
+  order: defaultOrder = [] as Array<[string, 'ASC' | 'DESC']>,
+} = {}): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      let { page, limit, order } = ctx.request.body;
+      page = +page || 1;
+      limit = +limit || defaultLimit;
+      order = order || defaultOrder;
+      ctx.pagination = {
+        page,
+        offset: (page - 1) * limit,
+        limit,
+        order,
+      };
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}

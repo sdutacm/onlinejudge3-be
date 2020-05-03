@@ -2,7 +2,11 @@ import { basename } from 'path';
 import { app, assert } from 'midway-mock/bootstrap';
 import { TUserModel } from '@/lib/models/user.model';
 import { CUserService } from '@/app/users/users.service';
-import { IMUserServiceGetDetailRes, IMUserServiceGetListRes } from '@/app/users/users.interface';
+import {
+  IMUserServiceGetDetailRes,
+  IMUserServiceGetListRes,
+  IUserModel,
+} from '@/app/users/users.interface';
 
 const mockDefaultFields = {
   password: 'mock_password',
@@ -69,9 +73,12 @@ describe(basename(__filename), () => {
 
   describe('getList()', () => {
     it('should work', async () => {
-      const res = await userService.getList({
-        limit: 1,
-      });
+      const res = await userService.getList(
+        {},
+        {
+          limit: 1,
+        },
+      );
       const expected: IMUserServiceGetListRes = {
         count: 3,
         rows: [
@@ -90,6 +97,7 @@ describe(basename(__filename), () => {
 
     it('should work with scope', async () => {
       const res = await userService.getList(
+        {},
         {
           limit: 1,
         },
@@ -99,26 +107,38 @@ describe(basename(__filename), () => {
     });
 
     it('should work with pagination', async () => {
-      let res = await userService.getList({
-        limit: 1,
-      });
+      let res = await userService.getList(
+        {},
+        {
+          limit: 1,
+        },
+      );
       const count = res.count;
       const limit = count - 1;
-      res = await userService.getList({
-        limit,
-        offset: 0,
-      });
+      res = await userService.getList(
+        {},
+        {
+          limit,
+          offset: 0,
+        },
+      );
       assert.strictEqual(res.rows.length, limit);
-      res = await userService.getList({
-        limit,
-        offset: limit,
-      });
+      res = await userService.getList(
+        {},
+        {
+          limit,
+          offset: limit,
+        },
+      );
       assert.strictEqual(res.rows.length, 1);
       const lastUserId = res.rows[0].userId;
-      res = await userService.getList({
-        limit: 1,
-        order: [['userId', 'DESC']],
-      });
+      res = await userService.getList(
+        {},
+        {
+          limit: 1,
+          order: [['userId', 'DESC']],
+        },
+      );
       assert.strictEqual(res.rows[0].userId, lastUserId);
     });
 
@@ -216,12 +236,13 @@ describe(basename(__filename), () => {
       };
       const userId = await userService.create(opt);
       assert(userId);
-      const user = await userModel.findOne({
-        where: {
-          userId,
-        },
-        raw: true,
-      });
+      const user = await userModel
+        .findOne({
+          where: {
+            userId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IUserModel));
       assert(user);
       assert.strictEqual(user?.username, opt.username);
       assert.strictEqual(user?.nickname, opt.nickname);
@@ -234,25 +255,52 @@ describe(basename(__filename), () => {
     it('should work', async () => {
       const userId = 3;
       const opt = {
+        verified: true,
+        password: 'mock_update_password',
+        email: 'mock_update@sdutacm.cn',
+        permission: 1,
+        avatar: 'mock_update.jpg',
+        bannerImage: 'mock_update.png',
         school: 'mock_update_sdut',
         college: 'mock_update_jsj',
         major: 'mock_update_jk',
         class: 'mock_update_jk1507',
         site: 'https://mock_update.sdutacm.cn',
+        accepted: 42,
+        submitted: 100,
+        rating: 1500,
+        ratingHistory: [],
+        forbidden: 1,
+        lastIp: '127.0.0.1',
+        lastTime: new Date('2020-01-01T00:00:00+08:00'),
       };
       let updated = await userService.update(userId, opt);
       assert(updated);
-      const user = await userModel.findOne({
-        where: {
-          userId,
-        },
-        raw: true,
-      });
+      const user = await userModel
+        .findOne({
+          where: {
+            userId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IUserModel));
+      assert.strictEqual(user?.verified, opt.verified);
+      assert.strictEqual(user?.password, opt.password);
+      assert.strictEqual(user?.email, opt.email);
+      assert.strictEqual(user?.permission, opt.permission);
+      assert.strictEqual(user?.avatar, opt.avatar);
+      assert.strictEqual(user?.bannerImage, opt.bannerImage);
       assert.strictEqual(user?.school, opt.school);
       assert.strictEqual(user?.college, opt.college);
       assert.strictEqual(user?.major, opt.major);
       assert.strictEqual(user?.class, opt.class);
       assert.strictEqual(user?.site, opt.site);
+      assert.strictEqual(user?.accepted, opt.accepted);
+      assert.strictEqual(user?.submitted, opt.submitted);
+      assert.strictEqual(user?.rating, opt.rating);
+      assert.deepStrictEqual(user?.ratingHistory, opt.ratingHistory);
+      assert.strictEqual(user?.forbidden, opt.forbidden);
+      assert.strictEqual(user?.lastIp, opt.lastIp);
+      assert.deepStrictEqual(user?.lastTime, opt.lastTime);
       updated = await userService.update(userId, opt);
       assert(!updated);
     });
