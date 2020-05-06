@@ -64,7 +64,8 @@
     "platforms/": true,
     "www/": true,
     "**/node_modules*": true,
-    "**/bower_components": true
+    "**/bower_components": true,
+    "dist/**": true
   },
   "search.useIgnoreFiles": true,
   "[markdown]": {

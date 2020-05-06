@@ -2,6 +2,33 @@ import { basename } from 'path';
 import { app, assert } from 'midway-mock/bootstrap';
 import * as sleep from 'sleep-promise';
 
+const mockSessions = {
+  root: {
+    userId: 1,
+    username: 'root',
+    nickname: 'hack',
+    permission: 3,
+    avatar: '',
+    contests: {},
+  },
+  test: {
+    userId: 3,
+    username: 'test',
+    nickname: 'test',
+    permission: 0,
+    avatar: '',
+    contests: {},
+  },
+  perm: {
+    userId: 4,
+    username: 'perm',
+    nickname: 'perm',
+    permission: 1,
+    avatar: '',
+    contests: {},
+  },
+};
+
 describe(basename(__filename), () => {
   before(async () => {
     await app.redis.flushdb();
@@ -169,6 +196,181 @@ describe(basename(__filename), () => {
       await app.redis.set('test:helper:del_1', 'test1');
       await ctx.helper.delRedisKey('test:helper:del_%s', ['1']);
       assert.strictEqual(await app.redis.get('test:helper:del_1'), null);
+    });
+  });
+
+  describe('isGlobalLoggedIn()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isGlobalLoggedIn(), false);
+    });
+
+    it('should return true when session expires', async () => {
+      const ctx = app.mockContext({
+        session: {
+          userId: 1,
+          username: 'root',
+          nickname: 'hack',
+          permission: 3,
+          avatar: '',
+        },
+      });
+      assert.strictEqual(ctx.helper.isGlobalLoggedIn(), true);
+    });
+  });
+
+  describe('isSelf()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isSelf(1), false);
+    });
+
+    it('should return true when specified user is self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.root,
+      });
+      assert.strictEqual(ctx.helper.isSelf(1), true);
+    });
+
+    it('should return false when specified user is not self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.root,
+      });
+      assert.strictEqual(ctx.helper.isSelf(2), false);
+    });
+  });
+
+  describe('isPerm()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isPerm(), false);
+    });
+
+    it('should return false when specified user is normal', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.test,
+      });
+      assert.strictEqual(ctx.helper.isPerm(), false);
+    });
+
+    it('should return true when specified user is perm', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.perm,
+      });
+      assert.strictEqual(ctx.helper.isPerm(), true);
+    });
+
+    it('should return true when specified user is admin', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.root,
+      });
+      assert.strictEqual(ctx.helper.isPerm(), true);
+    });
+  });
+
+  describe('isAdmin()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isAdmin(), false);
+    });
+
+    it('should return false when specified user is normal', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.test,
+      });
+      assert.strictEqual(ctx.helper.isAdmin(), false);
+    });
+
+    it('should return false when specified user is perm', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.perm,
+      });
+      assert.strictEqual(ctx.helper.isAdmin(), false);
+    });
+
+    it('should return true when specified user is admin', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.root,
+      });
+      assert.strictEqual(ctx.helper.isAdmin(), true);
+    });
+  });
+
+  describe('isSelfOrPerm()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isSelfOrPerm(1), false);
+    });
+
+    it('should return true when specified user is normal and self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.test,
+      });
+      assert.strictEqual(ctx.helper.isSelfOrPerm(3), true);
+    });
+
+    it('should return false when specified user is normal and not self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.test,
+      });
+      assert.strictEqual(ctx.helper.isSelfOrPerm(42), false);
+    });
+
+    it('should return true when specified user is perm and not self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.perm,
+      });
+      assert.strictEqual(ctx.helper.isSelfOrPerm(42), true);
+    });
+
+    it('should return true when specified user is admin and not self', async () => {
+      const ctx = app.mockContext({
+        session: mockSessions.root,
+      });
+      assert.strictEqual(ctx.helper.isSelfOrPerm(42), true);
+    });
+  });
+
+  describe('isContestLoggedIn()', () => {
+    it('should return false when no session', async () => {
+      const ctx = app.mockContext({
+        session: {},
+      });
+      assert.strictEqual(ctx.helper.isContestLoggedIn(1000), false);
+    });
+
+    it('should return true when has contest session', async () => {
+      const ctx = app.mockContext({
+        session: {
+          ...mockSessions.root,
+          contests: {
+            1000: true,
+          },
+        },
+      });
+      assert.strictEqual(ctx.helper.isContestLoggedIn(1000), true);
+    });
+
+    it('should return false when has not contest session', async () => {
+      const ctx = app.mockContext({
+        session: {
+          ...mockSessions.root,
+          contests: {
+            1000: true,
+          },
+        },
+      });
+      assert.strictEqual(ctx.helper.isContestLoggedIn(1001), false);
     });
   });
 });

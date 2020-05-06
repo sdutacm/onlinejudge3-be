@@ -1,3 +1,4 @@
+import 'tsconfig-paths/register';
 import { assert } from 'midway-mock/bootstrap';
 
 before(() => {

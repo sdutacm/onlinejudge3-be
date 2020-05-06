@@ -1,15 +1,25 @@
 import { codeMsgs, Codes } from '@/common/codes';
 import * as util from 'util';
 import { Context } from 'midway';
+import { Application } from 'egg';
 import { consoleColors } from '@/utils/misc';
+import { EUserPermission } from '@/common/enums';
 
 const isDev = process.env.NODE_ENV === 'development';
+
+interface IBaseContext {
+  app: Application;
+  ctx: Context;
+  logger: any;
+  service: any;
+  config: any;
+}
 
 /**
  * 获取带类型的 this（ctx）。
  * 调用时需要绑定 this。
  */
-function getThis(): Context {
+function getThis(): IBaseContext {
   // @ts-ignore
   return this;
 }
@@ -151,5 +161,56 @@ export default {
         consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
         consoleColors.INFO(`[${k}]`),
       );
+  },
+
+  /**
+   * 判断是否登录 OJ
+   */
+  isGlobalLoggedIn() {
+    const { ctx } = getThis.call(this);
+    return !!ctx.session.userId;
+  },
+
+  /**
+   * 判断当前要操作的 userId 是否是自己。
+   * @param userId 要判断的 userId
+   */
+  isSelf(userId: number) {
+    const { ctx } = getThis.call(this);
+    return ctx.session.userId === +userId;
+  },
+
+  /**
+   * 判断当前用户是否是权限人士。
+   */
+  isPerm() {
+    const { ctx } = getThis.call(this);
+    return ctx.session.permission! >= EUserPermission.teacher;
+  },
+
+  /**
+   * 判断当前用户是否是管理员。
+   */
+  isAdmin() {
+    const { ctx } = getThis.call(this);
+    return ctx.session.permission! >= EUserPermission.admin;
+  },
+
+  /**
+   * 判断当前用户是否是自己或权限人士（教师及以上）。
+   * @param userId 要判断的 userId
+   */
+  isSelfOrPerm(userId: number | string) {
+    const { ctx } = getThis.call(this);
+    return ctx.session.userId === +userId || ctx.session.permission! >= EUserPermission.teacher;
+  },
+
+  /**
+   * 判断是否已登录指定比赛。
+   * @param contestId 要判断的 contestId
+   */
+  isContestLoggedIn(contestId: number) {
+    const { ctx } = getThis.call(this);
+    return !!ctx.session.contests?.[contestId];
   },
 };

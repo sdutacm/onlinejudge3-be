@@ -1,4 +1,3 @@
-
 export const development = {
   watchDirs: [
     'agent.ts',
@@ -9,6 +8,7 @@ export const development = {
     'lib',
     'middleware',
     'service',
+    'common',
   ],
   overrideDefault: true,
-}
+};
