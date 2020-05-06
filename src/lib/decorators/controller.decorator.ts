@@ -1,7 +1,16 @@
 /* eslint-disable no-useless-call */
-import { Context } from 'midway';
+import {
+  Context,
+  KoaMiddlewareParamArray,
+  get as midwayGet,
+  post as midwayPost,
+  put as midwayPut,
+  patch as midwayPatch,
+  del as midwayDelete,
+} from 'midway';
 import { Codes } from '@/common/codes';
 import { defContract } from '@/typings/contract';
+import { IRouteBeConfig, routesBe } from '@/common/routes';
 
 /**
  * 获取 meta。
@@ -59,13 +68,19 @@ export function detail(): MethodDecorator {
 /**
  * 从 Contract 中的 JSON Schema 验证表单。
  * @param contract 要使用的 Contract Schema，如 `getUserDetailReq`
+ * @param targetModule 手动指定 module，否则默认从 Controller 类的 meta 中取
  */
-export function validate<T>(contractSchema: keyof T): MethodDecorator {
+export function validate<T>(contractSchema: keyof T, targetModule?: string): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
-      const { module } = getMeta.call(this);
+      let module: string;
+      if (targetModule) {
+        module = targetModule;
+      } else {
+        module = getMeta.call(this).module;
+      }
       const contractName = `${module}Contract`;
       const moduleContract = await ctx.requestContext.getAsync(contractName);
       const schema = moduleContract[contractSchema] as defContract.ContractSchema;
@@ -117,6 +132,100 @@ export function pagination({
         order,
       };
       const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 根据 routesBe 的配置路由和校验。
+ * @routerOptions midway 路由装饰器参数
+ */
+export function route(
+  routerOptions: {
+    routerName?: string;
+    middleware?: KoaMiddlewareParamArray;
+  } = { middleware: [] },
+): MethodDecorator {
+  return function (target, propertyKey, descriptor: PropertyDescriptor) {
+    // @ts-ignore
+    const routeConfig = routesBe[propertyKey] as IRouteBeConfig;
+    const { method, url, contract } = routeConfig;
+    let requestDecorator: MethodDecorator;
+    switch (method.toUpperCase()) {
+      case 'GET':
+        requestDecorator = midwayGet(url, routerOptions);
+        break;
+      case 'POST':
+        requestDecorator = midwayPost(url, routerOptions);
+        break;
+      case 'PUT':
+        requestDecorator = midwayPut(url, routerOptions);
+        break;
+      case 'PATCH':
+        requestDecorator = midwayPatch(url, routerOptions);
+        break;
+      case 'DELETE':
+        requestDecorator = midwayDelete(url, routerOptions);
+        break;
+      default:
+        throw new Error('Invalid request method for route: ' + method);
+    }
+    requestDecorator(target, propertyKey, descriptor);
+    if (contract.req) {
+      const [module, contractSchema] = contract.req.split('.');
+      let validationDecorator = validate(contractSchema, module);
+      validationDecorator(target, propertyKey, descriptor);
+    }
+  };
+}
+
+/**
+ * 路由鉴权。
+ * @param perm 要求的最低权限
+ */
+export function auth(perm: 'loggedIn' | 'perm' | 'admin'): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      switch (perm) {
+        case 'loggedIn':
+          if (!ctx.helper.isGlobalLoggedIn()) {
+            ctx.body = ctx.helper.rFail(Codes.GENERAL_NOT_LOGGED_IN);
+            return;
+          }
+          break;
+        case 'perm':
+          if (!ctx.helper.isPerm()) {
+            ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+            return;
+          }
+          break;
+        case 'admin':
+          if (!ctx.helper.isAdmin()) {
+            ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+            return;
+          }
+          break;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 使请求最后默认返回成功。
+ * 相当于 `ctx.helper.rSuc()`
+ */
+export function suc(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const result = await method.call(this, ctx, ...rest);
+      ctx.body = ctx.helper.rSuc();
       return result;
     };
   };

@@ -1,8 +1,7 @@
-import { Context, controller, inject, provide, Middleware, post } from 'midway';
+import { Context, controller, inject, provide, Middleware } from 'midway';
 import { CUserService } from './users.service';
-import { id, detail, validate, pagination } from '@/lib/decorators/controller.decorator';
+import { id, detail, pagination, route, auth, suc } from '@/lib/decorators/controller.decorator';
 import { IMUserDetail } from './users.interface';
-import { IUserContract } from './users.contract';
 import { IUserMeta } from './users.meta';
 import { routesBe } from '@/common/routes';
 
@@ -20,14 +19,22 @@ export default class UserController {
   @inject('userService')
   private service: CUserService;
 
-  @post(routesBe.users.getUserDetail)
-  @validate<IUserContract>('getUserDetailReq')
+  @route()
+  async [routesBe.getSession.name](ctx: Context) {
+    ctx.body = ctx.helper.rSuc(ctx.helper.isGlobalLoggedIn() ? ctx.session : null);
+  }
+
+  @route()
+  @suc()
+  async [routesBe.logout.name](ctx: Context) {
+    // @ts-ignore
+    ctx.session = null;
+  }
+
+  @route()
   @id()
   @detail()
-  // @requireSelf('service')
-  // @fLimit(LIMIT.Frequency.detail)
-  // @traceReport
-  public async getUserDetail(ctx: Context) {
+  public async [routesBe.getUserDetail.name](ctx: Context) {
     const id = ctx.id!;
     const detail = ctx.detail! as IMUserDetail;
 
