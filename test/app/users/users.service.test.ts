@@ -23,13 +23,16 @@ const mockDefaultFields = {
   createdAt: new Date('2020-01-01T00:00:00+08:00'),
 };
 
+async function getService() {
+  return app.mockContext({}).requestContext.getAsync<CUserService>('userService');
+}
+
 describe(basename(__filename), () => {
   let userModel: TUserModel;
-  let userService: CUserService;
 
   before(async () => {
+    await app.redis.flushdb();
     userModel = await app.applicationContext.getAsync('userModel');
-    userService = await app.applicationContext.getAsync('userService');
     await userModel.destroy({ truncate: true, force: true });
     await userModel.create({
       ...mockDefaultFields,
@@ -73,7 +76,8 @@ describe(basename(__filename), () => {
 
   describe('getList()', () => {
     it('should work', async () => {
-      const res = await userService.getList(
+      const service = await getService();
+      const res = await service.getList(
         {},
         {
           limit: 1,
@@ -96,7 +100,8 @@ describe(basename(__filename), () => {
     });
 
     it('should work with scope', async () => {
-      const res = await userService.getList(
+      const service = await getService();
+      const res = await service.getList(
         {},
         {
           limit: 1,
@@ -107,7 +112,8 @@ describe(basename(__filename), () => {
     });
 
     it('should work with pagination', async () => {
-      let res = await userService.getList(
+      const service = await getService();
+      let res = await service.getList(
         {},
         {
           limit: 1,
@@ -115,7 +121,7 @@ describe(basename(__filename), () => {
       );
       const count = res.count;
       const limit = count - 1;
-      res = await userService.getList(
+      res = await service.getList(
         {},
         {
           limit,
@@ -123,7 +129,7 @@ describe(basename(__filename), () => {
         },
       );
       assert.strictEqual(res.rows.length, limit);
-      res = await userService.getList(
+      res = await service.getList(
         {},
         {
           limit,
@@ -132,7 +138,7 @@ describe(basename(__filename), () => {
       );
       assert.strictEqual(res.rows.length, 1);
       const lastUserId = res.rows[0].userId;
-      res = await userService.getList(
+      res = await service.getList(
         {},
         {
           limit: 1,
@@ -143,49 +149,50 @@ describe(basename(__filename), () => {
     });
 
     it('should work with query', async () => {
+      const service = await getService();
       // userId
-      let res = await userService.getList({
+      let res = await service.getList({
         userId: 3,
       });
       assert.strictEqual(res.count, 1);
       assert.strictEqual(res.rows[0]?.userId, 3);
       // username
-      res = await userService.getList({
+      res = await service.getList({
         username: 'user3',
       });
       assert.strictEqual(res.count, 1);
       assert.strictEqual(res.rows[0]?.username, 'user3');
       // grade
-      res = await userService.getList({
+      res = await service.getList({
         grade: '2015',
       });
       assert.strictEqual(res.count, 1);
       // nickname
-      res = await userService.getList({
+      res = await service.getList({
         nickname: 'zxw',
       });
       assert.strictEqual(res.count, 2);
-      res = await userService.getList({
+      res = await service.getList({
         nickname: 'zxwjk',
       });
       assert.strictEqual(res.count, 1);
       // school
-      res = await userService.getList({
+      res = await service.getList({
         school: 'SDUT',
       });
       assert.strictEqual(res.count, 2);
       // college
-      res = await userService.getList({
+      res = await service.getList({
         college: 'JSJ',
       });
       assert.strictEqual(res.count, 2);
       // major
-      res = await userService.getList({
+      res = await service.getList({
         major: 'jk',
       });
       assert.strictEqual(res.count, 2);
       // class
-      res = await userService.getList({
+      res = await service.getList({
         class: 'jk15',
       });
       assert.strictEqual(res.count, 2);
@@ -194,7 +201,21 @@ describe(basename(__filename), () => {
 
   describe('getDetail()', () => {
     it('should work', async () => {
-      const res = await userService.getDetail(1);
+      const service = await getService();
+      // 测试有缓存
+      await app.redis.set(
+        'cache:user_detail:1',
+        '{"userId":1,"username":"root_mock","createdAt":"2019-12-31T16:00:00.000Z"}',
+      );
+      let res = await service.getDetail(1);
+      assert.deepStrictEqual(res, {
+        userId: 1,
+        username: 'root_mock',
+        createdAt: new Date('2020-01-01T00:00:00+08:00'),
+      });
+      await app.redis.del('cache:user_detail:1');
+      // 测试无缓存
+      res = await service.getDetail(1);
       const expected: IMUserServiceGetDetailRes = {
         userId: 1,
         username: 'root',
@@ -214,27 +235,35 @@ describe(basename(__filename), () => {
         createdAt: new Date('2020-01-01T00:00:00+08:00'),
       };
       assert.deepStrictEqual(res, expected);
+      assert.strictEqual(
+        await app.redis.get('cache:user_detail:1'),
+        '{"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","rating":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
+      );
     });
 
     it('should work with scope', async () => {
-      assert.strictEqual(await userService.getDetail(2, 'available'), null);
-      assert(await userService.getDetail(2, null));
+      const service = await getService();
+      assert.strictEqual(await service.getDetail(2, 'available'), null);
+      assert(await service.getDetail(2, null));
     });
 
     it('should return null when detail dost not exist', async () => {
-      assert.strictEqual(await userService.getDetail(1024), null);
+      const service = await getService();
+      assert.strictEqual(await service.getDetail(1024), null);
+      assert.strictEqual(await app.redis.get('cache:user_detail:1024'), '');
     });
   });
 
   describe('create()', () => {
     it('should work', async () => {
+      const service = await getService();
       const opt = {
         username: 'mock_create_user1',
         nickname: 'mock_create_nick1',
         password: 'pass',
         email: 'test@sdutacm.cn',
       };
-      const userId = await userService.create(opt);
+      const userId = await service.create(opt);
       assert(userId);
       const user = await userModel
         .findOne({
@@ -253,6 +282,7 @@ describe(basename(__filename), () => {
 
   describe('update()', () => {
     it('should work', async () => {
+      const service = await getService();
       const userId = 3;
       const opt = {
         verified: true,
@@ -274,7 +304,7 @@ describe(basename(__filename), () => {
         lastIp: '127.0.0.1',
         lastTime: new Date('2020-01-01T00:00:00+08:00'),
       };
-      let updated = await userService.update(userId, opt);
+      let updated = await service.update(userId, opt);
       assert(updated);
       const user = await userModel
         .findOne({
@@ -301,8 +331,17 @@ describe(basename(__filename), () => {
       assert.strictEqual(user?.forbidden, opt.forbidden);
       assert.strictEqual(user?.lastIp, opt.lastIp);
       assert.deepStrictEqual(user?.lastTime, opt.lastTime);
-      updated = await userService.update(userId, opt);
+      updated = await service.update(userId, opt);
       assert(!updated);
+    });
+  });
+
+  describe('clearDetailCache()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      await app.redis.set('cache:user_detail:3', '{"userId":3}');
+      await service.clearDetailCache(3);
+      assert.strictEqual(await app.redis.get('cache:user_detail:3'), null);
     });
   });
 });

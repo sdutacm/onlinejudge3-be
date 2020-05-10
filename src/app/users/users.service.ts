@@ -1,4 +1,4 @@
-import { provide, inject, Context } from 'midway';
+import { provide, inject, Context, config } from 'midway';
 import { Op } from 'sequelize';
 import {
   TMUserDetailFields,
@@ -17,6 +17,8 @@ import {
 } from './users.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
+import { CUserMeta } from './users.meta';
+import { IDurationsConfig } from '@/config/durations.config';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -54,6 +56,9 @@ const userDetailFields: Array<TMUserDetailFields> = [
 
 @provide()
 export default class UserService {
+  @inject('userMeta')
+  meta: CUserMeta;
+
   @inject()
   userModel: TUserModel;
 
@@ -62,6 +67,9 @@ export default class UserService {
 
   @inject()
   ctx: Context;
+
+  @config('durations')
+  durations: IDurationsConfig;
 
   private _formatQuery(opts: Partial<IUserModel>) {
     const q: any = this.utils.misc.ignoreUndefined({
@@ -98,7 +106,30 @@ export default class UserService {
   }
 
   /**
-   * 获取用户列表
+   * 获取详情缓存。
+   * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
+   * @param userId userId
+   */
+  private async _getDetailCache(userId: IUserModel['userId']): Promise<IMUserDetail | null | ''> {
+    return this.ctx.helper
+      .getRedisKey<IMUserDetail>(this.meta.detailCacheKey, [userId])
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
+  }
+
+  private async _setDetailCache(
+    userId: IUserModel['userId'],
+    data: IMUserDetail | null,
+  ): Promise<void> {
+    return this.ctx.helper.setRedisKey(
+      this.meta.detailCacheKey,
+      [userId],
+      data,
+      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取用户列表。
    * @param options 查询参数
    * @param pagination 分页参数
    * @param scope 查询 scope，默认 available，如查询全部则传 null
@@ -124,23 +155,31 @@ export default class UserService {
   }
 
   /**
-   * 获取用户详情
-   * @param userId 用户 ID
+   * 获取用户详情。
+   * @param userId userId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getDetail(
     userId: IUserModel['userId'],
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceGetDetailRes> {
-    return this.userModel
-      .scope(scope || undefined)
-      .findOne({
-        attributes: userDetailFields,
-        where: {
-          userId,
-        },
-      })
-      .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
+    let res: IMUserServiceGetDetailRes = null;
+    const cached = scope === 'available' ? await this._getDetailCache(userId) : null;
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.userModel
+        .scope(scope || undefined)
+        .findOne({
+          attributes: userDetailFields,
+          where: {
+            userId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
+      scope === 'available' && (await this._setDetailCache(userId, res));
+    }
+    return res;
   }
 
   async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
@@ -158,6 +197,10 @@ export default class UserService {
       },
     });
     return res[0] > 0;
+  }
+
+  async clearDetailCache(userId: IUserModel['userId']): Promise<void> {
+    return this.ctx.helper.delRedisKey(this.meta.detailCacheKey, [userId]);
   }
 
   async _test() {

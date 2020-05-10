@@ -26,7 +26,7 @@ function getThis(): IBaseContext {
 
 export default {
   /**
-   * 格式化为成功返回
+   * 格式化为成功返回。
    * @param data
    */
   rSuc(data?: any) {
@@ -37,7 +37,7 @@ export default {
   },
 
   /**
-   * 格式化为失败返回
+   * 格式化为失败返回。
    * @param code
    * @param data
    */
@@ -51,7 +51,7 @@ export default {
   },
 
   /**
-   * 格式化为带分页的列表的返回
+   * 格式化为带分页的列表的返回。
    * @param page
    * @param limit
    * @param count
@@ -70,7 +70,7 @@ export default {
   },
 
   /**
-   * 格式化为不带分页的完整列表的返回
+   * 格式化为不带分页的完整列表的返回。
    * @param count
    * @param rows
    */
@@ -96,13 +96,15 @@ export default {
     } = getThis.call(this);
     const k = util.format(key, ...args);
     const redisRet = await redis.get(k);
-    let ret = null;
+    let ret;
     try {
       if (redisRet) {
         ret = JSON.parse(redisRet);
+      } else {
+        ret = redisRet ?? null;
       }
     } catch (e) {
-      ret = redisRet || null;
+      ret = redisRet ?? null;
     }
     isDev &&
       console.log(
@@ -127,7 +129,9 @@ export default {
     } = getThis.call(this);
     const k = util.format(key, ...args);
     let v: any = value;
-    if (typeof value === 'object') {
+    if (!value) {
+      v = null;
+    } else if (typeof value === 'object') {
       v = JSON.stringify(value);
     }
     if (expires) {

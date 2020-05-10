@@ -2,6 +2,8 @@ import { EggAppInfo, Context } from 'midway';
 import { DefaultConfig } from './config.interface';
 import { Codes, codeMsgs } from '@/common/codes';
 import { formatLoggerHelper } from '@/utils/misc';
+import redisKey from './redisKey.config';
+import durations from './durations.config';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;
@@ -75,6 +77,12 @@ export default (appInfo: EggAppInfo) => {
     },
     consoleLevel: 'DEBUG',
   };
+
+  // #region custom config
+  config.redisKey = redisKey;
+
+  config.durations = durations;
+  // #endregion
 
   return config;
 };

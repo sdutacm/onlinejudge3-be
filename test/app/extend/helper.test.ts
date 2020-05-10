@@ -168,7 +168,7 @@ describe(basename(__filename), () => {
       await ctx.helper.setRedisKey('test:helper:set_%s', ['1'], {
         data: ['test', 0, false, { foo: 'bar' }],
       });
-      assert.deepStrictEqual(
+      assert.strictEqual(
         await app.redis.get('test:helper:set_1'),
         '{"data":["test",0,false,{"foo":"bar"}]}',
       );

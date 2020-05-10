@@ -1,5 +1,5 @@
 import 'egg';
-import ExtendIHelper from '../../../../src/app/extend/helper';
+import ExtendIHelper from '@/app/extend/helper';
 
 declare module 'egg' {
   type ExtendIHelperType = typeof ExtendIHelper;

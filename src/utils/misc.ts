@@ -1,4 +1,5 @@
 import * as chalk from 'chalk';
+import { update as lodashUpdate } from 'lodash';
 
 /**
  * 去除对象中的 undefined 属性。
@@ -7,6 +8,22 @@ import * as chalk from 'chalk';
  */
 export function ignoreUndefined<T = any>(obj: T): Partial<T> {
   return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * 将从 json 解析的对象中的字符串日期属性格式化为 Date（会改变原对象）。
+ * @param obj 对象
+ * @param paths 要格式化 Date 的属性路径
+ */
+export function processDateFromJson<T = any>(obj: T, paths: Array<keyof T | string>): T {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+  paths.forEach((path) => {
+    // @ts-ignore
+    lodashUpdate(obj, path, (value) => new Date(value));
+  });
+  return obj;
 }
 
 type TLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';

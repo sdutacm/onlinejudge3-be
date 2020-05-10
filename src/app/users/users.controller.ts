@@ -2,7 +2,7 @@ import { Context, controller, inject, provide, Middleware } from 'midway';
 import { CUserService } from './users.service';
 import { id, detail, pagination, route, auth, suc } from '@/lib/decorators/controller.decorator';
 import { IMUserDetail } from './users.interface';
-import { IUserMeta } from './users.meta';
+import { CUserMeta } from './users.meta';
 import { routesBe } from '@/common/routes';
 
 const mw: Middleware = async (ctx, next) => {
@@ -14,10 +14,10 @@ const mw: Middleware = async (ctx, next) => {
 @controller('/')
 export default class UserController {
   @inject('userMeta')
-  private meta: IUserMeta;
+  meta: CUserMeta;
 
   @inject('userService')
-  private service: CUserService;
+  service: CUserService;
 
   @route()
   async [routesBe.getSession.name](ctx: Context) {
@@ -34,7 +34,7 @@ export default class UserController {
   @route()
   @id()
   @detail()
-  public async [routesBe.getUserDetail.name](ctx: Context) {
+  async [routesBe.getUserDetail.name](ctx: Context) {
     const id = ctx.id!;
     const detail = ctx.detail! as IMUserDetail;
 
@@ -47,8 +47,8 @@ export default class UserController {
     //   avatar: undefined,
     //   grade: '2015',
     // });
-    const res = await this.service._test();
-    ctx.logger.info('done', res);
+    // const res = await this.service._test();
+    // ctx.logger.info('done', res);
 
     ctx.body = ctx.helper.rSuc(detail);
   }
