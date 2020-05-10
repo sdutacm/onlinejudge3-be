@@ -31,7 +31,6 @@
     "app/views",
     "dist",
     "node_modules*",
-    // "test",
     "**/*.spec.ts"
   ]
 }

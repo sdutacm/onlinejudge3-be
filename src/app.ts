@@ -23,7 +23,9 @@ import { Application } from 'midway';
 // build db connections when starting APP
 module.exports = (app: Application) => {
   app.beforeStart(async () => {
-    console.log('🚀 App is launching...');
+    console.log(
+      `🚀 App is launching... (NODE_ENV: ${process.env.NODE_ENV}, EGG_SERVER_ENV: ${process.env.EGG_SERVER_ENV})`,
+    );
 
     await DB.initDB(app.config.sequelize);
 
