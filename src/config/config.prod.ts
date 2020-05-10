@@ -1,6 +1,6 @@
 import { EggAppInfo } from 'midway';
 import { DefaultConfig } from './config.interface';
-import { formatLoggerHelper } from '@/utils/misc';
+import { formatLoggerHelper } from '@/utils/format';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as DefaultConfig;

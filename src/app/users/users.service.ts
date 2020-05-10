@@ -156,6 +156,7 @@ export default class UserService {
 
   /**
    * 获取用户详情。
+   * 只有默认 scope 的查询会缓存
    * @param userId userId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */

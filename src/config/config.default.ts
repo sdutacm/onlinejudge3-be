@@ -1,7 +1,7 @@
 import { EggAppInfo, Context } from 'midway';
 import { DefaultConfig } from './config.interface';
 import { Codes, codeMsgs } from '@/common/codes';
-import { formatLoggerHelper } from '@/utils/misc';
+import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
 

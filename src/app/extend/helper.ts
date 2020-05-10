@@ -2,7 +2,7 @@ import { codeMsgs, Codes } from '@/common/codes';
 import * as util from 'util';
 import { Context } from 'midway';
 import { Application } from 'egg';
-import { consoleColors } from '@/utils/misc';
+import { consoleColors } from '@/utils/format';
 import { EUserPermission } from '@/common/enums';
 
 const isDev = process.env.NODE_ENV === 'development';
