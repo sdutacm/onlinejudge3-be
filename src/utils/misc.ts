@@ -1,5 +1,5 @@
-import * as chalk from 'chalk';
 import { update as lodashUpdate } from 'lodash';
+import * as md5 from 'md5';
 
 /**
  * 去除对象中的 undefined 属性。
@@ -26,31 +26,28 @@ export function processDateFromJson<T = any>(obj: T, paths: Array<keyof T | stri
   return obj;
 }
 
-type TLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
-
-export const consoleColors: Record<TLogLevel, chalk.Chalk> = {
-  DEBUG: chalk.blue,
-  INFO: chalk.green,
-  WARN: chalk.yellow,
-  ERROR: chalk.red,
-};
-
 /**
- * 格式化 formatLogger。
- * @param meta formatLogger meta
- * @param customContent 自定义 message 前的额外的输出信息（如 `${meta.hostname}`）
+ * 哈希密码（follow twg's algorithm）。
+ * @param str 密码
  */
-export function formatLoggerHelper(meta: any, customContent = '') {
-  const level = meta.level as TLogLevel;
-  const color: chalk.Chalk = consoleColors[level];
-  let formattedLevel = `[${level}]`;
-  if (formattedLevel.length < 7) {
-    formattedLevel += ' ';
+export function hashPassword(str: string): string {
+  const PASSWORD_SLOT = 'AtG$o*p^2~V';
+  str = md5(str);
+  const len1 = str.length;
+  const len2 = PASSWORD_SLOT.length;
+  let ret = '';
+  let i = 0;
+  let j = 0;
+  while (i < len1 && j < len2) {
+    ret += str.substr(i, 1) + PASSWORD_SLOT.substr(j, 1);
+    i++;
+    j++;
   }
-  if (customContent && !customContent.endsWith('\n') && !customContent.endsWith(' ')) {
-    customContent += ' ';
+  if (i < str.length) {
+    ret += str.substr(i);
   }
-  return (
-    color(`[${meta.date.replace(',', '.')}] ${formattedLevel} ${customContent}`) + `${meta.message}`
-  );
+  if (j < PASSWORD_SLOT.length) {
+    ret += PASSWORD_SLOT.substr(j);
+  }
+  return md5(ret);
 }

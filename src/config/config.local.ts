@@ -9,6 +9,7 @@ export const development = {
     'middleware',
     'service',
     'common',
+    'utils',
   ],
   overrideDefault: true,
 };

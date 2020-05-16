@@ -98,6 +98,19 @@ export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;
 export type IMUserServiceGetDetailRes = defModel.DetailModelRes<IMUserDetail>;
 // #endregion
 
+// #region service.getRelative
+export type IMUserServiceGetRelativeRes = Record<IUserModel['userId'], IMUserDetail>;
+// #endregion
+
+// #region service.findOne
+export type IMUserServiceFindOneOpt = Partial<IUserModel>;
+export type IMUserServiceFindOneRes = defModel.DetailModelRes<IMUserDetail>;
+// #endregion
+
+// #region service.isExists
+export type IMUserServiceIsExistsOpt = Partial<IUserModel>;
+// #endregion
+
 // #region service.create
 export interface IMUserServiceCreateOpt {
   username: IUserModel['username'];

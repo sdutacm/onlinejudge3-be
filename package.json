@@ -24,6 +24,7 @@
     "egg-redis": "^2.4.0",
     "egg-scripts": "^2.10.0",
     "egg-sequelize": "^5.2.1",
+    "md5": "^2.2.1",
     "midway": "^1.0.0",
     "mysql2": "^2.1.0",
     "sequelize-typescript": "^1.1.0",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.30",
     "@types/json-schema": "^7.0.4",
+    "@types/md5": "^2.2.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.18",
     "@types/redis": "^2.8.18",

@@ -6,6 +6,7 @@ import {
   IMUserServiceGetDetailRes,
   IMUserServiceGetListRes,
   IUserModel,
+  IMUserServiceGetRelativeRes,
 } from '@/app/users/users.interface';
 
 const mockDefaultFields = {
@@ -42,6 +43,7 @@ describe(basename(__filename), () => {
       email: 'root@sdutacm.cn',
       permission: 3,
       forbidden: 0,
+      verified: true,
     });
     await userModel.create({
       ...mockDefaultFields,
@@ -55,6 +57,7 @@ describe(basename(__filename), () => {
       userId: 3,
       username: 'user3',
       nickname: 'zxwjk01',
+      email: 'u3@sdutacm.cn',
       school: 'Mock School: SSDUT',
       college: 'Mock College: JSJ',
       major: 'Mock Major: jk',
@@ -244,6 +247,9 @@ describe(basename(__filename), () => {
     it('should work with scope', async () => {
       const service = await getService();
       assert.strictEqual(await service.getDetail(2, 'available'), null);
+      // 默认 scope 时，结果为 null 时也应缓存
+      assert.strictEqual(await app.redis.get('cache:user_detail:2'), '');
+      // 当 scope 为 null 时，应可以查到数据
       assert(await service.getDetail(2, null));
     });
 
@@ -251,6 +257,118 @@ describe(basename(__filename), () => {
       const service = await getService();
       assert.strictEqual(await service.getDetail(1024), null);
       assert.strictEqual(await app.redis.get('cache:user_detail:1024'), '');
+    });
+  });
+
+  describe('getRelative()', () => {
+    before(async () => {
+      await app.redis.del('cache:user_detail:1');
+      await app.redis.del('cache:user_detail:2');
+    });
+
+    it('should work', async () => {
+      const service = await getService();
+      // 测试有缓存
+      await app.redis.set(
+        'cache:user_detail:1',
+        '{"userId":1,"username":"root_mock","createdAt":"2019-12-31T16:00:00.000Z"}',
+      );
+      let res = await service.getRelative([1]);
+      assert.deepStrictEqual(res, {
+        1: {
+          userId: 1,
+          username: 'root_mock',
+          createdAt: new Date('2020-01-01T00:00:00+08:00'),
+        },
+      });
+      await app.redis.del('cache:user_detail:1');
+      // 测试无缓存
+      res = await service.getRelative([1, 1024, 1]);
+      const expected: IMUserServiceGetRelativeRes = {
+        1: {
+          userId: 1,
+          username: 'root',
+          nickname: 'hack',
+          email: 'root@sdutacm.cn',
+          submitted: 0,
+          accepted: 0,
+          permission: 3,
+          avatar: '',
+          bannerImage: '',
+          school: '',
+          college: '',
+          major: '',
+          class: '',
+          rating: 0,
+          ratingHistory: null,
+          createdAt: new Date('2020-01-01T00:00:00+08:00'),
+        },
+      };
+      assert.deepStrictEqual(res, expected);
+      assert.strictEqual(
+        await app.redis.get('cache:user_detail:1'),
+        '{"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","rating":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
+      );
+    });
+
+    it('should work with scope', async () => {
+      const service = await getService();
+      await app.redis.set('cache:user_detail:2', '');
+      // 即使之前有缓存为 null，也应忽略缓存从数据库拉取
+      const res = await service.getRelative([2], null);
+      assert(res[2]);
+    });
+  });
+
+  describe('findOne()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      const res = await service.findOne({
+        username: 'root',
+      });
+      const expected: IMUserServiceGetDetailRes = {
+        userId: 1,
+        username: 'root',
+        nickname: 'hack',
+        email: 'root@sdutacm.cn',
+        submitted: 0,
+        accepted: 0,
+        permission: 3,
+        avatar: '',
+        bannerImage: '',
+        school: '',
+        college: '',
+        major: '',
+        class: '',
+        rating: 0,
+        ratingHistory: null,
+        createdAt: new Date('2020-01-01T00:00:00+08:00'),
+      };
+      assert.deepStrictEqual(res, expected);
+      assert.strictEqual(
+        await service.findOne({
+          nickname: 'hack--',
+        }),
+        null,
+      );
+    });
+  });
+
+  describe('isExists()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      assert.strictEqual(
+        await service.isExists({
+          username: 'root',
+        }),
+        true,
+      );
+      assert.strictEqual(
+        await service.isExists({
+          nickname: 'hack--',
+        }),
+        false,
+      );
     });
   });
 
@@ -342,6 +460,31 @@ describe(basename(__filename), () => {
       await app.redis.set('cache:user_detail:3', '{"userId":3}');
       await service.clearDetailCache(3);
       assert.strictEqual(await app.redis.get('cache:user_detail:3'), null);
+    });
+  });
+
+  describe('isUsernameExists()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      assert.strictEqual(await service.isUsernameExists('root'), true);
+      assert.strictEqual(await service.isUsernameExists('root--'), false);
+    });
+  });
+
+  describe('isNicknameExists()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      assert.strictEqual(await service.isNicknameExists('hack'), true);
+      assert.strictEqual(await service.isNicknameExists('hack--'), false);
+    });
+  });
+
+  describe('isEmailExists()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      assert.strictEqual(await service.isEmailExists('root@sdutacm.cn'), true);
+      assert.strictEqual(await service.isEmailExists('u3@sdutacm.cn'), false);
+      assert.strictEqual(await service.isEmailExists('null@example.com'), false);
     });
   });
 });

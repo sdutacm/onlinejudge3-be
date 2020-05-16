@@ -14,6 +14,10 @@ import {
   IMUserServiceUpdateRes,
   IMUserServiceGetListRes,
   IMUserListPagination,
+  IMUserServiceGetRelativeRes,
+  IMUserServiceFindOneOpt,
+  IMUserServiceFindOneRes,
+  IMUserServiceIsExistsOpt,
 } from './users.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -116,6 +120,11 @@ export default class UserService {
       .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
   }
 
+  /**
+   * 设置详情缓存。
+   * @param userId userId
+   * @param data 详情数据
+   */
   private async _setDetailCache(
     userId: IUserModel['userId'],
     data: IMUserDetail | null,
@@ -183,11 +192,99 @@ export default class UserService {
     return res;
   }
 
+  /**
+   * 按 pk 关联查询用户详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表
+   * @param scope 查询 scope，默认 available，如查询全部则传 null
+   */
+  async getRelative(
+    keys: IUserModel['userId'][],
+    scope: TUserModelScopes | null = 'available',
+  ): Promise<IMUserServiceGetRelativeRes> {
+    const ks = this.utils.lib.lodash.uniq(keys);
+    const res: IMUserServiceGetRelativeRes = {};
+    let uncached: typeof keys = [];
+    if (scope === 'available') {
+      for (const k of ks) {
+        const cached = await this._getDetailCache(k);
+        if (cached) {
+          res[k] = cached;
+        } else if (cached === null) {
+          uncached.push(k);
+        }
+      }
+    } else {
+      uncached = ks;
+    }
+    if (uncached.length) {
+      const dbRes = await this.userModel
+        .scope(scope || undefined)
+        .findAll({
+          attributes: userDetailFields,
+          where: {
+            userId: {
+              [Op.in]: uncached,
+            },
+          },
+        })
+        .then((r) => r.map((d) => d.get({ plain: true }) as IMUserDetail));
+      for (const d of dbRes) {
+        res[d.userId] = d;
+        scope === 'available' && (await this._setDetailCache(d.userId, d));
+      }
+    }
+    return res;
+  }
+
+  /**
+   * 按条件查询用户详情。
+   * @param options 查询参数
+   * @param scope 查询 scope
+   */
+  async findOne(
+    options: IMUserServiceFindOneOpt,
+    scope: TUserModelScopes | null = 'available',
+  ): Promise<IMUserServiceFindOneRes> {
+    return this.userModel
+      .scope(scope || undefined)
+      .findOne({
+        attributes: userDetailFields,
+        where: options as any,
+      })
+      .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
+  }
+
+  /**
+   * 按条件查询用户是否存在。
+   * @param options 查询参数
+   * @param scope 查询 scope
+   */
+  async isExists(
+    options: IMUserServiceIsExistsOpt,
+    scope: TUserModelScopes | null = 'available',
+  ): Promise<boolean> {
+    const res = await this.userModel.scope(scope || undefined).findOne({
+      attributes: [this.meta.pk],
+      where: options as any,
+    });
+    return !!res;
+  }
+
+  /**
+   * 创建用户。
+   * @param data 创建数据
+   */
   async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
     const res = await this.userModel.create(data);
     return res.userId;
   }
 
+  /**
+   * 更新用户。
+   * @param userId userId
+   * @param data 更新数据
+   */
   async update(
     userId: IUserModel['userId'],
     data: IMUserServiceUpdateOpt,
@@ -200,8 +297,42 @@ export default class UserService {
     return res[0] > 0;
   }
 
+  /**
+   * 清除详情缓存。
+   * @param userId userId
+   */
   async clearDetailCache(userId: IUserModel['userId']): Promise<void> {
     return this.ctx.helper.delRedisKey(this.meta.detailCacheKey, [userId]);
+  }
+
+  /**
+   * 判断用户名是否已被使用。
+   * @param username 用户名
+   */
+  async isUsernameExists(username: IUserModel['username']): Promise<boolean> {
+    return this.isExists({ username }, null);
+  }
+
+  /**
+   * 判断昵称是否已被使用。
+   * @param nickname 昵称
+   */
+  async isNicknameExists(nickname: IUserModel['nickname']): Promise<boolean> {
+    return this.isExists({ nickname }, null);
+  }
+
+  /**
+   * 判断邮箱是否已验证且被使用。
+   * @param email 邮箱
+   */
+  async isEmailExists(email: IUserModel['email']): Promise<boolean> {
+    return this.isExists(
+      {
+        email,
+        verified: true,
+      },
+      null,
+    );
   }
 
   async _test() {
