@@ -7,6 +7,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
+import { ILoginReq } from '@/common/contracts/user.req';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -32,15 +33,15 @@ export default class UserController {
 
   @route()
   async [routesBe.login.name](ctx: Context) {
-    const { loginName, password } = ctx.request.body;
+    const { loginName, password } = ctx.request.body as ILoginReq;
     const pass = this.utils.misc.hashPassword(password);
     const user =
       (await this.service.findOne({
-        email: loginName,
+        username: loginName,
         password: pass,
       })) ||
       (await this.service.findOne({
-        username: loginName,
+        email: loginName,
         password: pass,
       }));
     if (!user) {
