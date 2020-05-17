@@ -24,6 +24,7 @@
     "egg-redis": "^2.4.0",
     "egg-scripts": "^2.10.0",
     "egg-sequelize": "^5.2.1",
+    "lodash": "^4.17.15",
     "md5": "^2.2.1",
     "midway": "^1.0.0",
     "mysql2": "^2.1.0",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.30",
     "@types/json-schema": "^7.0.4",
+    "@types/lodash": "^4.14.151",
     "@types/md5": "^2.2.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.18",
@@ -47,6 +49,8 @@
     "eslint": "^6.8.0",
     "eslint-config-alloy": "^3.6.0",
     "gulp": "^4.0.2",
+    "gulp-watch": "^5.0.1",
+    "json-schema-to-typescript": "^9.1.0",
     "midway-bin": "1",
     "midway-mock": "1",
     "mocha": "^6.2.0",
@@ -55,7 +59,7 @@
     "ts-node": "^8.3.0",
     "tsconfig-paths": "^3.9.0",
     "tslib": "^1.8.1",
-    "typescript": "^3.8.3"
+    "typescript": "3.8.3"
   },
   "engines": {
     "node": ">=10.16.0"

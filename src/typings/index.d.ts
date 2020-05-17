@@ -5,6 +5,7 @@ declare module 'egg' {
     // session: ISession;
     id?: number;
     detail?: any;
+    data: any;
     pagination?: {
       page: number;
       offset: number;
@@ -16,7 +17,7 @@ declare module 'egg' {
       username?: string;
       nickname?: string;
       permission?: number;
-      avatar?: string;
+      avatar?: string | null;
       contests?: {
         [x: number]: boolean;
       };

@@ -11,6 +11,7 @@ import {
 import { Codes } from '@/common/codes';
 import { defContract } from '@/typings/contract';
 import { IRouteBeConfig, routesBe } from '@/common/routes';
+import { ReqError } from '@/lib/global/error';
 
 /**
  * 获取 meta。
@@ -41,7 +42,7 @@ export function id(): MethodDecorator {
  * 通过 service 的 `getDetail()` 获取详情数据并挂载到 `ctx.detail`。
  * 需要先通过 @id() 挂载 `ctx.id`。
  */
-export function detail(): MethodDecorator {
+export function getDetail(): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -84,6 +85,9 @@ export function validate<T>(contractSchema: keyof T, targetModule?: string): Met
       const contractName = `${module}Contract`;
       const moduleContract = await ctx.requestContext.getAsync(contractName);
       const schema = moduleContract[contractSchema] as defContract.ContractSchema;
+      if (!schema) {
+        throw new Error(`SchemaNotFound: ${contractName}.${contractSchema}`);
+      }
       const schemaValid = ctx.app.schemaValidator.validateSchema(schema);
       if (!schemaValid) {
         throw new Error(`SchemaInvalid: ${contractName}.${contractSchema}`);
@@ -105,6 +109,46 @@ export function validate<T>(contractSchema: keyof T, targetModule?: string): Met
       }
       const result = await method.call(this, ctx, ...rest);
       return result;
+    };
+  };
+}
+
+/**
+ * 使请求最后默认返回成功。
+ * 相当于 `ctx.helper.rSuc()`。
+ */
+export function sucResp(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const result = await method.call(this, ctx, ...rest);
+      ctx.body = ctx.helper.rSuc();
+      return result;
+    };
+  };
+}
+
+/**
+ * 根据 Controller 返回来自动设置 ctx.body 完成响应。
+ * 如果 return，则调用 `ctx.rSuc()` 响应；如果抛出 `ReqError`，则调用 `ctx.rFail()` 响应。
+ */
+export function autoResp(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      try {
+        const result = await method.call(this, ctx, ...rest);
+        ctx.body = ctx.helper.rSuc(result);
+        return result;
+      } catch (e) {
+        if (e instanceof ReqError) {
+          ctx.body = ctx.helper.rFail(e.code, e.data);
+        } else {
+          throw e;
+        }
+      }
     };
   };
 }
@@ -139,6 +183,12 @@ export function pagination({
 
 /**
  * 根据 routesBe 的配置路由和校验。
+ *
+ * 整合了以下装饰器：
+ * - midwayControllerRoute
+ * - validate
+ * - autoResp
+ *
  * @routerOptions midway 路由装饰器参数
  */
 export function route(
@@ -148,6 +198,23 @@ export function route(
   } = { middleware: [] },
 ): MethodDecorator {
   return function (target, propertyKey, descriptor: PropertyDescriptor) {
+    /**
+     * 要使用的装饰器列表，按顺序反向存储，方便最后套圈圈。
+     *
+     * 例如，想按此组合装饰器：
+     * @f()
+     * @g()
+     * x() {}
+     *
+     * 其实际执行顺序为：
+     * f(g(x))
+     *
+     * 则：
+     * decorators = [g, f];
+     * decorators.forEach(decorator => decorator(x));
+     * => f(g(x))
+     */
+    const decorators: MethodDecorator[] = [];
     // @ts-ignore
     const routeConfig = routesBe[propertyKey] as IRouteBeConfig;
     const { method, url, contract } = routeConfig;
@@ -172,11 +239,13 @@ export function route(
         throw new Error('Invalid request method for route: ' + method);
     }
     requestDecorator(target, propertyKey, descriptor);
+    decorators.unshift(requestDecorator);
     if (contract.req) {
       const [module, contractSchema] = contract.req.split('.');
-      let validationDecorator = validate(contractSchema, module);
-      validationDecorator(target, propertyKey, descriptor);
+      decorators.unshift(validate(contractSchema, module));
     }
+    decorators.unshift(autoResp());
+    decorators.forEach((decorator) => decorator(target, propertyKey, descriptor));
   };
 }
 
@@ -210,22 +279,6 @@ export function auth(perm: 'loggedIn' | 'perm' | 'admin'): MethodDecorator {
           break;
       }
       const result = await method.call(this, ctx, ...rest);
-      return result;
-    };
-  };
-}
-
-/**
- * 使请求最后默认返回成功。
- * 相当于 `ctx.helper.rSuc()`
- */
-export function suc(): MethodDecorator {
-  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
-
-    descriptor.value = async function (ctx: Context, ...rest: any[]) {
-      const result = await method.call(this, ctx, ...rest);
-      ctx.body = ctx.helper.rSuc();
       return result;
     };
   };

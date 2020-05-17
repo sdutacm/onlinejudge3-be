@@ -16,6 +16,13 @@ const userContract = {
     },
     required: ['userId'],
   } as defContract.ContractSchema,
+  loginReq: {
+    properties: {
+      loginName: { type: 'string' },
+      password: { type: 'string' },
+    },
+    required: ['loginName', 'password'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;
