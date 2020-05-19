@@ -7,7 +7,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { ILoginReq } from '@/common/contracts/user.req';
+import { ILoginReq, IRegisterReq } from '@/common/contracts/user.req';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -58,8 +58,24 @@ export default class UserController {
 
   @route()
   async [routesBe.register.name](ctx: Context) {
-    const data = ctx.request.body;
-    // this.service.create(data);
+    const { username, nickname, email, code, password } = ctx.request.body as IRegisterReq;
+    // TODO 校验验证码
+    if (await this.service.isUsernameExists(username)) {
+      throw new ReqError(Codes.USER_USERNAME_EXISTS);
+    } else if (await this.service.isNicknameExists(nickname)) {
+      throw new ReqError(Codes.USER_NICKNAME_EXISTS);
+    } else if (await this.service.isEmailExists(email)) {
+      throw new ReqError(Codes.USER_EMAIL_EXISTS);
+    }
+    const pass = this.utils.misc.hashPassword(password);
+    const newUserId = await this.service.create({
+      username,
+      nickname,
+      email,
+      verified: true,
+      password: pass,
+    });
+    return { userId: newUserId };
   }
 
   @route()

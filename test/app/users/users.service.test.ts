@@ -380,6 +380,7 @@ describe(basename(__filename), () => {
         nickname: 'mock_create_nick1',
         password: 'pass',
         email: 'test@sdutacm.cn',
+        verified: true,
       };
       const userId = await service.create(opt);
       assert(userId);
@@ -395,6 +396,7 @@ describe(basename(__filename), () => {
       assert.strictEqual(user?.nickname, opt.nickname);
       assert.strictEqual(user?.password, opt.password);
       assert.strictEqual(user?.email, opt.email);
+      assert.strictEqual(user?.verified, opt.verified);
     });
   });
 

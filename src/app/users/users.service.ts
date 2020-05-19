@@ -274,6 +274,7 @@ export default class UserService {
   /**
    * 创建用户。
    * @param data 创建数据
+   * @returns 创建成功的主键 ID
    */
   async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
     const res = await this.userModel.create(data);

@@ -117,6 +117,7 @@ export interface IMUserServiceCreateOpt {
   nickname: IUserModel['nickname'];
   password: IUserModel['password'];
   email: IUserModel['email'];
+  verified: IUserModel['verified'];
 }
 
 export type IMUserServiceCreateRes = IUserModel['userId'];
