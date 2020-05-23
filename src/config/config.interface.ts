@@ -8,4 +8,12 @@ export interface DefaultConfig extends PowerPartial<EggAppConfig> {
   welcomeMsg: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
+  mail: {
+    accessKeyId: string;
+    accessSecret: string;
+    accountName: string;
+    fromAlias: string;
+    tagName: string;
+    regionId: 'cn-hangzhou';
+  };
 }

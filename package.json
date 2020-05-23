@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "ajv": "^6.12.0",
+    "alimail-sdk": "^1.0.6",
     "chalk": "^4.0.0",
     "egg-redis": "^2.4.0",
     "egg-scripts": "^2.10.0",

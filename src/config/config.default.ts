@@ -84,5 +84,14 @@ export default (appInfo: EggAppInfo) => {
   config.durations = durations;
   // #endregion
 
+  config.mail = {
+    accessKeyId: '',
+    accessSecret: '',
+    accountName: 'no-reply@notice.sdutacm.cn',
+    fromAlias: 'SDUTACM',
+    tagName: 'SDUTACM',
+    regionId: 'cn-hangzhou',
+  };
+
   return config;
 };
