@@ -12,6 +12,9 @@ export default class MailSender {
   private config: DefaultConfig['mail'];
   private mailer: any;
 
+  @config()
+  siteName: string;
+
   @logger()
   private logger: EggLogger;
 
@@ -33,7 +36,7 @@ export default class MailSender {
   /**
    * 单发邮件。
    * @param toAddress 邮件地址
-   * @param subject 邮件主题（无需手动添加【SDUTACM】前缀）
+   * @param subject 邮件主题（无需手动添加【】前缀）
    * @param htmlBody 邮件正文
    */
   public async singleSend(toAddress: string, subject: string, htmlBody: string) {
@@ -44,7 +47,7 @@ export default class MailSender {
       AddressType: 0, // 默认 0
       ToAddress: toAddress,
       FromAlias: this.config.fromAlias, // 可选
-      Subject: `【SDUTACM】${subject}`, // 可选
+      Subject: `【${this.siteName}】${subject}`, // 可选
       TagName: this.config.tagName, // 可选
       HtmlBody: htmlBody, // 可选
       // TextBody: 'TextBody', // 可选

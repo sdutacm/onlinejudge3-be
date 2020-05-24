@@ -3,11 +3,15 @@ import * as fs from 'fs';
 import * as prettierConfig from '../.prettierrc.js';
 import { upperFirst } from 'lodash';
 import { compile } from 'json-schema-to-typescript';
-import userContract from '../src/app/users/users.contract';
+import userContract from '../src/app/user/user.contract';
+import verificationContract from '../src/app/verification/verification.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
-const contracts = [[userContract, 'user.req']];
+const contracts = [
+  [userContract, 'user.req'],
+  [verificationContract, 'verification.req'],
+];
 
 const banner = `/**
  * This file was automatically generated.

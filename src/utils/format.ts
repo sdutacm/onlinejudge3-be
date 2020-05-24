@@ -28,3 +28,26 @@ export function formatLoggerHelper(meta: any, customContent = '') {
     color(`[${meta.date.replace(',', '.')}] ${formattedLevel} ${customContent}`) + `${meta.message}`
   );
 }
+
+/**
+ * 格式化大致时间。
+ * @param secs 秒数
+ */
+export function formatApproximateTime(secs: number): string {
+  const minutes = Math.floor(secs / 60);
+  const hours = Math.floor(secs / 3600);
+  if (secs < 0) {
+    return 'unknown time';
+  } else if (secs <= 1) {
+    return `${secs} second`;
+  } else if (secs < 60) {
+    return `${secs} seconds`;
+  } else if (secs < 120) {
+    return '1 minute';
+  } else if (secs < 3600) {
+    return `${minutes} minutes`;
+  } else if (secs < 7200) {
+    return '1 hour';
+  }
+  return `${hours} hours`;
+}
