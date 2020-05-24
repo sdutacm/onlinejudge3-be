@@ -16,7 +16,7 @@ import { IRedisKeyConfig } from '@/config/redisKey.config';
 // };
 
 @provide()
-export default class UserMeta {
+export default class UserMeta implements defMeta.BaseMeta {
   module = 'user';
   pk = 'userId';
   detailCacheKey: string;

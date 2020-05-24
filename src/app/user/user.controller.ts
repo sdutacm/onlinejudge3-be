@@ -1,8 +1,8 @@
 import { Context, controller, inject, provide, Middleware } from 'midway';
-import { CUserService } from './users.service';
+import { CUserService } from './user.service';
 import { id, getDetail, pagination, route, auth } from '@/lib/decorators/controller.decorator';
-import { IMUserDetail } from './users.interface';
-import { CUserMeta } from './users.meta';
+import { IMUserDetail } from './user.interface';
+import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';

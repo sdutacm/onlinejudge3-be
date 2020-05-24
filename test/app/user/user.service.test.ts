@@ -1,13 +1,13 @@
 import { basename } from 'path';
 import { app, assert } from 'midway-mock/bootstrap';
 import { TUserModel } from '@/lib/models/user.model';
-import { CUserService } from '@/app/users/users.service';
+import { CUserService } from '@/app/user/user.service';
 import {
   IMUserServiceGetDetailRes,
   IMUserServiceGetListRes,
   IUserModel,
   IMUserServiceGetRelativeRes,
-} from '@/app/users/users.interface';
+} from '@/app/user/user.interface';
 
 const mockDefaultFields = {
   password: 'mock_password',

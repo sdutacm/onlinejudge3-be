@@ -18,10 +18,10 @@ import {
   IMUserServiceFindOneOpt,
   IMUserServiceFindOneRes,
   IMUserServiceIsExistsOpt,
-} from './users.interface';
+} from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
-import { CUserMeta } from './users.meta';
+import { CUserMeta } from './user.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 
 // const Op = Sequelize.Op;

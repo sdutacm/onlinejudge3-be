@@ -31,7 +31,7 @@ export function id(): MethodDecorator {
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       const { pk } = getMeta.call(this);
-      ctx.id = +ctx.request.body[pk];
+      ctx.id = pk ? +ctx.request.body[pk] : undefined;
       const result = await method.call(this, ctx, ...rest);
       return result;
     };
