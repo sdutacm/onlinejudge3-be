@@ -10,7 +10,7 @@ import {
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EUserPermission, EUserForbidden } from '@/common/enums';
-import { IUserModel } from '@/app/users/users.interface';
+import { IUserModel } from '@/app/user/user.interface';
 
 export const factory = () => UserModel;
 providerWrapper([

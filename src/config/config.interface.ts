@@ -6,6 +6,8 @@ import { IDurationsConfig } from './durations.config';
 
 export interface DefaultConfig extends PowerPartial<EggAppConfig> {
   welcomeMsg: string;
+  siteName: string;
+  siteTeam: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
   mail: {

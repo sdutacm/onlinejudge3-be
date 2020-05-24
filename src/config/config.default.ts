@@ -14,6 +14,9 @@ export default (appInfo: EggAppInfo) => {
   // add your config here
   config.middleware = [];
 
+  config.siteName = 'SDUT OJ';
+  config.siteTeam = 'SDUTACM Team';
+
   config.welcomeMsg = 'Hello midwayjs!';
 
   config.security = {
