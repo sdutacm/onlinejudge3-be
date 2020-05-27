@@ -1,13 +1,22 @@
 import { Context, controller, inject, provide, Middleware } from 'midway';
 import { CUserService } from './user.service';
-import { id, getDetail, pagination, route, auth } from '@/lib/decorators/controller.decorator';
-import { IMUserDetail, IMUserListPagination } from './user.interface';
+import {
+  id,
+  getDetail,
+  pagination,
+  route,
+  auth,
+  getList,
+  respList,
+  respDetail,
+} from '@/lib/decorators/controller.decorator';
+import { IMUserDetail } from './user.interface';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { ILoginReq, IRegisterReq, IGetUserListReq } from '@/common/contracts/user.req';
+import { ILoginReq, IRegisterReq } from '@/common/contracts/user.req';
 import { CVerificationService } from '../verification/verification.service';
 
 // const mw: Middleware = async (ctx, next) => {
@@ -93,17 +102,13 @@ export default class UserController {
 
   @route()
   @pagination()
-  async [routesBe.getUserList.name](ctx: Context) {
-    const req = ctx.request.body as RemovePagination<IGetUserListReq>;
-    const pagination = ctx.pagination!;
-    const list = await this.service.getList(req, pagination as IMUserListPagination);
-    return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
-  }
+  @getList()
+  @respList()
+  async [routesBe.getUserList.name](_ctx: Context) {}
 
   @route()
   @id()
   @getDetail()
-  async [routesBe.getUserDetail.name](ctx: Context) {
-    return ctx.detail as IMUserDetail;
-  }
+  @respDetail()
+  async [routesBe.getUserDetail.name](_ctx: Context) {}
 }

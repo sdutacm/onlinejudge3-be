@@ -5,7 +5,10 @@ declare module 'egg' {
     // session: ISession;
     id?: number;
     detail?: any;
-    data: any;
+    list?: {
+      count: number;
+      rows: any[];
+    };
     pagination?: {
       page: number;
       offset: number;

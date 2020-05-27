@@ -40,7 +40,8 @@ export function id(): MethodDecorator {
 
 /**
  * 通过 service 的 `getDetail()` 获取详情数据并挂载到 `ctx.detail`。
- * 需要先通过 @id() 挂载 `ctx.id`。
+ * 需要先通过 `@id()` 挂载 `ctx.id`。
+ * 如果请求实体未找到，则直接拦截并响应请求错误。
  */
 export function getDetail(): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
@@ -60,6 +61,22 @@ export function getDetail(): MethodDecorator {
         return;
       }
       ctx.detail = detail;
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 将 `ctx.detail` 作为详情数据响应。
+ * 需要先通过 `@id()` 和 `getDetail()` 分别挂载 `ctx.id` 和 `ctx.detail`。
+ */
+export function respDetail(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      ctx.body = ctx.helper.rSuc(ctx.detail);
       const result = await method.call(this, ctx, ...rest);
       return result;
     };
@@ -140,11 +157,15 @@ export function autoResp(): MethodDecorator {
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       try {
         const result = await method.call(this, ctx, ...rest);
-        ctx.body = ctx.helper.rSuc(result);
+        if (!ctx.body) {
+          ctx.body = ctx.helper.rSuc(result);
+        }
         return result;
       } catch (e) {
         if (e instanceof ReqError) {
-          ctx.body = ctx.helper.rFail(e.code, e.data);
+          if (!ctx.body) {
+            ctx.body = ctx.helper.rFail(e.code, e.data);
+          }
         } else {
           throw e;
         }
@@ -188,7 +209,57 @@ export function pagination(
 }
 
 /**
- * 根据 routesBe 的配置路由和校验。
+ * 通过 service 的 `getList()` 获取列表数据并挂载到 `ctx.list`。
+ * 需要先通过 `@pagination()` 挂载 `ctx.pagination`。
+ */
+export function getList(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const pagination = ctx.pagination;
+      if (!pagination) {
+        throw new Error('未挂载 ctx.pagination');
+      }
+      // const service = await ctx.requestContext.getAsync(serviceName);
+      // @ts-ignore
+      const service = this.service;
+      const list = await service.getList(ctx.request.body, pagination);
+      ctx.list = list;
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 将 `ctx.list` 作为列表数据响应。
+ * 需要先通过 `@pagination()` 和 `getList()` 分别挂载 `ctx.pagination` 和 `ctx.list`。
+ */
+export function respList(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const pagination = ctx.pagination;
+      if (!pagination) {
+        throw new Error('未挂载 ctx.pagination');
+      }
+      const list = ctx.list;
+      if (!list) {
+        throw new Error('未挂载 ctx.list');
+      }
+      ctx.body = ctx.helper.rSuc(
+        ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows),
+      );
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 根据 routesBe 配置路由和校验。
  *
  * 整合了以下装饰器：
  * - midwayControllerRoute
