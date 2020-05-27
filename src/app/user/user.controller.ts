@@ -1,13 +1,13 @@
 import { Context, controller, inject, provide, Middleware } from 'midway';
 import { CUserService } from './user.service';
 import { id, getDetail, pagination, route, auth } from '@/lib/decorators/controller.decorator';
-import { IMUserDetail } from './user.interface';
+import { IMUserDetail, IMUserListPagination } from './user.interface';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { ILoginReq, IRegisterReq } from '@/common/contracts/user.req';
+import { ILoginReq, IRegisterReq, IGetUserListReq } from '@/common/contracts/user.req';
 import { CVerificationService } from '../verification/verification.service';
 
 // const mw: Middleware = async (ctx, next) => {
@@ -89,6 +89,15 @@ export default class UserController {
   async [routesBe.logout.name](ctx: Context) {
     // @ts-ignore
     ctx.session = null;
+  }
+
+  @route()
+  @pagination()
+  async [routesBe.getUserList.name](ctx: Context) {
+    const req = ctx.request.body as RemovePagination<IGetUserListReq>;
+    const pagination = ctx.pagination!;
+    const list = await this.service.getList(req, pagination as IMUserListPagination);
+    return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
   }
 
   @route()

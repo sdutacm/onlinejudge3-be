@@ -44,7 +44,14 @@ export type TUserModelFields = keyof IUserModel;
 
 export type TMUserLiteFields = Extract<
   TUserModelFields,
-  'userId' | 'username' | 'nickname' | 'avatar' | 'bannerImage' | 'rating'
+  | 'userId'
+  | 'username'
+  | 'nickname'
+  | 'avatar'
+  | 'bannerImage'
+  | 'rating'
+  | 'accepted'
+  | 'submitted'
 >;
 
 export type TMUserDetailFields = Extract<

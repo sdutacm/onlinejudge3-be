@@ -156,11 +156,12 @@ export function autoResp(): MethodDecorator {
 /**
  * 解析 post 参数中的分页参数并挂载到 `ctx.pagination`。
  * @param default 默认分页参数
+ * @param reservePagination 是否保留 request body 中的分页参数字段
  */
-export function pagination({
-  limit: defaultLimit = 0,
-  order: defaultOrder = [] as Array<[string, 'ASC' | 'DESC']>,
-} = {}): MethodDecorator {
+export function pagination(
+  { limit: defaultLimit = 0, order: defaultOrder = [] as Array<[string, 'ASC' | 'DESC']> } = {},
+  reservePagination = false,
+): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -169,6 +170,11 @@ export function pagination({
       page = +page || 1;
       limit = +limit || defaultLimit;
       order = order || defaultOrder;
+      if (!reservePagination) {
+        delete ctx.request.body.page;
+        delete ctx.request.body.limit;
+        delete ctx.request.body.order;
+      }
       ctx.pagination = {
         page,
         offset: (page - 1) * limit,

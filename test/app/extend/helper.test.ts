@@ -109,6 +109,27 @@ describe(basename(__filename), () => {
     });
   });
 
+  describe('formatList()', () => {
+    it('should return formatted list', async () => {
+      const ctx = app.mockContext();
+      assert.deepStrictEqual(
+        ctx.helper.formatList(1, 2, 32, [
+          { userId: 1, username: 'root' },
+          { userId: 2, username: 'sdut' },
+        ]),
+        {
+          page: 1,
+          limit: 2,
+          count: 32,
+          rows: [
+            { userId: 1, username: 'root' },
+            { userId: 2, username: 'sdut' },
+          ],
+        },
+      );
+    });
+  });
+
   describe('rFullList()', () => {
     it('should return full list', async () => {
       const ctx = app.mockContext();
@@ -129,6 +150,25 @@ describe(basename(__filename), () => {
               { userId: 2, username: 'sdut' },
             ],
           },
+        },
+      );
+    });
+  });
+
+  describe('formatFullList()', () => {
+    it('should return formatted full list', async () => {
+      const ctx = app.mockContext();
+      assert.deepStrictEqual(
+        ctx.helper.formatFullList(32, [
+          { userId: 1, username: 'root' },
+          { userId: 2, username: 'sdut' },
+        ]),
+        {
+          count: 32,
+          rows: [
+            { userId: 1, username: 'root' },
+            { userId: 2, username: 'sdut' },
+          ],
         },
       );
     });

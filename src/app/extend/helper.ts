@@ -70,6 +70,22 @@ export default {
   },
 
   /**
+   * 格式化为带分页的列表数据。
+   * @param page
+   * @param limit
+   * @param count
+   * @param rows
+   */
+  formatList(page: number, limit: number, count: number, rows: any[]) {
+    return {
+      page,
+      limit,
+      count,
+      rows,
+    };
+  },
+
+  /**
    * 格式化为不带分页的完整列表的返回。
    * @param count
    * @param rows
@@ -81,6 +97,18 @@ export default {
         count,
         rows,
       },
+    };
+  },
+
+  /**
+   * 格式化为不带分页的完整列表数据。
+   * @param count
+   * @param rows
+   */
+  formatFullList(count: number, rows: any[]) {
+    return {
+      count,
+      rows,
     };
   },
 

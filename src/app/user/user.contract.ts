@@ -10,9 +10,36 @@ providerWrapper([
 ]);
 
 const userContract = {
+  getUserListReq: {
+    properties: {
+      page: { type: 'number', minimum: 1 },
+      limit: { type: 'number', minimum: 1, maximum: 1000 },
+      order: {
+        type: 'array',
+        items: {
+          type: 'array',
+          items: [
+            { type: 'string', enum: ['userId', 'accepted', 'rating'] },
+            { type: 'string', enum: ['ASC', 'DESC'] },
+          ],
+          additionalItems: false,
+          minItems: 2,
+        },
+      },
+      userId: { type: 'number', minimum: 1 },
+      username: { type: 'string' },
+      nickname: { type: 'string' },
+      school: { type: 'string' },
+      college: { type: 'string' },
+      major: { type: 'string' },
+      class: { type: 'string' },
+      grade: { type: 'string' },
+    },
+    additionalProperties: false,
+  } as defContract.ContractSchema,
   getUserDetailReq: {
     properties: {
-      userId: { type: 'number', exclusiveMinimum: 0 },
+      userId: { type: 'number', minimum: 1 },
     },
     additionalProperties: false,
     required: ['userId'],

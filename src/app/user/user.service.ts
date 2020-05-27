@@ -38,6 +38,8 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'avatar',
   'bannerImage',
   'rating',
+  'accepted',
+  'submitted',
 ];
 const userDetailFields: Array<TMUserDetailFields> = [
   'userId',
