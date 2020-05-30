@@ -21,7 +21,7 @@
         "run",
         "debug",
         "--",
-        "--inspect-brk"
+        "--inspect"
       ],
       "runtimeExecutable": "npm",
       "skipFiles": [
