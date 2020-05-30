@@ -96,6 +96,8 @@ describe(basename(__filename), () => {
             avatar: '',
             bannerImage: '',
             rating: 0,
+            submitted: 0,
+            accepted: 0,
           },
         ],
       };
