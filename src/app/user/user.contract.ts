@@ -10,6 +10,26 @@ providerWrapper([
 ]);
 
 const userContract = {
+  getSessionResp: {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          userId: { type: 'number' },
+          username: { type: 'string' },
+          nickname: { type: 'string' },
+          permission: { type: 'number' },
+          avatar: { type: ['string', 'null'] },
+        },
+        additionalProperties: false,
+        required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+      },
+      {
+        type: 'null',
+      },
+    ],
+  } as defContract.ContractSchema,
+
   getUserListReq: {
     properties: {
       page: { type: 'number', minimum: 1 },
@@ -37,6 +57,7 @@ const userContract = {
     },
     additionalProperties: false,
   } as defContract.ContractSchema,
+
   getUserDetailReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
@@ -44,6 +65,74 @@ const userContract = {
     additionalProperties: false,
     required: ['userId'],
   } as defContract.ContractSchema,
+
+  getUserDetailResp: {
+    properties: {
+      userId: { type: 'number' },
+      username: { type: 'string' },
+      nickname: { type: 'string' },
+      email: { type: 'string', format: 'email' },
+      submitted: { type: 'number' },
+      accepted: { type: 'number' },
+      permission: { type: 'number' },
+      avatar: { type: ['string', 'null'] },
+      bannerImage: { type: 'string' },
+      school: { type: 'string' },
+      college: { type: 'string' },
+      major: { type: 'string' },
+      class: { type: 'string' },
+      rating: { type: 'number' },
+      ratingHistory: {
+        anyOf: [
+          {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                contest: {
+                  type: 'object',
+                  properties: {
+                    contestId: { type: 'number' },
+                    title: { type: 'string' },
+                  },
+                  additionalProperties: false,
+                  required: ['contestId', 'title'],
+                },
+                rank: { type: 'number' },
+                rating: { type: 'number' },
+                ratingChange: { type: 'number' },
+                date: { type: 'string' },
+              },
+              additionalProperties: false,
+              required: ['contest', 'rank', 'rating', 'ratingChange', 'date'],
+            },
+          },
+          { type: 'null' },
+        ],
+      },
+      createdAt: { type: 'string', format: 'date-time' },
+    },
+    additionalProperties: false,
+    required: [
+      'userId',
+      'username',
+      'nickname',
+      'email',
+      'submitted',
+      'accepted',
+      'permission',
+      'avatar',
+      'bannerImage',
+      'school',
+      'college',
+      'major',
+      'class',
+      'rating',
+      'ratingHistory',
+      'createdAt',
+    ],
+  } as defContract.ContractSchema,
+
   loginReq: {
     properties: {
       loginName: { type: 'string' },
@@ -52,6 +141,7 @@ const userContract = {
     additionalProperties: false,
     required: ['loginName', 'password'],
   } as defContract.ContractSchema,
+
   registerReq: {
     properties: {
       username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },

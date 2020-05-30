@@ -10,13 +10,12 @@ import {
   respList,
   respDetail,
 } from '@/lib/decorators/controller.decorator';
-import { IMUserDetail } from './user.interface';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { ILoginReq, IRegisterReq } from '@/common/contracts/user.req';
+import { ILoginReq, IRegisterReq, IGetSessionResp } from '@/common/contracts/user';
 import { CVerificationService } from '../verification/verification.service';
 
 // const mw: Middleware = async (ctx, next) => {
@@ -40,8 +39,16 @@ export default class UserController {
   utils: IUtils;
 
   @route()
-  async [routesBe.getSession.name](ctx: Context) {
-    return ctx.helper.isGlobalLoggedIn() ? ctx.session : null;
+  async [routesBe.getSession.name](ctx: Context): Promise<IGetSessionResp> {
+    return ctx.helper.isGlobalLoggedIn()
+      ? {
+          userId: ctx.session.userId,
+          username: ctx.session.username,
+          nickname: ctx.session.nickname,
+          permission: ctx.session.permission,
+          avatar: ctx.session.avatar,
+        }
+      : null;
   }
 
   @route()

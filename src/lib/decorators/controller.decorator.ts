@@ -12,6 +12,7 @@ import { Codes } from '@/common/codes';
 import { defContract } from '@/typings/contract';
 import { IRouteBeConfig, routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
+import { consoleColors } from '@/utils/format';
 
 /**
  * 获取 meta。
@@ -85,10 +86,15 @@ export function respDetail(): MethodDecorator {
 
 /**
  * 从 Contract 中的 JSON Schema 验证表单。
+ * @param type 校验请求还是响应
  * @param contract 要使用的 Contract Schema，如 `getUserDetailReq`
  * @param targetModule 手动指定 module，否则默认从 Controller 类的 meta 中取
  */
-export function validate<T>(contractSchema: keyof T, targetModule?: string): MethodDecorator {
+export function validate<T>(
+  type: 'req' | 'resp',
+  contractSchema: keyof T,
+  targetModule?: string,
+): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -110,21 +116,41 @@ export function validate<T>(contractSchema: keyof T, targetModule?: string): Met
         throw new Error(`SchemaInvalid: ${contractName}.${contractSchema}`);
       }
       const validate = ctx.app.schemaValidator.compile(schema);
-      const res = validate(ctx.request.body);
-      if (!res) {
-        const errorMessage = ctx.app.schemaValidator
-          .errorsText(validate.errors)
-          .replace(/data./g, '');
-        ctx.body = ctx.helper.rFail(Codes.GENERAL_REQUEST_PARAMS_ERROR, {
-          msg: errorMessage,
-          errors: validate.errors?.map((err) => ({
-            field: err.dataPath.substr(1),
-            msg: err.message,
-          })),
-        });
-        return;
+      if (type === 'req') {
+        const res = validate(ctx.request.body);
+        if (!res) {
+          const errorMessage = ctx.app.schemaValidator
+            .errorsText(validate.errors)
+            .replace(/data./g, '');
+          ctx.body = ctx.helper.rFail(Codes.GENERAL_REQUEST_PARAMS_ERROR, {
+            msg: errorMessage,
+            errors: validate.errors?.map((err) => ({
+              field: err.dataPath.substr(1),
+              msg: err.message,
+            })),
+          });
+          return;
+        }
       }
       const result = await method.call(this, ctx, ...rest);
+      if (type === 'resp' && ctx.body?.success) {
+        // 先将 data 序列化为和响应相同的 JSON string，再解析，避免 Date 等类型的干扰
+        const parsedRespData = JSON.parse(JSON.stringify(ctx.body.data));
+        const res = validate(parsedRespData);
+        if (!res) {
+          const errorMessage = ctx.app.schemaValidator.errorsText(validate.errors);
+          console.error(
+            consoleColors.ERROR('[RespValidation.data]'),
+            JSON.stringify(parsedRespData, null, '  '),
+          );
+          console.error(consoleColors.ERROR('[RespValidation.errorMessage]'), errorMessage);
+          console.error(
+            consoleColors.ERROR('[RespValidation.errors]'),
+            JSON.stringify(validate.errors, null, '  '),
+          );
+          throw new Error('RespValidationFailed');
+        }
+      }
       return result;
     };
   };
@@ -319,7 +345,12 @@ export function route(
     decorators.unshift(requestDecorator);
     if (contract.req) {
       const [module, contractSchema] = contract.req.split('.');
-      decorators.unshift(validate(contractSchema, module));
+      decorators.unshift(validate('req', contractSchema, module));
+    }
+    // 仅在开发环境下校验响应
+    if (process.env.NODE_ENV === 'development' && contract.resp) {
+      const [module, contractSchema] = contract.resp.split('.');
+      decorators.unshift(validate('resp', contractSchema, module));
     }
     decorators.unshift(autoResp());
     decorators.forEach((decorator) => decorator(target, propertyKey, descriptor));

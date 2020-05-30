@@ -9,8 +9,8 @@ import verificationContract from '../src/app/verification/verification.contract'
 // 新增 contract 配置在这里
 // [contractObject, filename]
 const contracts = [
-  [userContract, 'user.req'],
-  [verificationContract, 'verification.req'],
+  [userContract, 'user'],
+  [verificationContract, 'verification'],
 ];
 
 const banner = `/**

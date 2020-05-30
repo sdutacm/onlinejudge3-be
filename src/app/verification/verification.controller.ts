@@ -3,7 +3,7 @@ import { route } from '@/lib/decorators/controller.decorator';
 import { CVerificationMeta } from './verification.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
-import { ISendEmailVerificationReq } from '@/common/contracts/verification.req';
+import { ISendEmailVerificationReq } from '@/common/contracts/verification';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IDurationsConfig } from '@/config/durations.config';
 import { CVerificationService } from './verification.service';

@@ -16,11 +16,11 @@ declare module 'egg' {
       order: Array<[string, 'ASC' | 'DESC']>;
     };
     session: {
-      userId?: number;
-      username?: string;
-      nickname?: string;
-      permission?: number;
-      avatar?: string | null;
+      userId: number;
+      username: string;
+      nickname: string;
+      permission: number;
+      avatar: string | null;
       contests?: {
         [x: number]: boolean;
       };
