@@ -58,6 +58,43 @@ const userContract = {
     additionalProperties: false,
   } as defContract.ContractSchema,
 
+  getUserListResp: {
+    properties: {
+      page: { type: 'number', minimum: 1 },
+      limit: { type: 'number', minimum: 0 },
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            submitted: { type: 'number' },
+            accepted: { type: 'number' },
+            avatar: { type: ['string', 'null'] },
+            bannerImage: { type: 'string' },
+            rating: { type: 'number' },
+          },
+          additionalProperties: false,
+          required: [
+            'userId',
+            'username',
+            'nickname',
+            'submitted',
+            'accepted',
+            'avatar',
+            'bannerImage',
+            'rating',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['page', 'limit', 'count', 'rows'],
+  } as defContract.ContractSchema,
+
   getUserDetailReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
