@@ -17,6 +17,14 @@ const verificationContract = {
     additionalProperties: false,
     required: ['email'],
   } as defContract.ContractSchema,
+
+  sendEmailVerificationResp: {
+    properties: {
+      retryAfter: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['retryAfter'],
+  } as defContract.ContractSchema,
 };
 
 export type IVerificationContract = typeof verificationContract;

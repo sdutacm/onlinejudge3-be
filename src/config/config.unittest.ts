@@ -23,7 +23,7 @@ export default (appInfo: EggAppInfo) => {
       port: 6379,
       // @ts-ignore
       password: null,
-      db: 3,
+      db: 1,
     },
   };
 
