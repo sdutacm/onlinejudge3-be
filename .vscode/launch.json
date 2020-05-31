@@ -10,7 +10,7 @@
       "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "env": {
-        "NODE_ENV": "local"
+        "NODE_ENV": "development"
       },
       "port": 9229,
       // "preLaunchTask": "TypeScript compile",
@@ -36,7 +36,7 @@
       "autoAttachChildProcesses": true,
       "console": "integratedTerminal",
       "env": {
-        "NODE_ENV": "local",
+        "NODE_ENV": "test",
         "TS_NODE_PROJECT": "test/tsconfig.json",
       },
       "port": 9229,
@@ -47,7 +47,7 @@
         "run",
         "devtest",
         "--",
-        "--inspect-brk"
+        "--inspect"
       ],
       "runtimeExecutable": "npm",
       "skipFiles": [
