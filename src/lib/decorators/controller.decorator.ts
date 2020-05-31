@@ -13,6 +13,8 @@ import { defContract } from '@/typings/contract';
 import { IRouteBeConfig, routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { consoleColors } from '@/utils/format';
+import redisKey from '@/config/redisKey.config';
+import { isPrivate as isPrivateIp } from 'ip';
 
 /**
  * 获取 meta。
@@ -391,3 +393,67 @@ export function auth(perm: 'loggedIn' | 'perm' | 'admin'): MethodDecorator {
     };
   };
 }
+
+/**
+ * 频率限制装饰器工厂工厂
+ * @param type 限制类型
+ */
+function rateLimitFactoryFactory(
+  type: 'ip' | 'user',
+): (duration: number, maxCount: number) => MethodDecorator {
+  return function (duration: number, maxCount: number) {
+    return function (_target, propertyKey, descriptor: PropertyDescriptor) {
+      const method = descriptor.value;
+
+      descriptor.value = async function (ctx: Context, ...rest: any[]) {
+        let keyConfig: string;
+        let keyArgs: any[] = [propertyKey];
+        switch (type) {
+          case 'ip': {
+            keyConfig = redisKey.rateIp;
+            const ip = ctx.ip;
+            if (!isPrivateIp(ctx.ip)) {
+              keyArgs.push(ip);
+            }
+            break;
+          }
+          case 'user': {
+            keyConfig = redisKey.rateUser;
+            const userId = ctx.session.userId;
+            if (userId) {
+              keyArgs.push(userId);
+            }
+          }
+        }
+        if (keyConfig && keyArgs.length === 2) {
+          const rate = await ctx.helper.redisGet(keyConfig, keyArgs);
+          if (rate) {
+            if (+rate >= maxCount) {
+              ctx.body = ctx.helper.rFail(Codes.GENERAL_FLE);
+              return;
+            }
+            await ctx.helper.redisIncr(keyConfig, keyArgs);
+          } else {
+            await ctx.helper.redisSet(keyConfig, keyArgs, 1, duration);
+          }
+        }
+        const result = await method.call(this, ctx, ...rest);
+        return result;
+      };
+    };
+  };
+}
+
+/**
+ * 按 IP 频率限制。
+ * @param duration 统计时间区间（s）
+ * @param count 时间区间内最大请求次数
+ */
+export const rateLimitIp = rateLimitFactoryFactory('ip');
+
+/**
+ * 按用户频率限制。
+ * @param duration 统计时间区间（s）
+ * @param count 时间区间内最大次数
+ */
+export const rateLimitUser = rateLimitFactoryFactory('user');

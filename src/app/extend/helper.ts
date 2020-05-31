@@ -113,11 +113,11 @@ export default {
   },
 
   /**
-   * 获取 Redis key。
+   * redis get。
    * @param key redis key 配置
    * @param args key 格式化参数
    */
-  async getRedisKey<T = any>(key: string, args: any[] = []): Promise<T | null> {
+  async redisGet<T = any>(key: string, args: any[] = []): Promise<T | null> {
     const _start = Date.now();
     const {
       app: { redis },
@@ -144,13 +144,13 @@ export default {
   },
 
   /**
-   * 设置 Redis key。
+   * redis set。
    * @param key redis key 配置
    * @param args key 格式化参数
    * @param value 要设置的值
    * @param expires 过期时间，单位为秒，不传则不过期
    */
-  async setRedisKey<T = any>(key: string, args: any[], value: T, expires?: number): Promise<void> {
+  async redisSet<T = any>(key: string, args: any[], value: T, expires?: number): Promise<void> {
     const _start = Date.now();
     const {
       app: { redis },
@@ -177,11 +177,11 @@ export default {
   },
 
   /**
-   * 删除 Redis key。
+   * redis del。
    * @param key redis key 配置
    * @param args key 格式化参数
    */
-  async delRedisKey(key: string, args: any[] = []): Promise<void> {
+  async redisDel(key: string, args: any[] = []): Promise<void> {
     const _start = Date.now();
     const {
       app: { redis },
@@ -192,6 +192,26 @@ export default {
       console.log(
         consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
         consoleColors.INFO(`[${k}]`),
+      );
+  },
+
+  /**
+   * redis incr。
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   */
+  async redisIncr(key: string, args: any[] = []): Promise<void> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const incrValue = await redis.incr(k);
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.incr](${Date.now() - _start}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        incrValue,
       );
   },
 

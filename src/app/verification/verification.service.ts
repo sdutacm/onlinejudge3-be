@@ -25,7 +25,7 @@ export default class VerificationService {
   durations: IDurationsConfig;
 
   async getEmailVerificationCode(email: string): Promise<IVerificationCode | null> {
-    return this.ctx.helper.getRedisKey(this.redisKey.verificationCode, [email]);
+    return this.ctx.helper.redisGet(this.redisKey.verificationCode, [email]);
   }
 
   async createEmailVerificationCode(email: string): Promise<IVerificationCode> {
@@ -34,7 +34,7 @@ export default class VerificationService {
       code,
       createdAt: new Date().toISOString(),
     };
-    await this.ctx.helper.setRedisKey(
+    await this.ctx.helper.redisSet(
       this.redisKey.verificationCode,
       [email],
       verificationCode,

@@ -28,6 +28,8 @@ const redisKey = {
   userSubmittedProblemsStats: 'stats:user_submitted_problems:%d',
   contestRankData: 'temp:contest_rank_data:%d',
   contestRatingStatus: 'status:contest_rating_status:%d',
+  rateIp: 'rateIp:%s:%s', // {interfaceName} {ip}
+  rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
 };
 
 export default redisKey;

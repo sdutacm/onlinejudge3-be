@@ -174,38 +174,38 @@ describe(basename(__filename), () => {
     });
   });
 
-  describe('getRedisKey()', () => {
+  describe('redisGet()', () => {
     it('should get without key formating', async () => {
       const ctx = app.mockContext();
       await app.redis.set('test:helper:get_0', 'test0');
-      assert.strictEqual(await ctx.helper.getRedisKey('test:helper:get_0'), 'test0');
+      assert.strictEqual(await ctx.helper.redisGet('test:helper:get_0'), 'test0');
     });
 
     it('should get string with key formating', async () => {
       const ctx = app.mockContext();
       await app.redis.set('test:helper:get_1', 'test1');
-      assert.strictEqual(await ctx.helper.getRedisKey('test:helper:get_%s', ['1']), 'test1');
+      assert.strictEqual(await ctx.helper.redisGet('test:helper:get_%s', ['1']), 'test1');
     });
 
     it('should get object with key formating', async () => {
       const ctx = app.mockContext();
       await app.redis.set('test:helper:get_2', '{"data":["test",0,false,{"foo":"bar"}]}');
-      assert.deepStrictEqual(await ctx.helper.getRedisKey('test:helper:get_%s', ['2']), {
+      assert.deepStrictEqual(await ctx.helper.redisGet('test:helper:get_%s', ['2']), {
         data: ['test', 0, false, { foo: 'bar' }],
       });
     });
   });
 
-  describe('setRedisKey()', () => {
+  describe('redisSet()', () => {
     it('should set without key formating', async () => {
       const ctx = app.mockContext();
-      await ctx.helper.setRedisKey('test:helper:set_0', [], 'test0');
+      await ctx.helper.redisSet('test:helper:set_0', [], 'test0');
       assert.strictEqual(await app.redis.get('test:helper:set_0'), 'test0');
     });
 
     it('should set object with key formating', async () => {
       const ctx = app.mockContext();
-      await ctx.helper.setRedisKey('test:helper:set_%s', ['1'], {
+      await ctx.helper.redisSet('test:helper:set_%s', ['1'], {
         data: ['test', 0, false, { foo: 'bar' }],
       });
       assert.strictEqual(
@@ -216,25 +216,25 @@ describe(basename(__filename), () => {
 
     it('should set expire time with key formating', async () => {
       const ctx = app.mockContext();
-      await ctx.helper.setRedisKey('test:helper:set_%s', ['2'], 'test2', 1);
+      await ctx.helper.redisSet('test:helper:set_%s', ['2'], 'test2', 1);
       assert.strictEqual(await app.redis.get('test:helper:set_2'), 'test2');
       await sleep(1500);
       assert.strictEqual(await app.redis.get('test:helper:set_2'), null);
     });
   });
 
-  describe('delRedisKey()', () => {
+  describe('redisDel()', () => {
     it('should delete without key formating', async () => {
       const ctx = app.mockContext();
       await app.redis.set('test:helper:del_0', 'test0');
-      await ctx.helper.delRedisKey('test:helper:del_0');
+      await ctx.helper.redisDel('test:helper:del_0');
       assert.strictEqual(await app.redis.get('test:helper:del_0'), null);
     });
 
     it('should delete with key formating', async () => {
       const ctx = app.mockContext();
       await app.redis.set('test:helper:del_1', 'test1');
-      await ctx.helper.delRedisKey('test:helper:del_%s', ['1']);
+      await ctx.helper.redisDel('test:helper:del_%s', ['1']);
       assert.strictEqual(await app.redis.get('test:helper:del_1'), null);
     });
   });

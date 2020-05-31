@@ -118,7 +118,7 @@ export default class UserService {
    */
   private async _getDetailCache(userId: IUserModel['userId']): Promise<IMUserDetail | null | ''> {
     return this.ctx.helper
-      .getRedisKey<IMUserDetail>(this.meta.detailCacheKey, [userId])
+      .redisGet<IMUserDetail>(this.meta.detailCacheKey, [userId])
       .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
   }
 
@@ -131,7 +131,7 @@ export default class UserService {
     userId: IUserModel['userId'],
     data: IMUserDetail | null,
   ): Promise<void> {
-    return this.ctx.helper.setRedisKey(
+    return this.ctx.helper.redisSet(
       this.meta.detailCacheKey,
       [userId],
       data,
@@ -305,7 +305,7 @@ export default class UserService {
    * @param userId userId
    */
   async clearDetailCache(userId: IUserModel['userId']): Promise<void> {
-    return this.ctx.helper.delRedisKey(this.meta.detailCacheKey, [userId]);
+    return this.ctx.helper.redisDel(this.meta.detailCacheKey, [userId]);
   }
 
   /**
@@ -336,25 +336,5 @@ export default class UserService {
       },
       null,
     );
-  }
-
-  async _test() {
-    const x = await this.getList({
-      nickname: 'root',
-    });
-    await this.ctx.helper.getRedisKey('456:%s', ['aaa']);
-    // const x = await this.getDetail(1);
-    // const x = await this.create({
-    //   username: '_test1',
-    //   nickname: '_nick1',
-    //   password: '123',
-    //   email: '123@qq.com',
-    // });
-    // const x = await this.update(41521, {
-    //   school: 'SDUT',
-    //   site: 'http://qq.com',
-    // });
-    // console.log('_test done', x);
-    return x;
   }
 }
