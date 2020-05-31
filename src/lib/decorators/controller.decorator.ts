@@ -247,7 +247,7 @@ export function getList(): MethodDecorator {
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       const pagination = ctx.pagination;
       if (!pagination) {
-        throw new Error('未挂载 ctx.pagination');
+        throw new Error('GetListPreCheckError: `ctx.pagination` is unmounted');
       }
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
@@ -271,11 +271,11 @@ export function respList(): MethodDecorator {
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       const pagination = ctx.pagination;
       if (!pagination) {
-        throw new Error('未挂载 ctx.pagination');
+        throw new Error('RespListPreCheckError: `ctx.pagination` is unmounted');
       }
       const list = ctx.list;
       if (!list) {
-        throw new Error('未挂载 ctx.list');
+        throw new Error('RespListPreCheckError: `ctx.list` is unmounted');
       }
       ctx.body = ctx.helper.rSuc(
         ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows),
@@ -341,7 +341,7 @@ export function route(
         requestDecorator = midwayDelete(url, routerOptions);
         break;
       default:
-        throw new Error('Invalid request method for route: ' + method);
+        throw new Error(`RouteError: Invalid request method for route "${method}"`);
     }
     requestDecorator(target, propertyKey, descriptor);
     decorators.unshift(requestDecorator);
@@ -402,6 +402,10 @@ function rateLimitFactoryFactory(
   type: 'ip' | 'user',
 ): (duration: number, maxCount: number) => MethodDecorator {
   return function (duration: number, maxCount: number) {
+    if (!(duration > 0 && maxCount > 0)) {
+      throw new Error('RateLimitParamsError: duration and maxCount should be > 0');
+    }
+
     return function (_target, propertyKey, descriptor: PropertyDescriptor) {
       const method = descriptor.value;
 
