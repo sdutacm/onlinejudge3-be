@@ -239,6 +239,22 @@ describe(basename(__filename), () => {
     });
   });
 
+  describe('redisIncr()', () => {
+    it('should incr without key formating', async () => {
+      const ctx = app.mockContext();
+      await app.redis.set('test:helper:incr_0', 0);
+      await ctx.helper.redisIncr('test:helper:incr_0');
+      assert.strictEqual(await app.redis.get('test:helper:incr_0'), '1');
+    });
+
+    it('should delete with key formating', async () => {
+      const ctx = app.mockContext();
+      await app.redis.set('test:helper:incr_1', 1);
+      await ctx.helper.redisIncr('test:helper:incr_%s', ['1']);
+      assert.strictEqual(await app.redis.get('test:helper:incr_1'), '2');
+    });
+  });
+
   describe('isGlobalLoggedIn()', () => {
     it('should return false when no session', async () => {
       const ctx = app.mockContext({
