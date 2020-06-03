@@ -1,4 +1,4 @@
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 type TLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 

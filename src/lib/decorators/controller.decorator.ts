@@ -287,6 +287,37 @@ export function respList(): MethodDecorator {
 }
 
 /**
+ * 挂载请求所需基本信息。
+ *
+ * 初始挂载的属性：
+ * - ctx.userId：当前登录用户 userId，如未登录则为 undefined
+ * - ctx.loggedIn：是否登录
+ */
+function ctxBaseInfo(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (ctx.helper.isGlobalLoggedIn()) {
+        ctx.userId = ctx.session.userId;
+        ctx.loggedIn = true;
+      } else {
+        ctx.userId = undefined;
+        ctx.loggedIn = false;
+      }
+      if (ctx.request.headers['content-type']?.startsWith('multipart/')) {
+        const numberFields = ['userId'];
+        numberFields.forEach((field) => {
+          ctx.request.body[field] && (ctx.request.body[field] = +ctx.request.body[field]);
+        });
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
  * 根据 routesBe 配置路由和校验。
  *
  * 整合了以下装饰器：
@@ -343,8 +374,9 @@ export function route(
       default:
         throw new Error(`RouteError: Invalid request method for route "${method}"`);
     }
-    requestDecorator(target, propertyKey, descriptor);
+    // requestDecorator(target, propertyKey, descriptor);
     decorators.unshift(requestDecorator);
+    decorators.unshift(ctxBaseInfo());
     if (contract.req) {
       const [module, contractSchema] = contract.req.split('.');
       decorators.unshift(validate('req', contractSchema, module));
@@ -360,21 +392,15 @@ export function route(
 }
 
 /**
- * 路由鉴权。
+ * 鉴权。
  * @param perm 要求的最低权限
  */
-export function auth(perm: 'loggedIn' | 'perm' | 'admin'): MethodDecorator {
+export function auth(perm: 'perm' | 'admin'): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       switch (perm) {
-        case 'loggedIn':
-          if (!ctx.helper.isGlobalLoggedIn()) {
-            ctx.body = ctx.helper.rFail(Codes.GENERAL_NOT_LOGGED_IN);
-            return;
-          }
-          break;
         case 'perm':
           if (!ctx.helper.isPerm()) {
             ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
@@ -387,6 +413,29 @@ export function auth(perm: 'loggedIn' | 'perm' | 'admin'): MethodDecorator {
             return;
           }
           break;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 验证登录态。
+ * @param self 是否校验当前登录用户（要操作的 userId 是当前登录用户的 userId）
+ */
+export function login(self = false): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!ctx.helper.isGlobalLoggedIn()) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NOT_LOGGED_IN);
+        return;
+      }
+      if (self && ctx.session.userId !== ctx.request.body.userId) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
       }
       const result = await method.call(this, ctx, ...rest);
       return result;

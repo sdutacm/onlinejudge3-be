@@ -2,7 +2,8 @@ import 'egg';
 
 declare module 'egg' {
   interface Context {
-    // session: ISession;
+    userId?: number;
+    loggedIn: boolean;
     id?: number;
     detail?: any;
     list?: {

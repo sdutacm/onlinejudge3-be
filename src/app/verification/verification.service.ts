@@ -1,9 +1,9 @@
 import { provide, inject, Context, config } from 'midway';
-import { IUtils } from '@/utils';
 import { CVerificationMeta } from './verification.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IVerificationCode } from './verification.interface';
+import { ILodash } from '@/utils/libs/lodash';
 
 export type CVerificationService = VerificationService;
 
@@ -13,7 +13,7 @@ export default class VerificationService {
   meta: CVerificationMeta;
 
   @inject()
-  utils: IUtils;
+  lodash: ILodash;
 
   @inject()
   ctx: Context;
@@ -29,7 +29,7 @@ export default class VerificationService {
   }
 
   async createEmailVerificationCode(email: string): Promise<IVerificationCode> {
-    const code = this.utils.lib.lodash.random(100000, 999999);
+    const code = this.lodash.random(100000, 999999);
     const verificationCode: IVerificationCode = {
       code,
       createdAt: new Date().toISOString(),

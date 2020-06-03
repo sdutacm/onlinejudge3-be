@@ -3,6 +3,7 @@
 // import 'tsconfig-paths/register';
 import { DB } from '@/lib/models/db';
 import { Application } from 'midway';
+import fs from 'fs-extra';
 
 // const tsConfig = require('./tsconfig.json');
 // const tsConfigPaths = require('tsconfig-paths');
@@ -27,6 +28,10 @@ module.exports = (app: Application) => {
       `🚀 App is launching... (NODE_ENV: ${process.env.NODE_ENV}, EGG_SERVER_ENV: ${process.env.EGG_SERVER_ENV})`,
     );
 
+    const staticPath = app.getConfig('staticPath');
+    Object.keys(staticPath).forEach((key) => {
+      fs.ensureDirSync(staticPath[key]);
+    });
     await DB.initDB(app.config.sequelize);
 
     console.log('✅ App launched');

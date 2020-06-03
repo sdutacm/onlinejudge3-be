@@ -1,12 +1,13 @@
 import { EggAppInfo, Context } from 'midway';
-import { DefaultConfig } from './config.interface';
+import { IAppConfig } from './config.interface';
 import { Codes, codeMsgs } from '@/common/codes';
 import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
+import path from 'path';
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as DefaultConfig;
+  const config = {} as IAppConfig;
 
   // use for cookie sign key, should change to your own and keep security
   config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
@@ -21,6 +22,11 @@ export default (appInfo: EggAppInfo) => {
 
   config.security = {
     csrf: false,
+  };
+
+  config.multipart = {
+    mode: 'file',
+    fileSize: '16mb',
   };
 
   config.sequelize = {
@@ -52,6 +58,9 @@ export default (appInfo: EggAppInfo) => {
           ctx.body = codeMsgs[Codes.GENERAL_ILLEGAL_REQUEST];
           ctx.status = 403;
           return;
+        case 'Reach fileSize limit':
+          ctx.body = codeMsgs[Codes.GENERAL_INVALID_MEDIA_SIZE];
+          return;
       }
       ctx.body = 'Internal Server Error';
       ctx.status = 500;
@@ -62,6 +71,9 @@ export default (appInfo: EggAppInfo) => {
         case 'invalid csrf token':
           ctx.body = ctx.helper.rFail(Codes.GENERAL_ILLEGAL_REQUEST, { reason: err.message });
           ctx.status = 403;
+          return;
+        case 'Reach fileSize limit':
+          ctx.body = ctx.helper.rFail(Codes.GENERAL_INVALID_MEDIA_SIZE);
           return;
       }
       ctx.body = ctx.helper.rFail(Codes.GENERAL_INTERNAL_SERVER_ERROR);
@@ -79,6 +91,19 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta, `${meta.paddingMessage}`);
     },
     consoleLevel: 'DEBUG',
+  };
+
+  const basePath = path.join(__dirname, '../app/public/sf/');
+  config.staticPath = {
+    avatar: path.join(basePath, 'avatars/'),
+    bannerImage: path.join(basePath, 'banner_images/'),
+    media: path.join(basePath, 'media/'),
+  };
+
+  config.uploadLimit = {
+    avatar: 4 * 1024 * 1024,
+    bannerImage: 12 * 1024 * 1024,
+    media: 8 * 1024 * 1024,
   };
 
   // #region custom config

@@ -190,6 +190,15 @@ const userContract = {
     additionalProperties: false,
     required: ['username', 'nickname', 'email', 'code', 'password'],
   } as defContract.ContractSchema,
+
+  uploadUserAvatarReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      // avatar: { type: 'image' },
+    },
+    additionalProperties: true,
+    required: ['userId'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;

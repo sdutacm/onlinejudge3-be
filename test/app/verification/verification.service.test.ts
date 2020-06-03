@@ -1,5 +1,6 @@
 import { basename } from 'path';
-import { app, assert } from 'midway-mock/bootstrap';
+import assert from 'power-assert';
+import { app } from 'midway-mock/bootstrap';
 import { CVerificationService } from '@/app/verification/verification.service';
 
 async function getService() {

@@ -1,9 +1,10 @@
 import { EggAppInfo } from 'midway';
-import { DefaultConfig } from './config.interface';
+import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
+import path from 'path';
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as DefaultConfig;
+  const config = {} as IAppConfig;
 
   config.security = {
     csrf: {
@@ -34,15 +35,12 @@ export default (appInfo: EggAppInfo) => {
   //   },
   // };
 
-  config.logger = {
-    // @ts-ignore
-    formatter(meta: any) {
-      return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}]`);
-    },
-    contextFormatter(meta: any) {
-      return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}] ${meta.paddingMessage}`);
-    },
-  };
+  // const basePath = path.join(__dirname, '../app/public/sf/');
+  // config.staticPath = {
+  //   avatar: path.join(basePath, 'avatars/'),
+  //   bannerImage: path.join(basePath, 'banner_images/'),
+  //   media: path.join(basePath, 'media/'),
+  // };
 
   // config.mail = {
   //   accessKeyId: '',
@@ -52,6 +50,16 @@ export default (appInfo: EggAppInfo) => {
   //   tagName: 'SDUTACM',
   //   regionId: 'cn-hangzhou',
   // };
+
+  config.logger = {
+    // @ts-ignore
+    formatter(meta: any) {
+      return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}]`);
+    },
+    contextFormatter(meta: any) {
+      return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}] ${meta.paddingMessage}`);
+    },
+  };
 
   return config;
 };

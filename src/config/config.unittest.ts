@@ -1,8 +1,8 @@
 import { EggAppInfo } from 'midway';
-import { DefaultConfig } from './config.interface';
+import { IAppConfig } from './config.interface';
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as DefaultConfig;
+  const config = {} as IAppConfig;
 
   config.sequelize = {
     host: '127.0.0.1',

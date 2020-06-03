@@ -1,5 +1,6 @@
 import { update as lodashUpdate } from 'lodash';
-import * as md5 from 'md5';
+import md5 from 'md5';
+import cryptoRandomString from 'crypto-random-string';
 
 /**
  * 去除对象中的 undefined 属性。
@@ -51,3 +52,10 @@ export function hashPassword(str: string): string {
   }
   return md5(ret);
 }
+
+/**
+ * 随机字符串。
+ * @param options 参数
+ * @ref https://www.npmjs.com/package/crypto-random-string
+ */
+export const randomString = cryptoRandomString;

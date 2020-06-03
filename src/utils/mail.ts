@@ -1,7 +1,7 @@
 // @ts-ignore
-import * as AliMailSDK from 'alimail-sdk';
+import AliMailSDK from 'alimail-sdk';
 import { provide, config, logger, EggLogger } from 'midway';
-import { DefaultConfig } from '@/config/config.interface';
+import { IAppConfig } from '@/config/config.interface';
 import { AxiosResponse } from 'axios';
 import { consoleColors } from '@/utils/format';
 
@@ -9,7 +9,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 @provide()
 export default class MailSender {
-  private config: DefaultConfig['mail'];
+  private config: IAppConfig['mail'];
   private mailer: any;
 
   @config()
@@ -18,7 +18,7 @@ export default class MailSender {
   @logger()
   private logger: EggLogger;
 
-  constructor(@config('mail') mailConfig: DefaultConfig['mail']) {
+  constructor(@config('mail') mailConfig: IAppConfig['mail']) {
     this.config = mailConfig;
     if (isProd) {
       this.mailer = new AliMailSDK({

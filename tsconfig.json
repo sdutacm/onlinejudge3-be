@@ -17,6 +17,7 @@
     "stripInternal": true,
     "target": "ES2018",
     "resolveJsonModule": true,
+    "esModuleInterop": true,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]

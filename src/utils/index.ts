@@ -1,5 +1,4 @@
 import { providerWrapper } from 'midway';
-import * as lib from './lib';
 import * as format from './format';
 import * as misc from './misc';
 
@@ -12,7 +11,6 @@ providerWrapper([
 ]);
 
 const utils = {
-  lib,
   format,
   misc,
 };

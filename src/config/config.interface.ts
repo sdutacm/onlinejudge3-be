@@ -4,12 +4,22 @@ import 'egg-redis/index';
 import { IRedisKeyConfig } from './redisKey.config';
 import { IDurationsConfig } from './durations.config';
 
-export interface DefaultConfig extends PowerPartial<EggAppConfig> {
+export interface IAppConfig extends PowerPartial<EggAppConfig> {
   welcomeMsg: string;
   siteName: string;
   siteTeam: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
+  staticPath: {
+    avatar: string;
+    bannerImage: string;
+    media: string;
+  };
+  uploadLimit: {
+    avatar: number; // B
+    bannerImage: number; // B
+    media: number; // B
+  };
   mail: {
     accessKeyId: string;
     accessSecret: string;

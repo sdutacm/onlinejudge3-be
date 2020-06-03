@@ -1,5 +1,5 @@
 import { codeMsgs, Codes } from '@/common/codes';
-import * as util from 'util';
+import util from 'util';
 import { Context } from 'midway';
 import { Application } from 'egg';
 import { consoleColors } from '@/utils/format';

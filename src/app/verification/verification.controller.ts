@@ -39,7 +39,7 @@ export default class VerificationController {
   siteTeam: string;
 
   @route()
-  async [routesBe.sendEmailVerification.name](ctx: Context) {
+  async [routesBe.sendEmailVerification.i](ctx: Context) {
     const { email } = ctx.request.body as ISendEmailVerificationReq;
     const codeStore = await this.service.getEmailVerificationCode(email);
     // 检查是否已有验证码

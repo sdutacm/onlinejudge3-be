@@ -1,5 +1,6 @@
 import { basename } from 'path';
-import { app, assert } from 'midway-mock/bootstrap';
+import assert from 'power-assert';
+import { app } from 'midway-mock/bootstrap';
 import { TUserModel } from '@/lib/models/user.model';
 import { CUserService } from '@/app/user/user.service';
 import {

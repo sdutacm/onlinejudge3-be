@@ -1,6 +1,6 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import * as prettierConfig from '../.prettierrc.js';
+import path from 'path';
+import fs from 'fs-extra';
+import prettierConfig from '../.prettierrc.js';
 import { upperFirst } from 'lodash';
 import { compile } from 'json-schema-to-typescript';
 import userContract from '../src/app/user/user.contract';

@@ -1,6 +1,7 @@
 import { basename } from 'path';
-import { app, assert } from 'midway-mock/bootstrap';
-import * as sleep from 'sleep-promise';
+import assert from 'power-assert';
+import { app } from 'midway-mock/bootstrap';
+import sleep from 'sleep-promise';
 
 const mockSessions = {
   root: {

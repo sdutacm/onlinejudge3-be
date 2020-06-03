@@ -23,6 +23,7 @@ import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
 import { CUserMeta } from './user.meta';
 import { IDurationsConfig } from '@/config/durations.config';
+import { ILodash } from '@/utils/libs/lodash';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -73,6 +74,9 @@ export default class UserService {
 
   @inject()
   ctx: Context;
+
+  @inject()
+  lodash: ILodash;
 
   @config('durations')
   durations: IDurationsConfig;
@@ -204,7 +208,7 @@ export default class UserService {
     keys: IUserModel['userId'][],
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceGetRelativeRes> {
-    const ks = this.utils.lib.lodash.uniq(keys);
+    const ks = this.lodash.uniq(keys);
     const res: IMUserServiceGetRelativeRes = {};
     let uncached: typeof keys = [];
     if (scope === 'available') {
@@ -284,7 +288,7 @@ export default class UserService {
   }
 
   /**
-   * 更新用户。
+   * 更新用户（部分更新）。
    * @param userId userId
    * @param data 更新数据
    */
