@@ -59,3 +59,38 @@ export function hashPassword(str: string): string {
  * @ref https://www.npmjs.com/package/crypto-random-string
  */
 export const randomString = cryptoRandomString;
+
+/**
+ * 计算最大公约数
+ * @param m
+ * @param n
+ */
+export function gcd(m: number, n: number): number {
+  let a = m;
+  let b = n;
+  while (a !== b) {
+    if (a > b) a -= b;
+    else b -= a;
+  }
+  return a;
+}
+
+/**
+ * 计算所有约数
+ * @param m
+ * @param n
+ */
+export function cdAll(m: number, n: number): number[] {
+  let gcdValue = gcd(m, n);
+  const res = [];
+  for (let i = 1, pow = 1; pow <= gcdValue; pow += i + i + 1, ++i) {
+    if (gcdValue % i === 0) {
+      res.push(i);
+      if (pow !== gcdValue) {
+        res.push(gcdValue / i);
+      }
+    }
+  }
+  res.sort();
+  return res;
+}

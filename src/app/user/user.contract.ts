@@ -199,6 +199,15 @@ const userContract = {
     additionalProperties: true,
     required: ['userId'],
   } as defContract.ContractSchema,
+
+  uploadUserBannerImageReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      // bannerImage: { type: 'image' },
+    },
+    additionalProperties: true,
+    required: ['userId'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;

@@ -16,12 +16,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import {
-  ILoginReq,
-  IRegisterReq,
-  IGetSessionResp,
-  IUploadUserAvatarReq,
-} from '@/common/contracts/user';
+import { ILoginReq, IRegisterReq, IGetSessionResp } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
 import { IAppConfig } from '@/config/config.interface';
@@ -149,7 +144,6 @@ export default class UserController {
   async [routesBe.uploadUserAvatar.i](ctx: Context) {
     const userId = ctx.id!;
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
-    console.log('f', ctx.request.files);
     const image = ctx.request.files?.filter((f) => f.field === 'avatar')[0];
     if (!image) {
       throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
@@ -165,16 +159,20 @@ export default class UserController {
     const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     const fullFileName = saveName;
     const sFileName = `s_${saveName}`;
-    // 存储图片
-    await this.sharp(image.filepath)
-      .resize(128)
-      .toFile(path.join(this.staticPath.avatar, sFileName));
-    this.fs.copyFileSync(image.filepath, path.join(this.staticPath.avatar, fullFileName));
-    const { avatar: oldAvatar } = ctx.detail as IMUserDetail;
+    // 压缩并存储图片
+    await Promise.all([
+      this.fs.copyFile(image.filepath, path.join(this.staticPath.avatar, fullFileName)),
+      await this.sharp(image.filepath)
+        .resize(128)
+        .toFile(path.join(this.staticPath.avatar, sFileName)),
+    ]);
     // 清除旧文件
-    if (oldAvatar) {
-      this.fs.removeSync(path.join(this.staticPath.avatar, oldAvatar));
-      this.fs.removeSync(path.join(this.staticPath.avatar, `s_${oldAvatar}`));
+    const { avatar: oldImage } = ctx.detail as IMUserDetail;
+    if (oldImage) {
+      await Promise.all([
+        this.fs.remove(path.join(this.staticPath.avatar, oldImage)),
+        this.fs.remove(path.join(this.staticPath.avatar, `s_${oldImage}`)),
+      ]);
     }
     // 更新
     await this.service.update(userId, {
@@ -182,5 +180,77 @@ export default class UserController {
     });
     await this.service.clearDetailCache(userId);
     ctx.session.avatar = saveName;
+  }
+
+  @route()
+  @login(true)
+  @id()
+  @getDetail()
+  async [routesBe.uploadUserBannerImage.i](ctx: Context) {
+    const userId = ctx.id!;
+    const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
+    const SIZE_WITH_SCALE = 400;
+    const image = ctx.request.files?.filter((f) => f.field === 'bannerImage')[0];
+    if (!image) {
+      throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
+    }
+    if (!ALLOWED_TYPE.includes(image.mime)) {
+      throw new ReqError(Codes.GENERAL_INVALID_MEDIA);
+    }
+    const stat = this.fs.statSync(image.filepath);
+    if (stat.size > this.uploadLimit.bannerImage) {
+      throw new ReqError(Codes.GENERAL_INVALID_MEDIA_SIZE);
+    }
+    const ext = image.mime.split('/')[1];
+    const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
+    const fullFileName = saveName;
+    const sFileName = `s_${saveName}`;
+    const minFileName = `min_${saveName}`;
+    // 压缩图片
+    const sImageInstance = this.sharp(image.filepath).resize(SIZE_WITH_SCALE);
+    let minImageInstance = this.sharp(image.filepath);
+    const { format, width, height } = await sImageInstance.metadata();
+    if (!width || !height) {
+      throw new ReqError(Codes.GENERAL_INVALID_MEDIA);
+    }
+    // 压缩 min image
+    const cds = this.utils.misc.cdAll(width, height).reverse();
+    for (const cd of cds) {
+      const w = width / cd;
+      const h = height / cd;
+      if (w >= SIZE_WITH_SCALE || h >= SIZE_WITH_SCALE) {
+        minImageInstance = minImageInstance.resize(w, h);
+        break;
+      }
+    }
+    minImageInstance = minImageInstance.blur(20);
+    switch (format) {
+      case 'jpeg':
+        minImageInstance = minImageInstance.jpeg({ quality: 20 });
+        break;
+      case 'png':
+        minImageInstance = minImageInstance.png({ quality: 20 });
+        break;
+    }
+    // 存储图片
+    await Promise.all([
+      this.fs.copyFile(image.filepath, path.join(this.staticPath.bannerImage, fullFileName)),
+      sImageInstance.toFile(path.join(this.staticPath.bannerImage, sFileName)),
+      minImageInstance.toFile(path.join(this.staticPath.bannerImage, minFileName)),
+    ]);
+    // 清除旧文件
+    const { bannerImage: oldImage } = ctx.detail as IMUserDetail;
+    if (oldImage) {
+      await Promise.all([
+        this.fs.remove(path.join(this.staticPath.bannerImage, oldImage)),
+        this.fs.remove(path.join(this.staticPath.bannerImage, `s_${oldImage}`)),
+        this.fs.remove(path.join(this.staticPath.bannerImage, `min_${oldImage}`)),
+      ]);
+    }
+    // 更新
+    await this.service.update(userId, {
+      bannerImage: saveName,
+    });
+    await this.service.clearDetailCache(userId);
   }
 }
