@@ -153,7 +153,9 @@ export default class UserController {
     }
     const stat = this.fs.statSync(image.filepath);
     if (stat.size > this.uploadLimit.avatar) {
-      throw new ReqError(Codes.GENERAL_INVALID_MEDIA_SIZE);
+      throw new ReqError(Codes.GENERAL_INVALID_MEDIA_SIZE, {
+        maxSize: this.uploadLimit.avatar,
+      });
     }
     const ext = image.mime.split('/')[1];
     const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
@@ -199,7 +201,9 @@ export default class UserController {
     }
     const stat = this.fs.statSync(image.filepath);
     if (stat.size > this.uploadLimit.bannerImage) {
-      throw new ReqError(Codes.GENERAL_INVALID_MEDIA_SIZE);
+      throw new ReqError(Codes.GENERAL_INVALID_MEDIA_SIZE, {
+        maxSize: this.uploadLimit.bannerImage,
+      });
     }
     const ext = image.mime.split('/')[1];
     const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
