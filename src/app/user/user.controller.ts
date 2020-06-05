@@ -8,7 +8,6 @@ import {
   auth,
   getList,
   respList,
-  respDetail,
   login,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
@@ -23,6 +22,7 @@ import { IAppConfig } from '@/config/config.interface';
 import path from 'path';
 import { ISharp } from '@/utils/libs/sharp';
 import { IFs } from '@/utils/libs/fs-extra';
+import { ILodash } from '@/utils/libs/lodash';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -49,6 +49,9 @@ export default class UserController {
 
   @inject()
   fs: IFs;
+
+  @inject()
+  lodash: ILodash;
 
   @config()
   staticPath: IAppConfig['staticPath'];
@@ -134,8 +137,21 @@ export default class UserController {
   @route()
   @id()
   @getDetail()
-  @respDetail()
-  async [routesBe.getUserDetail.i](_ctx: Context) {}
+  async [routesBe.getUserDetail.i](ctx: Context) {
+    const detail = ctx.detail as IMUserDetail;
+    if (!ctx.helper.isSelf(ctx.id!)) {
+      return this.lodash.omit(detail, [
+        'email',
+        'defaultLanguage',
+        'settings',
+        'coin',
+        'verified',
+        'lastTime',
+        'createdAt',
+      ]);
+    }
+    return detail;
+  }
 
   @route()
   @login(true)

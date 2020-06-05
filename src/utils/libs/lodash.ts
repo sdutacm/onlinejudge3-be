@@ -1,5 +1,5 @@
 import { providerWrapper } from 'midway';
-import { isEqual, cloneDeep, uniq, random } from 'lodash';
+import { isEqual, cloneDeep, uniq, random, pick, omit } from 'lodash';
 
 export const factory = () => lodash;
 providerWrapper([
@@ -14,6 +14,8 @@ const lodash = {
   cloneDeep,
   uniq,
   random,
+  pick,
+  omit,
 };
 export default lodash;
 export type ILodash = typeof lodash;
