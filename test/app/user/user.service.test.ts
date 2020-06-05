@@ -45,6 +45,7 @@ describe(basename(__filename), () => {
       permission: 3,
       forbidden: 0,
       verified: true,
+      defaultLanguage: 'javascript',
     });
     await userModel.create({
       ...mockDefaultFields,
@@ -99,6 +100,7 @@ describe(basename(__filename), () => {
             rating: 0,
             submitted: 0,
             accepted: 0,
+            grade: '',
           },
         ],
       };
@@ -236,14 +238,20 @@ describe(basename(__filename), () => {
         college: '',
         major: '',
         class: '',
+        grade: '',
         rating: 0,
         ratingHistory: null,
+        defaultLanguage: 'javascript',
+        settings: null,
+        coin: 0,
+        verified: true,
+        lastTime: null,
         createdAt: new Date('2020-01-01T00:00:00+08:00'),
       };
       assert.deepStrictEqual(res, expected);
       assert.strictEqual(
         await app.redis.get('cache:user_detail:1'),
-        '{"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","rating":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","rating":0,"defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
     });
 
@@ -302,15 +310,21 @@ describe(basename(__filename), () => {
           college: '',
           major: '',
           class: '',
+          grade: '',
           rating: 0,
           ratingHistory: null,
+          defaultLanguage: 'javascript',
+          settings: null,
+          coin: 0,
+          verified: true,
+          lastTime: null,
           createdAt: new Date('2020-01-01T00:00:00+08:00'),
         },
       };
       assert.deepStrictEqual(res, expected);
       assert.strictEqual(
         await app.redis.get('cache:user_detail:1'),
-        '{"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","rating":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","rating":0,"defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
     });
 
@@ -343,8 +357,14 @@ describe(basename(__filename), () => {
         college: '',
         major: '',
         class: '',
+        grade: '',
         rating: 0,
         ratingHistory: null,
+        defaultLanguage: 'javascript',
+        settings: null,
+        coin: 0,
+        verified: true,
+        lastTime: null,
         createdAt: new Date('2020-01-01T00:00:00+08:00'),
       };
       assert.deepStrictEqual(res, expected);

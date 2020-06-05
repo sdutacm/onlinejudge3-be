@@ -11,6 +11,8 @@ interface IUserModelRatingHistoryItem {
 
 type IUserModelRatingHistory = IUserModelRatingHistoryItem[];
 
+interface IUserSettings {}
+
 export interface IUserModel {
   userId: number;
   username: string;
@@ -34,7 +36,7 @@ export interface IUserModel {
   class: string;
   site: string;
   bannerImage: string;
-  settings: string;
+  settings: IUserSettings | null;
   coin: number;
   rating: number;
   ratingHistory: IUserModelRatingHistory | null;
@@ -52,6 +54,7 @@ export type TMUserLiteFields = Extract<
   | 'rating'
   | 'accepted'
   | 'submitted'
+  | 'grade'
 >;
 
 export type TMUserDetailFields = Extract<
@@ -67,10 +70,16 @@ export type TMUserDetailFields = Extract<
   | 'college'
   | 'major'
   | 'class'
+  | 'grade'
   | 'accepted'
   | 'submitted'
   | 'rating'
   | 'ratingHistory'
+  | 'defaultLanguage'
+  | 'settings'
+  | 'coin'
+  | 'verified'
+  | 'lastTime'
   | 'createdAt'
 >;
 

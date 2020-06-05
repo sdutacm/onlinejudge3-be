@@ -322,6 +322,7 @@ function ctxBaseInfo(): MethodDecorator {
  *
  * 整合了以下装饰器：
  * - midwayControllerRoute
+ * - ctxBaseInfo
  * - validate
  * - autoResp
  *

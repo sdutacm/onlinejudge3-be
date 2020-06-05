@@ -41,6 +41,7 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'rating',
   'accepted',
   'submitted',
+  'grade',
 ];
 const userDetailFields: Array<TMUserDetailFields> = [
   'userId',
@@ -56,8 +57,14 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'college',
   'major',
   'class',
+  'grade',
   'rating',
   'ratingHistory',
+  'defaultLanguage',
+  'settings',
+  'coin',
+  'verified',
+  'lastTime',
   'createdAt',
 ];
 

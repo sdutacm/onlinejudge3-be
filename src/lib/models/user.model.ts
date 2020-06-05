@@ -146,7 +146,16 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
     field: 'last_time',
     type: DataType.DATE,
   })
-  lastTime: Date | null;
+  get lastTime(): IUserModel['lastTime'] {
+    const value = this.getDataValue('lastTime');
+    if (value instanceof Date && Number.isNaN(value.getTime())) {
+      return null;
+    }
+    return value ?? null;
+  }
+  set lastTime(value: IUserModel['lastTime']) {
+    this.setDataValue('lastTime', value);
+  }
 
   @AllowNull(false)
   @Default(EUserPermission.normal)
@@ -217,9 +226,26 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
   @AllowNull(false)
   @Default('')
   @Column({
+    field: 'settings',
     type: DataType.TEXT({ length: 'medium' }),
   })
-  settings: string;
+  get settings(): IUserModel['settings'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('settings'));
+    } catch (e) {
+      return null;
+    }
+  }
+  set settings(value: IUserModel['settings']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('settings', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('settings', '');
+    }
+  }
 
   @AllowNull(false)
   @Default(0)

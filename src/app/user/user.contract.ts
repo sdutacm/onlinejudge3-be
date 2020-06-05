@@ -76,6 +76,7 @@ const userContract = {
             avatar: { type: ['string', 'null'] },
             bannerImage: { type: 'string' },
             rating: { type: 'number' },
+            grade: { type: 'string' },
           },
           additionalProperties: false,
           required: [
@@ -87,6 +88,7 @@ const userContract = {
             'avatar',
             'bannerImage',
             'rating',
+            'grade',
           ],
         },
       },
@@ -118,6 +120,7 @@ const userContract = {
       college: { type: 'string' },
       major: { type: 'string' },
       class: { type: 'string' },
+      grade: { type: 'string' },
       rating: { type: 'number' },
       ratingHistory: {
         anyOf: [
@@ -147,6 +150,22 @@ const userContract = {
           { type: 'null' },
         ],
       },
+      defaultLanguage: { type: 'string' },
+      settings: {
+        anyOf: [
+          {
+            type: 'object',
+            properties: {},
+            additionalProperties: false,
+          },
+          { type: 'null' },
+        ],
+      },
+      coin: { type: 'number' },
+      verified: { type: 'boolean' },
+      lastTime: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
       createdAt: { type: 'string', format: 'date-time' },
     },
     additionalProperties: false,
@@ -154,7 +173,6 @@ const userContract = {
       'userId',
       'username',
       'nickname',
-      'email',
       'submitted',
       'accepted',
       'permission',
@@ -164,9 +182,9 @@ const userContract = {
       'college',
       'major',
       'class',
+      'grade',
       'rating',
       'ratingHistory',
-      'createdAt',
     ],
   } as defContract.ContractSchema,
 
