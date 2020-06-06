@@ -9,6 +9,7 @@ import {
   getList,
   respList,
   login,
+  requireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
@@ -103,6 +104,12 @@ export default class UserController {
   }
 
   @route()
+  async [routesBe.logout.i](ctx: Context) {
+    // @ts-ignore
+    ctx.session = null;
+  }
+
+  @route()
   async [routesBe.register.i](ctx: Context) {
     const { username, nickname, email, code, password } = ctx.request.body as IRegisterReq;
     if (await this.service.isUsernameExists(username)) {
@@ -125,12 +132,6 @@ export default class UserController {
       password: pass,
     });
     return { userId: newUserId };
-  }
-
-  @route()
-  async [routesBe.logout.i](ctx: Context) {
-    // @ts-ignore
-    ctx.session = null;
   }
 
   @route()
@@ -159,7 +160,8 @@ export default class UserController {
   }
 
   @route()
-  @login(true)
+  @login()
+  @requireSelf()
   @id()
   @getDetail()
   async [routesBe.updateUserDetail.i](ctx: Context) {
@@ -170,7 +172,8 @@ export default class UserController {
   }
 
   @route()
-  @login(true)
+  @login()
+  @requireSelf()
   @id()
   @getDetail()
   async [routesBe.uploadUserAvatar.i](ctx: Context) {
@@ -217,7 +220,8 @@ export default class UserController {
   }
 
   @route()
-  @login(true)
+  @login()
+  @requireSelf()
   @id()
   @getDetail()
   async [routesBe.uploadUserBannerImage.i](ctx: Context) {

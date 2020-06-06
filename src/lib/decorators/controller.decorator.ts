@@ -423,9 +423,8 @@ export function auth(perm: 'perm' | 'admin'): MethodDecorator {
 
 /**
  * 验证登录态。
- * @param self 是否校验当前登录用户（要操作的 userId 是当前登录用户的 userId）
  */
-export function login(self = false): MethodDecorator {
+export function login(): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -434,7 +433,34 @@ export function login(self = false): MethodDecorator {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NOT_LOGGED_IN);
         return;
       }
-      if (self && ctx.session.userId !== ctx.request.body.userId) {
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 校验要操作的实体的所有者是否是当前登录用户。
+ *
+ * 用做校验的 userId 会按照如下顺序尝试获取：
+ * - selectUserId(ctx)
+ * - ctx.request.body.userId
+ * - ctx.detail.userId（需要先使用 `@getDetail()`）
+ * - ctx.detail.user.userId（需要先使用 `@getDetail()`）
+ *
+ * @param selectUserId 自定义如何取得实体所有者的 userId
+ */
+export function requireSelf(selectUserId?: (ctx: Context) => number): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const userId =
+        selectUserId?.(ctx) ||
+        ctx.request.body.userId ||
+        ctx.detail?.userId ||
+        ctx.detail?.user?.userId;
+      if (!userId || ctx.session.userId !== userId) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
