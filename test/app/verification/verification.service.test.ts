@@ -45,4 +45,17 @@ describe(basename(__filename), () => {
       assert.deepStrictEqual(actual, expected);
     });
   });
+
+  describe('deleteEmailVerificationCode()', () => {
+    it('should work', async () => {
+      const service = await getService();
+      await app.redis.set(
+        'verification:code:u3@sdutacm.cn',
+        '{"code":123456,"createdAt":"2019-12-31T16:00:00.000Z"}',
+      );
+      await service.deleteEmailVerificationCode('u3@sdutacm.cn');
+      const actual = await app.redis.get('verification:code:u3@sdutacm.cn');
+      assert.strictEqual(actual, null);
+    });
+  });
 });
