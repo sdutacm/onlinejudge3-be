@@ -30,6 +30,27 @@ const userContract = {
     ],
   } as defContract.ContractSchema,
 
+  loginReq: {
+    properties: {
+      loginName: { type: 'string' },
+      password: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['loginName', 'password'],
+  } as defContract.ContractSchema,
+
+  registerReq: {
+    properties: {
+      username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
+      nickname: { type: 'string', minLength: 3, maxLength: 20 },
+      email: { type: 'string', minLength: 5, maxLength: 60, format: 'email' },
+      code: { type: 'number', minimum: 100000, maximum: 999999 },
+      password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
+    },
+    additionalProperties: false,
+    required: ['username', 'nickname', 'email', 'code', 'password'],
+  } as defContract.ContractSchema,
+
   getUserListReq: {
     properties: {
       page: { type: 'number', minimum: 1 },
@@ -210,28 +231,26 @@ const userContract = {
     },
     additionalProperties: false,
     required: ['userId'],
-    // required: ['school', 'college', 'major', 'class', 'site', 'defaultLanguage'],
   } as defContract.ContractSchema,
 
-  loginReq: {
+  updateUserPasswordReq: {
     properties: {
-      loginName: { type: 'string' },
-      password: { type: 'string' },
+      userId: { type: 'number', minimum: 1 },
+      oldPassword: { type: 'string' },
+      password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
     },
     additionalProperties: false,
-    required: ['loginName', 'password'],
+    required: ['userId', 'oldPassword', 'password'],
   } as defContract.ContractSchema,
 
-  registerReq: {
+  resetUserPasswordReq: {
     properties: {
-      username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
-      nickname: { type: 'string', minLength: 3, maxLength: 20 },
-      email: { type: 'string', minLength: 5, maxLength: 60, format: 'email' },
+      email: { type: 'string', format: 'email' },
       code: { type: 'number', minimum: 100000, maximum: 999999 },
       password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
     },
     additionalProperties: false,
-    required: ['username', 'nickname', 'email', 'code', 'password'],
+    required: ['email', 'code', 'password'],
   } as defContract.ContractSchema,
 
   uploadUserAvatarReq: {

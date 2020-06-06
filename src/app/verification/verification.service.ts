@@ -42,4 +42,8 @@ export default class VerificationService {
     );
     return verificationCode;
   }
+
+  async deleteEmailVerificationCode(email: string): Promise<void> {
+    await this.ctx.helper.redisDel(this.redisKey.verificationCode, [email]);
+  }
 }

@@ -1,5 +1,5 @@
 import { Context, controller, inject, provide, config } from 'midway';
-import { route } from '@/lib/decorators/controller.decorator';
+import { route, rateLimitIp } from '@/lib/decorators/controller.decorator';
 import { CVerificationMeta } from './verification.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -39,6 +39,7 @@ export default class VerificationController {
   siteTeam: string;
 
   @route()
+  @rateLimitIp(60, 2)
   async [routesBe.sendEmailVerification.i](ctx: Context) {
     const { email } = ctx.request.body as ISendEmailVerificationReq;
     const codeStore = await this.service.getEmailVerificationCode(email);

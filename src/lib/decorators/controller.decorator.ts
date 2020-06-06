@@ -509,7 +509,10 @@ function rateLimitFactoryFactory(
           const rate = await ctx.helper.redisGet(keyConfig, keyArgs);
           if (rate) {
             if (+rate >= maxCount) {
-              ctx.body = ctx.helper.rFail(Codes.GENERAL_FLE);
+              ctx.body = ctx.helper.rFail(Codes.GENERAL_FLE, {
+                duration,
+                maxCount,
+              });
               return;
             }
             await ctx.helper.redisIncr(keyConfig, keyArgs);

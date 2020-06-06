@@ -21,6 +21,8 @@ import {
   IRegisterReq,
   IGetSessionResp,
   IUpdateUserDetailReq,
+  IUpdateUserPasswordReq,
+  IResetUserPasswordReq,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -123,14 +125,14 @@ export default class UserController {
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
-    const pass = this.utils.misc.hashPassword(password);
     const newUserId = await this.service.create({
       username,
       nickname,
       email,
       verified: true,
-      password: pass,
+      password: this.utils.misc.hashPassword(password),
     });
+    this.verificationService.deleteEmailVerificationCode(email);
     return { userId: newUserId };
   }
 
@@ -169,6 +171,47 @@ export default class UserController {
     const req = ctx.request.body as IUpdateUserDetailReq;
     await this.service.update(userId, this.lodash.omit(req, ['userId']));
     await this.service.clearDetailCache(userId);
+  }
+
+  @route()
+  @login()
+  @requireSelf()
+  @id()
+  @getDetail()
+  async [routesBe.updateUserPassword.i](ctx: Context) {
+    const userId = ctx.id!;
+    const { oldPassword, password } = ctx.request.body as IUpdateUserPasswordReq;
+    if (
+      !(await this.service.isExists({
+        userId,
+        password: this.utils.misc.hashPassword(oldPassword),
+      }))
+    ) {
+      throw new ReqError(Codes.USER_INCORRECT_OLD_PASSWORD);
+    }
+    await this.service.update(userId, {
+      password: this.utils.misc.hashPassword(password),
+    });
+  }
+
+  @route()
+  async [routesBe.resetUserPassword.i](ctx: Context) {
+    const { email, code, password } = ctx.request.body as IResetUserPasswordReq;
+    const user = await this.service.findOne({
+      email,
+      verified: true,
+    });
+    if (!user) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    const verificationCode = await this.verificationService.getEmailVerificationCode(email);
+    if (verificationCode?.code !== code) {
+      throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
+    }
+    await this.service.update(user.userId, {
+      password: this.utils.misc.hashPassword(password),
+    });
+    this.verificationService.deleteEmailVerificationCode(email);
   }
 
   @route()
