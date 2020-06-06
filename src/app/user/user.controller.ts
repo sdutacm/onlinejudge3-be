@@ -23,6 +23,7 @@ import {
   IUpdateUserDetailReq,
   IUpdateUserPasswordReq,
   IResetUserPasswordReq,
+  IUpdateUserEmailReq,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -211,6 +212,26 @@ export default class UserController {
     await this.service.update(user.userId, {
       password: this.utils.misc.hashPassword(password),
     });
+    this.verificationService.deleteEmailVerificationCode(email);
+  }
+
+  @route()
+  @login()
+  @requireSelf()
+  @id()
+  @getDetail()
+  async [routesBe.updateUserEmail.i](ctx: Context) {
+    const userId = ctx.id!;
+    const { email, code } = ctx.request.body as IUpdateUserEmailReq;
+    const verificationCode = await this.verificationService.getEmailVerificationCode(email);
+    if (verificationCode?.code !== code) {
+      throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
+    }
+    await this.service.update(userId, {
+      email,
+      verified: true,
+    });
+    await this.service.clearDetailCache(userId);
     this.verificationService.deleteEmailVerificationCode(email);
   }
 

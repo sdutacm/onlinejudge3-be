@@ -253,6 +253,16 @@ const userContract = {
     required: ['email', 'code', 'password'],
   } as defContract.ContractSchema,
 
+  updateUserEmailReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      email: { type: 'string', format: 'email' },
+      code: { type: 'number', minimum: 100000, maximum: 999999 },
+    },
+    additionalProperties: false,
+    required: ['userId', 'email', 'code'],
+  } as defContract.ContractSchema,
+
   uploadUserAvatarReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
