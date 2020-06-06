@@ -75,6 +75,7 @@ export type TMUserDetailFields = Extract<
   | 'submitted'
   | 'rating'
   | 'ratingHistory'
+  | 'site'
   | 'defaultLanguage'
   | 'settings'
   | 'coin'

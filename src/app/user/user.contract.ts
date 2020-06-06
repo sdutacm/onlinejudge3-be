@@ -150,6 +150,7 @@ const userContract = {
           { type: 'null' },
         ],
       },
+      site: { type: 'string' },
       defaultLanguage: { type: 'string' },
       settings: {
         anyOf: [
@@ -185,7 +186,31 @@ const userContract = {
       'grade',
       'rating',
       'ratingHistory',
+      'site',
     ],
+  } as defContract.ContractSchema,
+
+  updateUserDetailReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      school: { type: 'string', maxLength: 100 },
+      college: { type: 'string', maxLength: 100 },
+      major: { type: 'string', maxLength: 100 },
+      class: { type: 'string', maxLength: 100 },
+      site: {
+        anyOf: [
+          { type: 'string', maxLength: 255, format: 'url' },
+          { type: 'string', maxLength: 0 },
+        ],
+      },
+      defaultLanguage: {
+        type: 'string',
+        enum: ['', 'gcc', 'g++', 'java', 'python2', 'python3', 'c#'],
+      },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+    // required: ['school', 'college', 'major', 'class', 'site', 'defaultLanguage'],
   } as defContract.ContractSchema,
 
   loginReq: {

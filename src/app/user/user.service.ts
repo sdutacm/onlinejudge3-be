@@ -60,6 +60,7 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'grade',
   'rating',
   'ratingHistory',
+  'site',
   'defaultLanguage',
   'settings',
   'coin',

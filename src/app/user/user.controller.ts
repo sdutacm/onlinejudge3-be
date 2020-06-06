@@ -15,7 +15,12 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { ILoginReq, IRegisterReq, IGetSessionResp } from '@/common/contracts/user';
+import {
+  ILoginReq,
+  IRegisterReq,
+  IGetSessionResp,
+  IUpdateUserDetailReq,
+} from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
 import { IAppConfig } from '@/config/config.interface';
@@ -151,6 +156,17 @@ export default class UserController {
       ]);
     }
     return detail;
+  }
+
+  @route()
+  @login(true)
+  @id()
+  @getDetail()
+  async [routesBe.updateUserDetail.i](ctx: Context) {
+    const userId = ctx.id!;
+    const req = ctx.request.body as IUpdateUserDetailReq;
+    await this.service.update(userId, this.lodash.omit(req, ['userId']));
+    await this.service.clearDetailCache(userId);
   }
 
   @route()
