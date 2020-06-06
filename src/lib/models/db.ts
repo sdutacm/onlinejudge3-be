@@ -1,6 +1,6 @@
 import { Sequelize, SequelizeOptions } from 'sequelize-typescript';
 import { provide, scope, ScopeEnum } from 'midway';
-import * as path from 'path';
+import path from 'path';
 // import { UserModel } from './user.model';
 // import { ProblemModel } from './problem';
 
