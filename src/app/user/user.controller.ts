@@ -24,6 +24,7 @@ import {
   IResetUserPasswordReq,
   IUpdateUserEmailReq,
   IResetUserPasswordByAdminReq,
+  IGetUserDetailResp,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -82,7 +83,7 @@ export default class UserController {
   }
 
   @route()
-  async [routesBe.login.i](ctx: Context) {
+  async [routesBe.login.i](ctx: Context): Promise<void> {
     const { loginName, password } = ctx.request.body as ILoginReq;
     const pass = this.utils.misc.hashPassword(password);
     const user =
@@ -107,7 +108,7 @@ export default class UserController {
   }
 
   @route()
-  async [routesBe.logout.i](ctx: Context) {
+  async [routesBe.logout.i](ctx: Context): Promise<void> {
     // @ts-ignore
     ctx.session = null;
   }
@@ -146,10 +147,12 @@ export default class UserController {
   @route()
   @id()
   @getDetail()
-  async [routesBe.getUserDetail.i](ctx: Context) {
+  async [routesBe.getUserDetail.i](ctx: Context): Promise<IGetUserDetailResp> {
     const detail = ctx.detail as IMUserDetail;
+    // @ts-ignore
+    const detailResp = detail as TreatDateFieldsAsString<typeof detail>;
     if (!ctx.helper.isSelf(ctx.id!)) {
-      return this.lodash.omit(detail, [
+      return this.lodash.omit(detailResp, [
         'email',
         'defaultLanguage',
         'settings',
@@ -159,14 +162,14 @@ export default class UserController {
         'createdAt',
       ]);
     }
-    return detail;
+    return detailResp;
   }
 
   @route()
   @requireSelf()
   @id()
   @getDetail()
-  async [routesBe.updateUserDetail.i](ctx: Context) {
+  async [routesBe.updateUserDetail.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const req = ctx.request.body as IUpdateUserDetailReq;
     await this.service.update(userId, this.lodash.omit(req, ['userId']));
@@ -177,7 +180,7 @@ export default class UserController {
   @requireSelf()
   @id()
   @getDetail()
-  async [routesBe.updateUserPassword.i](ctx: Context) {
+  async [routesBe.updateUserPassword.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const { oldPassword, password } = ctx.request.body as IUpdateUserPasswordReq;
     if (
@@ -194,7 +197,7 @@ export default class UserController {
   }
 
   @route()
-  async [routesBe.resetUserPassword.i](ctx: Context) {
+  async [routesBe.resetUserPassword.i](ctx: Context): Promise<void> {
     const { email, code, password } = ctx.request.body as IResetUserPasswordReq;
     const user = await this.service.findOne({
       email,
@@ -217,7 +220,7 @@ export default class UserController {
   @auth('admin')
   @id()
   @getDetail()
-  async [routesBe.resetUserPasswordByAdmin.i](ctx: Context) {
+  async [routesBe.resetUserPasswordByAdmin.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const { password } = ctx.request.body as IResetUserPasswordByAdminReq;
     await this.service.update(userId, {
@@ -229,7 +232,7 @@ export default class UserController {
   @requireSelf()
   @id()
   @getDetail()
-  async [routesBe.updateUserEmail.i](ctx: Context) {
+  async [routesBe.updateUserEmail.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const { email, code } = ctx.request.body as IUpdateUserEmailReq;
     const verificationCode = await this.verificationService.getEmailVerificationCode(email);
@@ -248,7 +251,7 @@ export default class UserController {
   @requireSelf()
   @id()
   @getDetail()
-  async [routesBe.uploadUserAvatar.i](ctx: Context) {
+  async [routesBe.uploadUserAvatar.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
     const image = ctx.request.files?.filter((f) => f.field === 'avatar')[0];
@@ -295,7 +298,7 @@ export default class UserController {
   @requireSelf()
   @id()
   @getDetail()
-  async [routesBe.uploadUserBannerImage.i](ctx: Context) {
+  async [routesBe.uploadUserBannerImage.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
     const SIZE_WITH_SCALE = 400;
