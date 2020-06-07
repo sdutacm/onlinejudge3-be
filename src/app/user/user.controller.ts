@@ -1,14 +1,13 @@
-import { Context, controller, inject, provide, Middleware, config } from 'midway';
+import { Context, controller, inject, provide, config } from 'midway';
 import { CUserService } from './user.service';
 import {
   id,
   getDetail,
   pagination,
   route,
-  auth,
   getList,
   respList,
-  login,
+  auth,
   requireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
@@ -24,6 +23,7 @@ import {
   IUpdateUserPasswordReq,
   IResetUserPasswordReq,
   IUpdateUserEmailReq,
+  IResetUserPasswordByAdminReq,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -163,7 +163,6 @@ export default class UserController {
   }
 
   @route()
-  @login()
   @requireSelf()
   @id()
   @getDetail()
@@ -175,7 +174,6 @@ export default class UserController {
   }
 
   @route()
-  @login()
   @requireSelf()
   @id()
   @getDetail()
@@ -216,7 +214,18 @@ export default class UserController {
   }
 
   @route()
-  @login()
+  @auth('admin')
+  @id()
+  @getDetail()
+  async [routesBe.resetUserPasswordByAdmin.i](ctx: Context) {
+    const userId = ctx.id!;
+    const { password } = ctx.request.body as IResetUserPasswordByAdminReq;
+    await this.service.update(userId, {
+      password: this.utils.misc.hashPassword(password),
+    });
+  }
+
+  @route()
   @requireSelf()
   @id()
   @getDetail()
@@ -236,7 +245,6 @@ export default class UserController {
   }
 
   @route()
-  @login()
   @requireSelf()
   @id()
   @getDetail()
@@ -284,7 +292,6 @@ export default class UserController {
   }
 
   @route()
-  @login()
   @requireSelf()
   @id()
   @getDetail()
