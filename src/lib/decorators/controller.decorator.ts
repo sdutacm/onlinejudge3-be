@@ -393,35 +393,6 @@ export function route(
 }
 
 /**
- * 鉴权。
- * @param perm 要求的最低权限
- */
-export function auth(perm: 'perm' | 'admin'): MethodDecorator {
-  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
-
-    descriptor.value = async function (ctx: Context, ...rest: any[]) {
-      switch (perm) {
-        case 'perm':
-          if (!ctx.helper.isPerm()) {
-            ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
-            return;
-          }
-          break;
-        case 'admin':
-          if (!ctx.helper.isAdmin()) {
-            ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
-            return;
-          }
-          break;
-      }
-      const result = await method.call(this, ctx, ...rest);
-      return result;
-    };
-  };
-}
-
-/**
  * 验证登录态。
  */
 export function login(): MethodDecorator {
@@ -431,6 +402,63 @@ export function login(): MethodDecorator {
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!ctx.helper.isGlobalLoggedIn()) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NOT_LOGGED_IN);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * auth 逻辑实现。
+ * @param ctx
+ * @param perm
+ */
+function authImpl(ctx: Context, perm: 'perm' | 'admin') {
+  switch (perm) {
+    case 'perm':
+      if (!ctx.helper.isPerm()) {
+        return false;
+      }
+      break;
+    case 'admin':
+      if (!ctx.helper.isAdmin()) {
+        return false;
+      }
+      break;
+  }
+  return true;
+}
+
+/**
+ * requireSelf 逻辑实现。
+ * @param ctx
+ * @param selectUserId
+ */
+function requireSelfImpl(ctx: Context, selectUserId?: (ctx: Context) => number) {
+  const userId =
+    selectUserId?.(ctx) ||
+    ctx.request.body.userId ||
+    ctx.detail?.userId ||
+    ctx.detail?.user?.userId;
+  if (!userId || ctx.session.userId !== userId) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 鉴权。
+ * @param perm 要求的最低权限
+ */
+export function auth(perm: 'perm' | 'admin'): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authImpl(ctx, perm)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
       const result = await method.call(this, ctx, ...rest);
@@ -455,12 +483,31 @@ export function requireSelf(selectUserId?: (ctx: Context) => number): MethodDeco
     const method = descriptor.value;
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
-      const userId =
-        selectUserId?.(ctx) ||
-        ctx.request.body.userId ||
-        ctx.detail?.userId ||
-        ctx.detail?.user?.userId;
-      if (!userId || ctx.session.userId !== userId) {
+      if (!requireSelfImpl(ctx, selectUserId)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 鉴权或校验要操作的实体的所有者是否是当前登录用户。
+ * （先尝试鉴权，如果没有权限则校验实体所有者）
+ * @param perm 要求的最低权限（参数同 `@auth()`）
+ * @param selectUserId 自定义如何取得实体所有者的 userId（参数同 `@requireSelf()`）
+ */
+export function authOrRequireSelf(
+  perm: 'perm' | 'admin',
+  selectUserId?: (ctx: Context) => number,
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authImpl(ctx, perm) && !requireSelfImpl(ctx, selectUserId)) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
