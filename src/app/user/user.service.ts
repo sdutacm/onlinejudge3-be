@@ -74,8 +74,8 @@ export default class UserService {
   @inject('userMeta')
   meta: CUserMeta;
 
-  @inject()
-  userModel: TUserModel;
+  @inject('userModel')
+  model: TUserModel;
 
   @inject()
   utils: IUtils;
@@ -162,7 +162,7 @@ export default class UserService {
     pagination: IMUserListPagination = {},
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceGetListRes> {
-    return this.userModel
+    return this.model
       .scope(scope || undefined)
       .findAndCountAll({
         attributes: userLiteFields,
@@ -192,7 +192,7 @@ export default class UserService {
     if (cached) {
       res = cached;
     } else if (cached === null) {
-      res = await this.userModel
+      res = await this.model
         .scope(scope || undefined)
         .findOne({
           attributes: userDetailFields,
@@ -232,7 +232,7 @@ export default class UserService {
       uncached = ks;
     }
     if (uncached.length) {
-      const dbRes = await this.userModel
+      const dbRes = await this.model
         .scope(scope || undefined)
         .findAll({
           attributes: userDetailFields,
@@ -260,7 +260,7 @@ export default class UserService {
     options: IMUserServiceFindOneOpt,
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceFindOneRes> {
-    return this.userModel
+    return this.model
       .scope(scope || undefined)
       .findOne({
         attributes: userDetailFields,
@@ -278,7 +278,7 @@ export default class UserService {
     options: IMUserServiceIsExistsOpt,
     scope: TUserModelScopes | null = 'available',
   ): Promise<boolean> {
-    const res = await this.userModel.scope(scope || undefined).findOne({
+    const res = await this.model.scope(scope || undefined).findOne({
       attributes: [this.meta.pk],
       where: options as any,
     });
@@ -291,7 +291,7 @@ export default class UserService {
    * @returns 创建成功的主键 ID
    */
   async create(data: IMUserServiceCreateOpt): Promise<IMUserServiceCreateRes> {
-    const res = await this.userModel.create(data);
+    const res = await this.model.create(data);
     return res.userId;
   }
 
@@ -304,7 +304,7 @@ export default class UserService {
     userId: IUserModel['userId'],
     data: IMUserServiceUpdateOpt,
   ): Promise<IMUserServiceUpdateRes> {
-    const res = await this.userModel.update(data, {
+    const res = await this.model.update(data, {
       where: {
         userId,
       },
