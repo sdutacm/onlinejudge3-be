@@ -87,7 +87,7 @@ export function respDetail(): MethodDecorator {
 }
 
 /**
- * 从 Contract 中的 JSON Schema 验证表单。
+ * 从 Contract 中的 JSON Schema 验证数据。
  * @param type 校验请求还是响应
  * @param contract 要使用的 Contract Schema，如 `getUserDetailReq`
  * @param targetModule 手动指定 module，否则默认从 Controller 类的 meta 中取
