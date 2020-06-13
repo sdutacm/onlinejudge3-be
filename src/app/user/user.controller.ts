@@ -25,6 +25,7 @@ import {
   IUpdateUserEmailReq,
   IResetUserPasswordByAdminReq,
   IGetUserDetailResp,
+  IRegisterResp,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -114,7 +115,7 @@ export default class UserController {
   }
 
   @route()
-  async [routesBe.register.i](ctx: Context) {
+  async [routesBe.register.i](ctx: Context): Promise<IRegisterResp> {
     const { username, nickname, email, code, password } = ctx.request.body as IRegisterReq;
     if (await this.service.isUsernameExists(username)) {
       throw new ReqError(Codes.USER_USERNAME_EXISTS);

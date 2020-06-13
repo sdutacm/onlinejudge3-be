@@ -51,6 +51,14 @@ const userContract = {
     required: ['username', 'nickname', 'email', 'code', 'password'],
   } as defContract.ContractSchema,
 
+  registerResp: {
+    properties: {
+      userId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
   getUserListReq: {
     properties: {
       page: { type: 'number', minimum: 1 },
