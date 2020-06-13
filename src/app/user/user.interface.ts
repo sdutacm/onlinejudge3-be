@@ -96,7 +96,7 @@ export type IMUserFullListPagination = defService.ServiceFullListOpt<TUserModelF
 //   permission: IUserModel['permission'];
 // }
 
-// #region service.getList
+//#region service.getList
 export interface IMUserServiceGetListOpt {
   userId?: IUserModel['userId'];
   username?: IUserModel['username'];
@@ -109,26 +109,26 @@ export interface IMUserServiceGetListOpt {
 }
 
 export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;
-// #endregion
+//#endregion
 
-// #region service.getDetail
+//#region service.getDetail
 export type IMUserServiceGetDetailRes = defModel.DetailModelRes<IMUserDetail>;
-// #endregion
+//#endregion
 
-// #region service.getRelative
+//#region service.getRelative
 export type IMUserServiceGetRelativeRes = Record<IUserModel['userId'], IMUserDetail>;
-// #endregion
+//#endregion
 
-// #region service.findOne
+//#region service.findOne
 export type IMUserServiceFindOneOpt = Partial<IUserModel>;
 export type IMUserServiceFindOneRes = defModel.DetailModelRes<IMUserDetail>;
-// #endregion
+//#endregion
 
-// #region service.isExists
+//#region service.isExists
 export type IMUserServiceIsExistsOpt = Partial<IUserModel>;
-// #endregion
+//#endregion
 
-// #region service.create
+//#region service.create
 export interface IMUserServiceCreateOpt {
   username: IUserModel['username'];
   nickname: IUserModel['nickname'];
@@ -138,9 +138,9 @@ export interface IMUserServiceCreateOpt {
 }
 
 export type IMUserServiceCreateRes = IUserModel['userId'];
-// #endregion
+//#endregion
 
-// #region service.update
+//#region service.update
 export interface IMUserServiceUpdateOpt {
   verified?: IUserModel['verified'];
   password?: IUserModel['password'];
@@ -163,4 +163,4 @@ export interface IMUserServiceUpdateOpt {
 }
 
 export type IMUserServiceUpdateRes = boolean;
-// #endregion
+//#endregion

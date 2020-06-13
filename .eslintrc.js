@@ -58,6 +58,7 @@ module.exports = {
     'max-params': 'off',
     'no-useless-constructor': 'off',
     'max-nested-callbacks': 'off',
+    'spaced-comment': 'off',
 
     // TypeScript
     // '@typescript-eslint/indent': [

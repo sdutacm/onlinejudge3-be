@@ -89,7 +89,7 @@ export default class UserService {
   @config('durations')
   durations: IDurationsConfig;
 
-  private _formatQuery(opts: Partial<IUserModel>) {
+  private _formatListQuery(opts: IMUserServiceGetListOpt) {
     const q: any = this.utils.misc.ignoreUndefined({
       userId: opts.userId,
       username: opts.username,
@@ -166,7 +166,7 @@ export default class UserService {
       .scope(scope || undefined)
       .findAndCountAll({
         attributes: userLiteFields,
-        where: this._formatQuery(options),
+        where: this._formatListQuery(options),
         limit: pagination.limit,
         offset: pagination.offset,
         order: pagination.order,
