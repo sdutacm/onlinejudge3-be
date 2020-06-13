@@ -247,6 +247,10 @@ export default class UserService {
         res[d.userId] = d;
         scope === 'available' && (await this._setDetailCache(d.userId, d));
       }
+      // 查不到的也要缓存
+      for (const k of ks) {
+        !res[k] && scope === 'available' && (await this._setDetailCache(k, null));
+      }
     }
     return res;
   }

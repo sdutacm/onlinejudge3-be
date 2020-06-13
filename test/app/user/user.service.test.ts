@@ -328,6 +328,7 @@ describe(basename(__filename), () => {
         await app.redis.get('cache:user_detail:1'),
         '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
+      assert.strictEqual(await app.redis.get('cache:user_detail:1024'), '');
     });
 
     it('should work with scope', async () => {
