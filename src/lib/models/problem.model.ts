@@ -9,9 +9,12 @@ import {
   UpdatedAt,
   AllowNull,
   Default,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { IProblemModel } from '@/app/problem/problem.interface';
+import TagModel from './tag.model';
+import ProblemTagModel from './problemTag.model';
 
 export const factory = () => ProblemModel;
 providerWrapper([
@@ -191,6 +194,9 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
     type: DataType.INTEGER,
   })
   difficulty: number;
+
+  @BelongsToMany(() => TagModel, () => ProblemTagModel)
+  tags: Array<TagModel & { ProblemTagModel: ProblemTagModel }>;
 }
 
 export type TProblemModel = typeof ProblemModel;

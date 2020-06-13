@@ -1,3 +1,5 @@
+import { ITagModel } from '../tag/tag.interface';
+
 export interface IProblemModel {
   problemId: number;
   title: string;
@@ -33,6 +35,7 @@ export type TMProblemLiteFields = Extract<
   | 'updatedAt'
   | 'accepted'
   | 'submitted'
+  | 'display'
 >;
 
 export type TMProblemDetailFields = Extract<
@@ -58,7 +61,28 @@ export type TMProblemDetailFields = Extract<
   | 'display'
 >;
 
-export type IMProblemLite = Pick<IProblemModel, TMProblemLiteFields>;
-export type IMProblemDetail = Pick<IProblemModel, TMProblemDetailFields>;
+export type IMProblemLite = Pick<IProblemModel, TMProblemLiteFields> & {
+  tags: ITagModel[];
+};
+export type IMProblemDetail = Pick<IProblemModel, TMProblemDetailFields> & {
+  tags: ITagModel[];
+};
 export type IMProblemListPagination = defService.ServiceListOpt<TProblemModelFields>;
 export type IMProblemFullListPagination = defService.ServiceFullListOpt<TProblemModelFields>;
+
+//#region service.getList
+export interface IMProblemServiceGetListOpt {
+  problemId?: IProblemModel['problemId'];
+  problemIds?: Array<IProblemModel['problemId']>;
+  title?: IProblemModel['title'];
+  source?: IProblemModel['source'];
+  author?: IProblemModel['author'];
+  tagIds?: Array<ITagModel['tagId']>;
+}
+
+export type IMProblemServiceGetListRes = defModel.ListModelRes<IMProblemLite>;
+//#endregion
+
+//#region service.getDetail
+export type IMProblemServiceGetDetailRes = defModel.DetailModelRes<IMProblemDetail>;
+//#endregion

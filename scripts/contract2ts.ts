@@ -5,12 +5,14 @@ import { upperFirst } from 'lodash';
 import { compile } from 'json-schema-to-typescript';
 import userContract from '../src/app/user/user.contract';
 import verificationContract from '../src/app/verification/verification.contract';
+import problemContract from '../src/app/problem/problem.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
 const contracts = [
   [userContract, 'user'],
   [verificationContract, 'verification'],
+  [problemContract, 'problem'],
 ];
 
 const banner = `/**
@@ -29,6 +31,7 @@ function compileContract(contract: any, filename: string) {
     const schema = contract[name];
     const ts = await compile(schema, `I${upperFirst(name)}`, {
       bannerComment: '',
+      // @ts-ignore
       style: prettierConfig,
     });
     fs.appendFileSync(filePath, '\n' + ts);

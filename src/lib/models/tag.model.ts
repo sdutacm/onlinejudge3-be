@@ -7,9 +7,12 @@ import {
   Scopes,
   AllowNull,
   Default,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { ITagModel } from '@/app/tag/tag.interface';
+import ProblemModel from './problem.model';
+import ProblemTagModel from './problemTag.model';
 
 export const factory = () => TagModel;
 providerWrapper([
@@ -84,6 +87,9 @@ export default class TagModel extends Model<TagModel> implements ITagModel {
     type: DataType.DATE,
   })
   createdAt: Date;
+
+  @BelongsToMany(() => ProblemModel, () => ProblemTagModel)
+  problems: Array<ProblemModel & { ProblemTagModel: ProblemTagModel }>;
 }
 
 export type TTagModel = typeof TagModel;

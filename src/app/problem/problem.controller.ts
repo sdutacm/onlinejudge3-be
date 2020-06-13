@@ -1,5 +1,13 @@
 import { Context, controller, inject, provide, config } from 'midway';
-import { route } from '@/lib/decorators/controller.decorator';
+import {
+  route,
+  pagination,
+  getList,
+  respList,
+  id,
+  getDetail,
+  respDetail,
+} from '@/lib/decorators/controller.decorator';
 import { CProblemMeta } from './problem.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -18,4 +26,16 @@ export default class ProblemController {
 
   @inject()
   utils: IUtils;
+
+  @route()
+  @pagination()
+  @getList()
+  @respList()
+  async [routesBe.getProblemList.i](_ctx: Context) {}
+
+  @route()
+  @id()
+  @getDetail()
+  @respDetail()
+  async [routesBe.getProblemDetail.i](_ctx: Context) {}
 }
