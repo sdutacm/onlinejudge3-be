@@ -55,6 +55,7 @@ export type TMUserLiteFields = Extract<
   | 'accepted'
   | 'submitted'
   | 'grade'
+  | 'forbidden'
 >;
 
 export type TMUserDetailFields = Extract<
@@ -71,6 +72,7 @@ export type TMUserDetailFields = Extract<
   | 'major'
   | 'class'
   | 'grade'
+  | 'forbidden'
   | 'accepted'
   | 'submitted'
   | 'rating'
@@ -106,6 +108,7 @@ export interface IMUserServiceGetListOpt {
   major?: IUserModel['major'];
   class?: IUserModel['class'];
   grade?: IUserModel['grade'];
+  forbidden?: IUserModel['forbidden'];
 }
 
 export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;

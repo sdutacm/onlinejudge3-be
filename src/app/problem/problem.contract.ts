@@ -32,6 +32,7 @@ const problemContract = {
       source: { type: 'string' },
       author: { type: 'number' },
       tagIds: { type: 'array', items: { type: 'number', minimum: 1 } },
+      _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,
   } as defContract.ContractSchema,
@@ -99,6 +100,7 @@ const problemContract = {
   getProblemDetailReq: {
     properties: {
       problemId: { type: 'number', minimum: 1 },
+      _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,
     required: ['problemId'],

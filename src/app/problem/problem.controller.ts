@@ -63,13 +63,13 @@ export default class ProblemController {
   @route()
   @auth('perm')
   @id()
-  @getDetail(true)
+  @getDetail(null)
   async [routesBe.updateProblemDetail.i](ctx: Context): Promise<void> {
     const problemId = ctx.id!;
     const data = this.lodash.omit(ctx.request.body as IUpdateProblemDetailReq, ['problemId']);
     await this.service.update(
       problemId,
-      ctx.helper.isAdmin() ? data : this.lodash.pick(data, ['difficulty']),
+      ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
     );
     await this.service.clearDetailCache(problemId);
   }

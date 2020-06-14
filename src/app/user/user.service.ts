@@ -42,6 +42,7 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'accepted',
   'submitted',
   'grade',
+  'forbidden',
 ];
 const userDetailFields: Array<TMUserDetailFields> = [
   'userId',
@@ -58,6 +59,7 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'major',
   'class',
   'grade',
+  'forbidden',
   'rating',
   'ratingHistory',
   'site',
@@ -94,6 +96,7 @@ export default class UserService {
       userId: opts.userId,
       username: opts.username,
       grade: opts.grade,
+      forbidden: opts.forbidden,
     });
     if (opts.nickname) {
       q.nickname = {

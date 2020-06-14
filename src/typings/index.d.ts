@@ -4,6 +4,9 @@ declare module 'egg' {
   interface Context {
     userId?: number;
     loggedIn: boolean;
+    isPerm: boolean;
+    isAdmin: boolean;
+    scope?: string | null;
     id?: number;
     detail?: any;
     list?: {

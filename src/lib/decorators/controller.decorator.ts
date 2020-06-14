@@ -45,9 +45,17 @@ export function id(): MethodDecorator {
  * 通过 service 的 `getDetail()` 获取详情数据并挂载到 `ctx.detail`。
  * 需要先通过 `@id()` 挂载 `ctx.id`。
  * 如果请求实体未找到，则直接拦截并响应请求错误。
- * @param scopeNull 是否 scope 为 null
+ * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
+ * @param hooks 钩子
  */
-export function getDetail(scopeNull = false): MethodDecorator {
+export function getDetail(
+  scope?: string | null,
+  hooks: {
+    beforeGetDetail?: (ctx: Context) => void | Promise<void>;
+    afterGetDetail?: (ctx: Context) => void | Promise<void>;
+  } = {},
+): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -59,7 +67,12 @@ export function getDetail(scopeNull = false): MethodDecorator {
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
-      const detail = await service.getDetail(ctx.id, scopeNull ? null : undefined);
+      await hooks.beforeGetDetail?.(ctx);
+      const detail = await service.getDetail(
+        ctx.id,
+        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+      );
+      await hooks.afterGetDetail?.(ctx);
       if (!detail) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
         return;
@@ -240,8 +253,17 @@ export function pagination(
 /**
  * 通过 service 的 `getList()` 获取列表数据并挂载到 `ctx.list`。
  * 需要先通过 `@pagination()` 挂载 `ctx.pagination`。
+ * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
+ * @param hooks 钩子
  */
-export function getList(): MethodDecorator {
+export function getList(
+  scope?: string | null,
+  hooks: {
+    beforeGetList?: (ctx: Context) => void | Promise<void>;
+    afterGetList?: (ctx: Context) => void | Promise<void>;
+  } = {},
+): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -253,7 +275,13 @@ export function getList(): MethodDecorator {
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
-      const list = await service.getList(ctx.request.body, pagination);
+      await hooks.beforeGetList?.(ctx);
+      const list = await service.getList(
+        ctx.request.body,
+        pagination,
+        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+      );
+      await hooks.afterGetList?.(ctx);
       ctx.list = list;
       const result = await method.call(this, ctx, ...rest);
       return result;
@@ -293,6 +321,7 @@ export function respList(): MethodDecorator {
  * 初始挂载的属性：
  * - ctx.userId：当前登录用户 userId，如未登录则为 undefined
  * - ctx.loggedIn：是否登录
+ * - ctx.scope：查询 scope
  */
 function ctxBaseInfo(): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
@@ -306,6 +335,9 @@ function ctxBaseInfo(): MethodDecorator {
         ctx.userId = undefined;
         ctx.loggedIn = false;
       }
+      ctx.isPerm = ctx.helper.isPerm();
+      ctx.isAdmin = ctx.helper.isAdmin();
+      ctx.scope = ctx.request.body._scope;
       if (ctx.request.headers['content-type']?.startsWith('multipart/')) {
         const numberFields = ['userId'];
         numberFields.forEach((field) => {

@@ -141,7 +141,11 @@ export default class UserController {
 
   @route()
   @pagination()
-  @getList()
+  @getList(undefined, {
+    beforeGetList: (ctx) => {
+      !ctx.isAdmin && delete ctx.request.body.forbidden;
+    },
+  })
   @respList()
   async [routesBe.getUserList.i](_ctx: Context) {}
 

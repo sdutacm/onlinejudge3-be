@@ -83,6 +83,8 @@ const userContract = {
       major: { type: 'string' },
       class: { type: 'string' },
       grade: { type: 'string' },
+      forbidden: { type: 'number' },
+      _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,
   } as defContract.ContractSchema,
@@ -106,6 +108,7 @@ const userContract = {
             bannerImage: { type: 'string' },
             rating: { type: 'number' },
             grade: { type: 'string' },
+            forbidden: { type: 'number' },
           },
           additionalProperties: false,
           required: [
@@ -118,6 +121,7 @@ const userContract = {
             'bannerImage',
             'rating',
             'grade',
+            'forbidden',
           ],
         },
       },
@@ -129,6 +133,7 @@ const userContract = {
   getUserDetailReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
+      _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,
     required: ['userId'],
@@ -150,6 +155,7 @@ const userContract = {
       major: { type: 'string' },
       class: { type: 'string' },
       grade: { type: 'string' },
+      forbidden: { type: 'number' },
       rating: { type: 'number' },
       ratingHistory: {
         anyOf: [
@@ -213,6 +219,7 @@ const userContract = {
       'major',
       'class',
       'grade',
+      'forbidden',
       'rating',
       'ratingHistory',
       'site',
