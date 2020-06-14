@@ -1,4 +1,4 @@
-import { Context, controller, inject, provide, config } from 'midway';
+import { Context, controller, inject, provide } from 'midway';
 import {
   route,
   pagination,
@@ -13,8 +13,6 @@ import { CProblemMeta } from './problem.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CProblemService } from './problem.service';
-import { ReqError } from '@/lib/global/error';
-import { Codes } from '@/common/codes';
 import {
   ICreateProblemResp,
   ICreateProblemReq,

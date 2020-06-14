@@ -101,6 +101,7 @@ describe(basename(__filename), () => {
             submitted: 0,
             accepted: 0,
             grade: '',
+            forbidden: 0,
           },
         ],
       };
@@ -239,6 +240,7 @@ describe(basename(__filename), () => {
         major: '',
         class: '',
         grade: '',
+        forbidden: 0,
         rating: 0,
         ratingHistory: null,
         site: '',
@@ -252,7 +254,7 @@ describe(basename(__filename), () => {
       assert.deepStrictEqual(res, expected);
       assert.strictEqual(
         await app.redis.get('cache:user_detail:1'),
-        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","forbidden":0,"rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
     });
 
@@ -312,6 +314,7 @@ describe(basename(__filename), () => {
           major: '',
           class: '',
           grade: '',
+          forbidden: 0,
           rating: 0,
           ratingHistory: null,
           site: '',
@@ -326,7 +329,7 @@ describe(basename(__filename), () => {
       assert.deepStrictEqual(res, expected);
       assert.strictEqual(
         await app.redis.get('cache:user_detail:1'),
-        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","forbidden":0,"rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
       assert.strictEqual(await app.redis.get('cache:user_detail:1024'), '');
     });
@@ -361,6 +364,7 @@ describe(basename(__filename), () => {
         major: '',
         class: '',
         grade: '',
+        forbidden: 0,
         rating: 0,
         ratingHistory: null,
         site: '',
