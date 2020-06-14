@@ -61,9 +61,9 @@ export default class ProblemController {
   }
 
   @route()
+  @auth('perm')
   @id()
   @getDetail(true)
-  @auth('perm')
   async [routesBe.updateProblemDetail.i](ctx: Context): Promise<void> {
     const problemId = ctx.id!;
     const data = this.lodash.omit(ctx.request.body as IUpdateProblemDetailReq, ['problemId']);
