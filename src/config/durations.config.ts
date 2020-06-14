@@ -1,6 +1,7 @@
 const durations = {
   cacheDetail: 86400, // s
   cacheDetailNull: 10, // s
+  cacheFullList: 86400, // s
   emailVerificationCodeExpires: 86400, // s
   emailVerificationCodeRetryAfter: 60, // s
 };

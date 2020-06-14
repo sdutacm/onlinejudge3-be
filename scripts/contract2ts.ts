@@ -6,6 +6,7 @@ import { compile } from 'json-schema-to-typescript';
 import userContract from '../src/app/user/user.contract';
 import verificationContract from '../src/app/verification/verification.contract';
 import problemContract from '../src/app/problem/problem.contract';
+import tagContract from '../src/app/tag/tag.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -13,6 +14,7 @@ const contracts = [
   [userContract, 'user'],
   [verificationContract, 'verification'],
   [problemContract, 'problem'],
+  [tagContract, 'tag'],
 ];
 
 const banner = `/**

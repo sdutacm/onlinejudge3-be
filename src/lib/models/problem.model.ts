@@ -109,12 +109,12 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   })
   source: string;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Default(0)
   @Column({
     type: DataType.INTEGER,
   })
-  author: number;
+  author: number | null;
 
   @AllowNull(false)
   @CreatedAt

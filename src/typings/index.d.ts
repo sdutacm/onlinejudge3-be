@@ -13,6 +13,10 @@ declare module 'egg' {
       count: number;
       rows: any[];
     };
+    fullList?: {
+      count: number;
+      rows: any[];
+    };
     pagination?: {
       page: number;
       offset: number;

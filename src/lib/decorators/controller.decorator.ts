@@ -316,6 +316,57 @@ export function respList(): MethodDecorator {
 }
 
 /**
+ * 通过 service 的 `getFullList()` 获取列表数据并挂载到 `ctx.fullList`。
+ * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
+ * @param hooks 钩子
+ */
+export function getFullList(
+  scope?: string | null,
+  hooks: {
+    beforeGetFullList?: (ctx: Context) => void | Promise<void>;
+    afterGetFullList?: (ctx: Context) => void | Promise<void>;
+  } = {},
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      // @ts-ignore
+      const service = this.service;
+      await hooks.beforeGetFullList?.(ctx);
+      const fullList = await service.getFullList(
+        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+      );
+      await hooks.afterGetFullList?.(ctx);
+      ctx.fullList = fullList;
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 将 `ctx.fullList` 作为列表数据响应。
+ * 需要先通过 `getFullList()` 挂载 `ctx.list`。
+ */
+export function respFullList(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const fullList = ctx.fullList;
+      if (!fullList) {
+        throw new Error('RespFullListPreCheckError: `ctx.fullList` is unmounted');
+      }
+      ctx.body = ctx.helper.rSuc(ctx.helper.formatFullList(fullList.count, fullList.rows));
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
  * 挂载请求所需基本信息。
  *
  * 初始挂载的属性：
