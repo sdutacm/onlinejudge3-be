@@ -45,8 +45,9 @@ export function id(): MethodDecorator {
  * 通过 service 的 `getDetail()` 获取详情数据并挂载到 `ctx.detail`。
  * 需要先通过 `@id()` 挂载 `ctx.id`。
  * 如果请求实体未找到，则直接拦截并响应请求错误。
+ * @param scopeNull 是否 scope 为 null
  */
-export function getDetail(): MethodDecorator {
+export function getDetail(scopeNull = false): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
 
@@ -58,7 +59,7 @@ export function getDetail(): MethodDecorator {
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
-      const detail = await service.getDetail(ctx.id);
+      const detail = await service.getDetail(ctx.id, scopeNull ? null : undefined);
       if (!detail) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
         return;

@@ -128,7 +128,7 @@ export default class UserController {
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
-    const newUserId = await this.service.create({
+    const newId = await this.service.create({
       username,
       nickname,
       email,
@@ -136,7 +136,7 @@ export default class UserController {
       password: this.utils.misc.hashPassword(password),
     });
     this.verificationService.deleteEmailVerificationCode(email);
-    return { userId: newUserId };
+    return { userId: newId };
   }
 
   @route()

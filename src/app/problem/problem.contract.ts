@@ -168,6 +168,66 @@ const problemContract = {
       'updatedAt',
     ],
   } as defContract.ContractSchema,
+
+  createProblemReq: {
+    properties: {
+      title: { type: 'string' },
+      description: { type: 'string' },
+      input: { type: 'string' },
+      output: { type: 'string' },
+      sampleInput: { type: 'string' },
+      sampleOutput: { type: 'string' },
+      hint: { type: 'string' },
+      source: { type: 'string' },
+      timeLimit: { type: 'number' },
+      memoryLimit: { type: 'number' },
+      difficulty: { type: 'number' },
+      spj: { type: 'boolean' },
+      display: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: [
+      'title',
+      'description',
+      'input',
+      'output',
+      'sampleInput',
+      'sampleOutput',
+      'hint',
+      'source',
+      'timeLimit',
+      'memoryLimit',
+    ],
+  } as defContract.ContractSchema,
+
+  createProblemResp: {
+    properties: {
+      problemId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['problemId'],
+  } as defContract.ContractSchema,
+
+  updateProblemDetailReq: {
+    properties: {
+      problemId: { type: 'number', minimum: 1 },
+      title: { type: 'string' },
+      description: { type: 'string' },
+      input: { type: 'string' },
+      output: { type: 'string' },
+      sampleInput: { type: 'string' },
+      sampleOutput: { type: 'string' },
+      hint: { type: 'string' },
+      source: { type: 'string' },
+      timeLimit: { type: 'number' },
+      memoryLimit: { type: 'number' },
+      difficulty: { type: 'number' },
+      spj: { type: 'boolean' },
+      display: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['problemId'],
+  } as defContract.ContractSchema,
 };
 
 export type IProblemContract = typeof problemContract;
