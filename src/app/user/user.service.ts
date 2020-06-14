@@ -134,7 +134,7 @@ export default class UserService {
   private async _getDetailCache(userId: IUserModel['userId']): Promise<IMUserDetail | null | ''> {
     return this.ctx.helper
       .redisGet<IMUserDetail>(this.meta.detailCacheKey, [userId])
-      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'lastTime']));
   }
 
   /**

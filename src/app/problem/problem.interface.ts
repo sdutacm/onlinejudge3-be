@@ -10,7 +10,7 @@ export interface IProblemModel {
   sampleOutput: string;
   hint: string;
   source: string;
-  author: number;
+  author: number | null;
   timeLimit: number;
   memoryLimit: number;
   accepted: number;

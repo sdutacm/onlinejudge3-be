@@ -144,7 +144,7 @@ export default class ProblemService {
   ): Promise<IMProblemDetail | null | ''> {
     return this.ctx.helper
       .redisGet<IMProblemDetail>(this.meta.detailCacheKey, [problemId])
-      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'updatedAt']));
   }
 
   /**

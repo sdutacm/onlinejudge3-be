@@ -1,4 +1,4 @@
-import { update as lodashUpdate } from 'lodash';
+import { update as lodashUpdate, get as lodashGet } from 'lodash';
 import md5 from 'md5';
 import cryptoRandomString from 'crypto-random-string';
 
@@ -22,7 +22,7 @@ export function processDateFromJson<T = any>(obj: T, paths: Array<keyof T | stri
   }
   paths.forEach((path) => {
     // @ts-ignore
-    lodashUpdate(obj, path, (value) => new Date(value));
+    lodashGet(obj, path) && lodashUpdate(obj, path, (value) => new Date(value));
   });
   return obj;
 }
