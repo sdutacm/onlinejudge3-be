@@ -230,6 +230,15 @@ const problemContract = {
     additionalProperties: false,
     required: ['problemId'],
   } as defContract.ContractSchema,
+
+  updateProblemTagsReq: {
+    properties: {
+      problemId: { type: 'number', minimum: 1 },
+      tagIds: { type: 'array', items: { type: 'number', minimum: 1 } },
+    },
+    additionalProperties: false,
+    required: ['problemId', 'tagIds'],
+  },
 };
 
 export type IProblemContract = typeof problemContract;

@@ -17,6 +17,7 @@ import {
   ICreateProblemResp,
   ICreateProblemReq,
   IUpdateProblemDetailReq,
+  IUpdateProblemTagsReq,
 } from '@/common/contracts/problem';
 import { ILodash } from '@/utils/libs/lodash';
 
@@ -69,6 +70,17 @@ export default class ProblemController {
       problemId,
       ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
     );
+    await this.service.clearDetailCache(problemId);
+  }
+
+  @route()
+  @auth('perm')
+  @id()
+  @getDetail(null)
+  async [routesBe.updateProblemTags.i](ctx: Context): Promise<void> {
+    const problemId = ctx.id!;
+    const { tagIds } = ctx.request.body as IUpdateProblemTagsReq;
+    await this.service.updateProblemTags(problemId, tagIds);
     await this.service.clearDetailCache(problemId);
   }
 }

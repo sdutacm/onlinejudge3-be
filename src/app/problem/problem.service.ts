@@ -26,6 +26,8 @@ import { TTagModel } from '@/lib/models/tag.model';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
+import { TProblemTagModel } from '@/lib/models/problemTag.model';
+import { ITagModel } from '../tag/tag.interface';
 
 export type CProblemService = ProblemService;
 
@@ -70,6 +72,9 @@ export default class ProblemService {
 
   @inject('problemModel')
   model: TProblemModel;
+
+  @inject()
+  problemTagModel: TProblemTagModel;
 
   @inject()
   tagModel: TTagModel;
@@ -393,5 +398,27 @@ export default class ProblemService {
    */
   async clearDetailCache(problemId: IProblemModel['problemId']): Promise<void> {
     return this.ctx.helper.redisDel(this.meta.detailCacheKey, [problemId]);
+  }
+
+  /**
+   * 更新题目标签（全量覆盖）。
+   * @param problemId problemId
+   * @param tagIds tagIds
+   */
+  async updateProblemTags(
+    problemId: IProblemModel['problemId'],
+    tagIds: ITagModel['tagId'][],
+  ): Promise<void> {
+    await this.problemTagModel.destroy({
+      where: {
+        problemId,
+      },
+    });
+    await this.problemTagModel.bulkCreate(
+      tagIds.map((tagId) => ({
+        problemId,
+        tagId,
+      })),
+    );
   }
 }
