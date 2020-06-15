@@ -13,6 +13,8 @@ import { IUtils } from '@/utils';
 import { CTagService } from './tag.service';
 import { ICreateTagResp, ICreateTagReq, IUpdateTagDetailReq } from '@/common/contracts/tag';
 import { ILodash } from '@/utils/libs/lodash';
+import { CProblemService } from '../problem/problem.service';
+import PromiseQueue from 'promise-queue';
 
 @provide()
 @controller('/')
@@ -22,6 +24,9 @@ export default class TagController {
 
   @inject('tagService')
   service: CTagService;
+
+  @inject()
+  problemService: CProblemService;
 
   @inject()
   utils: IUtils;
@@ -51,6 +56,12 @@ export default class TagController {
     const data = this.lodash.omit(ctx.request.body as IUpdateTagDetailReq, ['tagId']);
     await this.service.update(tagId, data);
     await this.service.clearFullListCache();
-    // TODO 清除有这个标签的题目的缓存
+    // 清除有这个标签的题目的缓存
+    const problemIds = await this.service.getTagRelativeProblemIds(tagId);
+    const pq = new PromiseQueue(5, Infinity);
+    const queueTasks = problemIds.map((problemId) =>
+      pq.add(() => this.problemService.clearDetailCache(problemId)),
+    );
+    await Promise.all(queueTasks);
   }
 }

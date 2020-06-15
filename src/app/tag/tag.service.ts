@@ -16,6 +16,8 @@ import {
 } from './tag.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
+import { IProblemModel } from '../problem/problem.interface';
+import { TProblemTagModel } from '@/lib/models/problemTag.model';
 
 export type CTagService = TagService;
 
@@ -35,6 +37,9 @@ export default class TagService {
 
   @inject('tagModel')
   model: TTagModel;
+
+  @inject()
+  problemTagModel: TProblemTagModel;
 
   @inject()
   utils: IUtils;
@@ -152,5 +157,20 @@ export default class TagService {
    */
   async clearFullListCache(): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.tagList);
+  }
+
+  /**
+   * 根据指定 tagId 查找所有关联的 problemId
+   * @param tagId tagId
+   */
+  async getTagRelativeProblemIds(tagId: ITagModel['tagId']): Promise<IProblemModel['problemId'][]> {
+    return this.problemTagModel
+      .findAll({
+        attributes: ['problemId'],
+        where: {
+          tagId,
+        },
+      })
+      .then((r) => r.map((d) => d.problemId));
   }
 }
