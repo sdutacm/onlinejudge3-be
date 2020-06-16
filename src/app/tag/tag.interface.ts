@@ -1,3 +1,5 @@
+import { IProblemModel } from '../problem/problem.interface';
+
 export interface ITagModel {
   tagId: number;
   nameEn: string;
@@ -44,4 +46,8 @@ export interface IMTagServiceUpdateOpt {
 }
 
 export type IMTagServiceUpdateRes = boolean;
+//#endregion
+
+//#region service.getRelativeProblemIds
+export type IMTagServiceGetRelativeProblemIdsRes = IProblemModel['problemId'][];
 //#endregion

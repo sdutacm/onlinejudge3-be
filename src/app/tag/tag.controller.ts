@@ -57,7 +57,7 @@ export default class TagController {
     await this.service.update(tagId, data);
     await this.service.clearFullListCache();
     // 清除有这个标签的题目的缓存
-    const problemIds = await this.service.getTagRelativeProblemIds(tagId);
+    const problemIds = await this.service.getRelativeProblemIds(tagId);
     const pq = new PromiseQueue(5, Infinity);
     const queueTasks = problemIds.map((problemId) =>
       pq.add(() => this.problemService.clearDetailCache(problemId)),
