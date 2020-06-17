@@ -10,6 +10,7 @@ import {
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EContestCategory, EContestMode } from '@/common/enums';
+import { IContestModel } from '@/app/contest/contest.interface';
 
 export const factory = () => ContestModel;
 providerWrapper([
@@ -31,7 +32,7 @@ const scope = {
   freezeTableName: true,
   timestamps: false,
 })
-export class ContestModel extends Model<ContestModel> {
+export default class ContestModel extends Model<ContestModel> implements IContestModel {
   @Column({
     field: 'contest_id',
     primaryKey: true,
@@ -114,7 +115,16 @@ export class ContestModel extends Model<ContestModel> {
     field: 'register_start',
     type: DataType.DATE,
   })
-  registerStartAt: Date | null;
+  get registerStartAt(): IContestModel['registerStartAt'] {
+    const value = this.getDataValue('registerStartAt');
+    if (value instanceof Date && Number.isNaN(value.getTime())) {
+      return null;
+    }
+    return value ?? null;
+  }
+  set registerStartAt(value: IContestModel['registerStartAt']) {
+    this.setDataValue('registerStartAt', value);
+  }
 
   @AllowNull(true)
   @Default(null)
@@ -122,7 +132,16 @@ export class ContestModel extends Model<ContestModel> {
     field: 'register_end',
     type: DataType.DATE,
   })
-  registerEndAt: Date | null;
+  get registerEndAt(): IContestModel['registerEndAt'] {
+    const value = this.getDataValue('registerEndAt');
+    if (value instanceof Date && Number.isNaN(value.getTime())) {
+      return null;
+    }
+    return value ?? null;
+  }
+  set registerEndAt(value: IContestModel['registerEndAt']) {
+    this.setDataValue('registerEndAt', value);
+  }
 
   @AllowNull(false)
   @Default(false)

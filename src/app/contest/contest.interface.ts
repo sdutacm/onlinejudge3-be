@@ -13,7 +13,7 @@ export interface IContestModel {
   registerStartAt: Date | null;
   registerEndAt: Date | null;
   team: boolean;
-  end: boolean;
+  ended: boolean;
   hidden: boolean;
 }
 
