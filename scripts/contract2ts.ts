@@ -7,6 +7,7 @@ import userContract from '../src/app/user/user.contract';
 import verificationContract from '../src/app/verification/verification.contract';
 import problemContract from '../src/app/problem/problem.contract';
 import tagContract from '../src/app/tag/tag.contract';
+import contestContract from '../src/app/contest/contest.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -15,6 +16,7 @@ const contracts = [
   [verificationContract, 'verification'],
   [problemContract, 'problem'],
   [tagContract, 'tag'],
+  [contestContract, 'contest'],
 ];
 
 const banner = `/**

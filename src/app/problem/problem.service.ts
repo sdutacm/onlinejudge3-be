@@ -94,6 +94,36 @@ export default class ProblemService {
   @config('durations')
   durations: IDurationsConfig;
 
+  /**
+   * 获取详情缓存。
+   * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
+   * @param problemId problemId
+   */
+  private async _getDetailCache(
+    problemId: IProblemModel['problemId'],
+  ): Promise<IMProblemDetail | null | ''> {
+    return this.ctx.helper
+      .redisGet<IMProblemDetail>(this.meta.detailCacheKey, [problemId])
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'updatedAt']));
+  }
+
+  /**
+   * 设置详情缓存。
+   * @param problemId problemId
+   * @param data 详情数据
+   */
+  private async _setDetailCache(
+    problemId: IProblemModel['problemId'],
+    data: IMProblemDetail | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.meta.detailCacheKey,
+      [problemId],
+      data,
+      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
   private _formatListQuery(opts: IMProblemServiceGetListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       problemId: opts.problemId,
@@ -137,36 +167,6 @@ export default class ProblemService {
       where,
       include,
     };
-  }
-
-  /**
-   * 获取详情缓存。
-   * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
-   * @param problemId problemId
-   */
-  private async _getDetailCache(
-    problemId: IProblemModel['problemId'],
-  ): Promise<IMProblemDetail | null | ''> {
-    return this.ctx.helper
-      .redisGet<IMProblemDetail>(this.meta.detailCacheKey, [problemId])
-      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'updatedAt']));
-  }
-
-  /**
-   * 设置详情缓存。
-   * @param problemId problemId
-   * @param data 详情数据
-   */
-  private async _setDetailCache(
-    problemId: IProblemModel['problemId'],
-    data: IMProblemDetail | null,
-  ): Promise<void> {
-    return this.ctx.helper.redisSet(
-      this.meta.detailCacheKey,
-      [problemId],
-      data,
-      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
-    );
   }
 
   /**

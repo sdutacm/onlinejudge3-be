@@ -91,6 +91,34 @@ export default class UserService {
   @config('durations')
   durations: IDurationsConfig;
 
+  /**
+   * 获取详情缓存。
+   * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
+   * @param userId userId
+   */
+  private async _getDetailCache(userId: IUserModel['userId']): Promise<IMUserDetail | null | ''> {
+    return this.ctx.helper
+      .redisGet<IMUserDetail>(this.meta.detailCacheKey, [userId])
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'lastTime']));
+  }
+
+  /**
+   * 设置详情缓存。
+   * @param userId userId
+   * @param data 详情数据
+   */
+  private async _setDetailCache(
+    userId: IUserModel['userId'],
+    data: IMUserDetail | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.meta.detailCacheKey,
+      [userId],
+      data,
+      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
   private _formatListQuery(opts: IMUserServiceGetListOpt) {
     const q: any = this.utils.misc.ignoreUndefined({
       userId: opts.userId,
@@ -124,34 +152,6 @@ export default class UserService {
       };
     }
     return q;
-  }
-
-  /**
-   * 获取详情缓存。
-   * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
-   * @param userId userId
-   */
-  private async _getDetailCache(userId: IUserModel['userId']): Promise<IMUserDetail | null | ''> {
-    return this.ctx.helper
-      .redisGet<IMUserDetail>(this.meta.detailCacheKey, [userId])
-      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'lastTime']));
-  }
-
-  /**
-   * 设置详情缓存。
-   * @param userId userId
-   * @param data 详情数据
-   */
-  private async _setDetailCache(
-    userId: IUserModel['userId'],
-    data: IMUserDetail | null,
-  ): Promise<void> {
-    return this.ctx.helper.redisSet(
-      this.meta.detailCacheKey,
-      [userId],
-      data,
-      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
-    );
   }
 
   /**

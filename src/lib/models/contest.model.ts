@@ -95,11 +95,13 @@ export default class ContestModel extends Model<ContestModel> implements IContes
   })
   type: number;
 
-  // @Column({
-  //   field: 'contest_author',
-  //   type: DataType.INTEGER,
-  // })
-  // author: number;
+  @AllowNull(false)
+  @Default(0)
+  @Column({
+    field: 'contest_author',
+    type: DataType.INTEGER,
+  })
+  author: number;
 
   @AllowNull(false)
   @Default('')
@@ -197,3 +199,7 @@ export default class ContestModel extends Model<ContestModel> implements IContes
   })
   mode: number;
 }
+
+export type TContestModel = typeof ContestModel;
+export type CContestModel = ContestModel;
+export type TContestModelScopes = keyof typeof scope;
