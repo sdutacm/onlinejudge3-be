@@ -205,7 +205,7 @@ describe(basename(__filename), () => {
       assert.strictEqual(res.rows[0]?.problemId, 1000);
       // problemIds
       res = await service.getList({
-        problemIds: [1000, 1002],
+        problemIds: [1000, 1002, 42],
       });
       assert.strictEqual(res.count, 2);
       // title

@@ -58,6 +58,7 @@ const contestDetailFields: Array<TMContestDetailFields> = [
   'registerEndAt',
   'team',
   'ended',
+  'hidden',
 ];
 
 @provide()

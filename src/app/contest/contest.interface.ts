@@ -106,7 +106,7 @@ export interface IMContestServiceCreateOpt {
   registerStartAt?: IContestModel['registerStartAt'];
   registerEndAt?: IContestModel['registerEndAt'];
   team?: IContestModel['team'];
-  hidden: IContestModel['hidden'];
+  hidden?: IContestModel['hidden'];
 }
 
 export type IMContestServiceCreateRes = IContestModel['contestId'];
