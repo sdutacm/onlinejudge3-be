@@ -1,3 +1,5 @@
+import { IUserModel } from '../user/user.interface';
+
 export interface IContestModel {
   contestId: number;
   title: string;
@@ -68,6 +70,7 @@ export interface IMContestServiceGetListOpt {
   category?: IContestModel['category'];
   mode?: IContestModel['mode'];
   hidden?: IContestModel['hidden'];
+  userId?: IUserModel['userId'];
 }
 
 export type IMContestServiceGetListRes = defModel.ListModelRes<IMContestLite>;

@@ -7,10 +7,13 @@ import {
   Scopes,
   AllowNull,
   Default,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EContestCategory, EContestMode } from '@/common/enums';
 import { IContestModel } from '@/app/contest/contest.interface';
+import UserModel from './user.model';
+import UserContestModel from './userContest.model';
 
 export const factory = () => ContestModel;
 providerWrapper([
@@ -198,6 +201,9 @@ export default class ContestModel extends Model<ContestModel> implements IContes
     type: DataType.TINYINT,
   })
   mode: number;
+
+  @BelongsToMany(() => UserModel, () => UserContestModel)
+  users: Array<UserModel & { UserContestModel: UserContestModel }>;
 }
 
 export type TContestModel = typeof ContestModel;

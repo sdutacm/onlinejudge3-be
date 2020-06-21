@@ -7,10 +7,13 @@ import {
   Scopes,
   AllowNull,
   Default,
+  BelongsToMany,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EUserPermission, EUserForbidden } from '@/common/enums';
 import { IUserModel } from '@/app/user/user.interface';
+import ContestModel from './contest.model';
+import UserContestModel from './userContest.model';
 
 export const factory = () => UserModel;
 providerWrapper([
@@ -284,6 +287,9 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
       this.setDataValue('ratingHistory', '');
     }
   }
+
+  @BelongsToMany(() => ContestModel, () => UserContestModel)
+  contests: Array<ContestModel & { UserContestModel: UserContestModel }>;
 }
 
 export type TUserModel = typeof UserModel;

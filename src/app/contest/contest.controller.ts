@@ -35,9 +35,11 @@ export default class ContestController {
   @getList(undefined, {
     beforeGetList: (ctx) => {
       !ctx.isAdmin && delete ctx.request.body.hidden;
+      if (ctx.request.body.joined) {
+        ctx.request.body.userId = ctx.session.userId;
+      }
     },
   })
   @respList()
-  // TODO joined
   async [routesBe.getContestList.i](_ctx: Context) {}
 }

@@ -25,6 +25,8 @@ import {
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
+import { TUserContestModel } from '@/lib/models/userContest.model';
+import { TUserModel } from '@/lib/models/user.model';
 
 export type CContestService = ContestService;
 
@@ -68,6 +70,12 @@ export default class ContestService {
 
   @inject('contestModel')
   model: TContestModel;
+
+  @inject()
+  userContestModel: TUserContestModel;
+
+  @inject()
+  userModel: TUserModel;
 
   @inject()
   utils: IUtils;
@@ -122,7 +130,7 @@ export default class ContestService {
   }
 
   private _formatListQuery(opts: IMContestServiceGetListOpt) {
-    const q: any = this.utils.misc.ignoreUndefined({
+    const where: any = this.utils.misc.ignoreUndefined({
       contestId: opts.contestId,
       type: opts.type,
       category: opts.category,
@@ -130,16 +138,32 @@ export default class ContestService {
       hidden: opts.hidden,
     });
     if (opts.title) {
-      q.title = {
+      where.title = {
         [Op.like]: `%${opts.title}%`,
       };
     }
     if (opts.contestIds) {
-      q.contestId = {
+      where.contestId = {
         [Op.in]: opts.contestIds,
       };
     }
-    return q;
+    let include: any[] = [];
+    if (opts.userId) {
+      include = [
+        {
+          model: this.userModel,
+          attributes: [],
+          where: {
+            userId: opts.userId,
+          },
+          required: true,
+        },
+      ];
+    }
+    return {
+      where,
+      include,
+    };
   }
 
   /**
@@ -153,14 +177,17 @@ export default class ContestService {
     pagination: IMContestListPagination = {},
     scope: TContestModelScopes | null = 'available',
   ): Promise<IMContestServiceGetListRes> {
+    const query = this._formatListQuery(options);
     return this.model
       .scope(scope || undefined)
       .findAndCountAll({
         attributes: contestLiteFields,
-        where: this._formatListQuery(options),
+        where: query.where,
+        include: query.include,
         limit: pagination.limit,
         offset: pagination.offset,
         order: pagination.order,
+        distinct: query.include?.length > 0,
       })
       .then((r) => ({
         ...r,

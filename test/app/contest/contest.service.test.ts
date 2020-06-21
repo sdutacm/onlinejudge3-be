@@ -2,6 +2,7 @@ import { basename } from 'path';
 import assert from 'power-assert';
 import { app } from 'midway-mock/bootstrap';
 import { TContestModel } from '@/lib/models/contest.model';
+import { TUserContestModel } from '@/lib/models/userContest.model';
 import { CContestService } from '@/app/contest/contest.service';
 import {
   IMContestServiceGetDetailRes,
@@ -34,11 +35,14 @@ async function getService() {
 
 describe(basename(__filename), () => {
   let contestModel: TContestModel;
+  let userContestModel: TUserContestModel;
 
   before(async () => {
     await app.redis.flushdb();
     contestModel = await app.applicationContext.getAsync('contestModel');
+    userContestModel = await app.applicationContext.getAsync('userContestModel');
     await contestModel.destroy({ truncate: true, force: true });
+    await userContestModel.destroy({ truncate: true, force: true });
     await contestModel.create({
       ...mockDefaultFields,
       contestId: 1000,
@@ -69,6 +73,10 @@ describe(basename(__filename), () => {
       contestId: 1003,
       title: 'c1003',
       hidden: true,
+    });
+    await userContestModel.create({
+      userId: 1,
+      contestId: 1000,
     });
   });
 
@@ -188,6 +196,11 @@ describe(basename(__filename), () => {
       // hidden
       res = await service.getList({
         hidden: true,
+      });
+      assert.strictEqual(res.count, 1);
+      // userId
+      res = await service.getList({
+        userId: 1,
       });
       assert.strictEqual(res.count, 1);
     });
