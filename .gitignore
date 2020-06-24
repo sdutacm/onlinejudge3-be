@@ -14,3 +14,4 @@ run/
 .tsbuildinfo
 .tsbuildinfo.*
 src/app/public/sf/*
+judger-data_test/

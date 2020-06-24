@@ -417,6 +417,7 @@ export function route(
     routerName?: string;
     middleware?: KoaMiddlewareParamArray;
   } = { middleware: [] },
+  { customResp = false } = {},
 ): MethodDecorator {
   return function (target, propertyKey, descriptor: PropertyDescriptor) {
     /**
@@ -466,12 +467,14 @@ export function route(
       const [module, contractSchema] = contract.req.split('.');
       decorators.unshift(validate('req', contractSchema, module));
     }
-    // 仅在开发环境下校验响应
-    if (process.env.NODE_ENV === 'development' && contract.resp) {
-      const [module, contractSchema] = contract.resp.split('.');
-      decorators.unshift(validate('resp', contractSchema, module));
+    if (!customResp) {
+      if (process.env.NODE_ENV === 'development' && contract.resp) {
+        // 仅在开发环境下校验响应
+        const [module, contractSchema] = contract.resp.split('.');
+        decorators.unshift(validate('resp', contractSchema, module));
+      }
+      decorators.unshift(autoResp());
     }
-    decorators.unshift(autoResp());
     decorators.forEach((decorator) => decorator(target, propertyKey, descriptor));
   };
 }
