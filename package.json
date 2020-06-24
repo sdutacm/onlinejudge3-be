@@ -11,8 +11,8 @@
     "clean": "midway-bin clean",
     "cov": "cross-env DEBUG=-* midway-bin cov --ts",
     "cov-serve": "static-server coverage/lcov-report -p 7087",
-    "debug": "cross-env NODE_ENV=development DEBUG=oj3:* midway-bin debug --ts",
-    "dev": "cross-env NODE_ENV=development DEBUG=oj3:* midway-bin dev --ts",
+    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin debug --ts",
+    "dev": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin dev --ts",
     "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts",
     "lint": "eslint --fix {src,test}/**/*.ts",
     "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be --framework=midway --ts",
@@ -22,6 +22,7 @@
     "gen:contract": "cross-env IS_EXEC_FROM_PKG_SCRIPT=1 ts-node -T scripts/contract2ts.ts"
   },
   "dependencies": {
+    "adm-zip": "^0.4.14",
     "ajv": "^6.12.0",
     "alimail-sdk": "^1.0.6",
     "chalk": "^4.0.0",
@@ -31,6 +32,7 @@
     "egg-sequelize": "^5.2.1",
     "fs-extra": "^9.0.0",
     "ip": "^1.1.5",
+    "isbinaryfile": "^4.0.6",
     "lodash": "^4.17.15",
     "md5": "^2.2.1",
     "midway": "^1.0.0",
@@ -38,10 +40,12 @@
     "promise-queue": "^2.2.5",
     "sequelize-typescript": "^1.1.0",
     "sharp": "^0.25.3",
+    "simple-git": "^2.9.0",
     "sleep-promise": "^8.0.1",
     "traverse": "^0.6.6"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.33",
     "@types/bluebird": "^3.5.30",
     "@types/fs-extra": "^9.0.1",
     "@types/ip": "^1.1.0",

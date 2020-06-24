@@ -12,45 +12,6 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
-  // config.sequelize = {
-  //   host: '127.0.0.1',
-  //   port: 3306,
-  //   username: 'blue',
-  //   password: 'test',
-  //   database: 'oj',
-  //   dialect: 'mysql',
-  //   pool: {
-  //     max: 2,
-  //   },
-  //   logging: false,
-  // };
-
-  // config.redis = {
-  //   client: {
-  //     host: '127.0.0.1',
-  //     port: 6379,
-  //     // @ts-ignore
-  //     password: null,
-  //     db: 0,
-  //   },
-  // };
-
-  // const basePath = path.join(__dirname, '../app/public/sf/');
-  // config.staticPath = {
-  //   avatar: path.join(basePath, 'avatars/'),
-  //   bannerImage: path.join(basePath, 'banner_images/'),
-  //   media: path.join(basePath, 'media/'),
-  // };
-
-  // config.mail = {
-  //   accessKeyId: '',
-  //   accessSecret: '',
-  //   accountName: 'no-reply@notice.sdutacm.cn',
-  //   fromAlias: 'SDUTACM',
-  //   tagName: 'SDUTACM',
-  //   regionId: 'cn-hangzhou',
-  // };
-
   config.logger = {
     // @ts-ignore
     formatter(meta: any) {
@@ -60,6 +21,10 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}] ${meta.paddingMessage}`);
     },
   };
+
+  //#region custom prod config
+
+  //#endregion
 
   return config;
 };

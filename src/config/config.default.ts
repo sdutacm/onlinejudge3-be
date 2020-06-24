@@ -93,11 +93,11 @@ export default (appInfo: EggAppInfo) => {
     consoleLevel: 'DEBUG',
   };
 
-  const basePath = path.join(__dirname, '../app/public/sf/');
+  const staticBasePath = path.join(__dirname, '../app/public/sf/');
   config.staticPath = {
-    avatar: path.join(basePath, 'avatars/'),
-    bannerImage: path.join(basePath, 'banner_images/'),
-    media: path.join(basePath, 'media/'),
+    avatar: path.join(staticBasePath, 'avatars/'),
+    bannerImage: path.join(staticBasePath, 'banner_images/'),
+    media: path.join(staticBasePath, 'media/'),
   };
 
   config.uploadLimit = {
@@ -119,6 +119,13 @@ export default (appInfo: EggAppInfo) => {
     fromAlias: 'SDUTACM',
     tagName: 'SDUTACM',
     regionId: 'cn-hangzhou',
+  };
+
+  config.judger = {
+    dataPath: path.join(__dirname, '../../judger-data_test'),
+    dataGitBranch: 'master',
+    dataGitUser: 'sdutacm',
+    dataGitEmail: 'sdutacm@163.com',
   };
 
   return config;

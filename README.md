@@ -7,12 +7,14 @@
 ### 本地开发
 
 ```bash
+$ git submodule init && git submodule update
+$ git clone git@github.com:sdutacm/judger-data_test.git
 $ npm i
 $ npm run dev
 $ open http://localhost:7001/
 ```
 
-如果需要断点调试，建议直接通过 VS Code，运行 Debug 命令 `Midway Debug`，不需要手动运行 `npm run dev`。
+如果需要断点调试，建议直接通过 VS Code，运行 Debug 命令 `Debug`，不需要手动运行 `npm run dev`。
 
 ### 部署
 

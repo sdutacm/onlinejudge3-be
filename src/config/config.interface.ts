@@ -28,4 +28,10 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     tagName: string;
     regionId: 'cn-hangzhou';
   };
+  judger: {
+    dataPath: string;
+    dataGitBranch: string;
+    dataGitUser: string;
+    dataGitEmail: string;
+  };
 }
