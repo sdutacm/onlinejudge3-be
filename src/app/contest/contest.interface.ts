@@ -1,5 +1,6 @@
 import { IUserModel } from '../user/user.interface';
 import { EContestType, EContestCategory, EContestMode } from '@/common/enums';
+import { IMProblemDetail } from '../problem/problem.interface';
 
 export interface IContestModel {
   contestId: number;
@@ -61,6 +62,25 @@ export type TMContestDetailFields = Extract<
 export type IMContestLite = Pick<IContestModel, TMContestLiteFields>;
 export type IMContestDetail = Pick<IContestModel, TMContestDetailFields>;
 export type IMContestListPagination = defService.ServiceListOpt<TContestModelFields>;
+
+export interface IContestProblemModel {
+  contestId: number;
+  problemId: number;
+  title: string;
+  index: number;
+}
+
+export type TContestProblemModelFields = keyof IContestProblemModel;
+
+export type TMContestProblemDetailFields = Extract<
+  TContestProblemModelFields,
+  'problemId' | 'title'
+>;
+
+export type IMContestProblemLite = Pick<IContestProblemModel, TMContestProblemDetailFields>;
+
+export type IMContestProblemDetail = Pick<IContestProblemModel, TMContestProblemDetailFields> &
+  Omit<IMProblemDetail, 'tags'>;
 
 //#region service.getList
 export interface IMContestServiceGetListOpt {
@@ -141,5 +161,11 @@ export type IMContestServiceUpdateRes = boolean;
 //#region service.getUserContests
 export type IMContestServiceGetUserContestsRes = defModel.FullListModelRes<
   IContestModel['contestId']
+>;
+//#endregion
+
+//#region service.getContestProblems
+export type IMContestServiceGetContestProblemsRes = defModel.FullListModelRes<
+  IMContestProblemDetail
 >;
 //#endregion

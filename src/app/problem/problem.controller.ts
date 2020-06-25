@@ -20,6 +20,7 @@ import {
   IUpdateProblemTagsReq,
 } from '@/common/contracts/problem';
 import { ILodash } from '@/utils/libs/lodash';
+import { CContestService } from '../contest/contest.service';
 
 @provide()
 @controller('/')
@@ -29,6 +30,9 @@ export default class ProblemController {
 
   @inject('problemService')
   service: CProblemService;
+
+  @inject()
+  contestService: CContestService;
 
   @inject()
   utils: IUtils;
@@ -71,6 +75,7 @@ export default class ProblemController {
       ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
     );
     await this.service.clearDetailCache(problemId);
+    await this.contestService.clearContestProblemCacheByProblemId(problemId);
   }
 
   @route()

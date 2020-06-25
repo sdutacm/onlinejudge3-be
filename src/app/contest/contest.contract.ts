@@ -194,6 +194,73 @@ const contestContract = {
       'hidden',
     ],
   } as defContract.ContractSchema,
+
+  getContestProblemsReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestProblemsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            input: { type: 'string' },
+            output: { type: 'string' },
+            sampleInput: { type: 'string' },
+            sampleOutput: { type: 'string' },
+            hint: { type: 'string' },
+            source: { type: 'string' },
+            author: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+            timeLimit: { type: 'number' },
+            memoryLimit: { type: 'number' },
+            difficulty: { type: 'number' },
+            accepted: { type: 'number' },
+            submitted: { type: 'number' },
+            spj: { type: 'boolean' },
+            display: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+          },
+          additionalProperties: false,
+          required: [
+            'problemId',
+            'title',
+            'description',
+            'input',
+            'output',
+            'sampleInput',
+            'sampleOutput',
+            'hint',
+            'source',
+            'author',
+            'timeLimit',
+            'memoryLimit',
+            'difficulty',
+            'accepted',
+            'submitted',
+            'spj',
+            'display',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;

@@ -23,12 +23,19 @@ import {
   IMContestServiceUpdateOpt,
   IMContestServiceUpdateRes,
   IMContestServiceGetUserContestsRes,
+  IMContestProblemDetail,
+  IMContestServiceGetContestProblemsRes,
+  TMContestProblemDetailFields,
+  IMContestProblemLite,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { TUserContestModel } from '@/lib/models/userContest.model';
 import { TUserModel } from '@/lib/models/user.model';
 import { IUserModel } from '../user/user.interface';
+import { TContestProblemModel } from '@/lib/models/contestProblem.model';
+import { CProblemService } from '../problem/problem.service';
+import { IProblemModel } from '../problem/problem.interface';
 
 export type CContestService = ContestService;
 
@@ -65,6 +72,8 @@ const contestDetailFields: Array<TMContestDetailFields> = [
   'hidden',
 ];
 
+const contestProblemDetailFields: Array<TMContestProblemDetailFields> = ['problemId', 'title'];
+
 @provide()
 export default class ContestService {
   @inject('contestMeta')
@@ -75,6 +84,12 @@ export default class ContestService {
 
   @inject()
   userContestModel: TUserContestModel;
+
+  @inject()
+  contestProblemModel: TContestProblemModel;
+
+  @inject()
+  problemService: CProblemService;
 
   @inject()
   userModel: TUserModel;
@@ -155,6 +170,35 @@ export default class ContestService {
     return this.ctx.helper.redisSet(
       this.redisKey.userContests,
       [userId],
+      data,
+      this.durations.cacheFullList,
+    );
+  }
+
+  /**
+   * 获取比赛题目列表缓存。
+   * @param contestId contestId
+   */
+  private async _getContestProblemsCache(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestProblemDetail[] | null> {
+    return this.ctx.helper.redisGet<IMContestProblemDetail[]>(this.redisKey.contestProblems, [
+      contestId,
+    ]);
+  }
+
+  /**
+   * 设置比赛题目列表缓存。
+   * @param contestId contestId
+   * @param data 列表数据
+   */
+  private async _setContestProblemsCache(
+    contestId: IContestModel['contestId'],
+    data: IMContestProblemDetail[] | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.contestProblems,
+      [contestId],
       data,
       this.durations.cacheFullList,
     );
@@ -420,5 +464,83 @@ export default class ContestService {
    */
   async clearUserContestsCache(userId: IUserModel['userId']): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.userContests, [userId]);
+  }
+
+  /**
+   * 获取比赛题目列表。
+   * @param contestId contestId
+   */
+  async getContestProblems(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestServiceGetContestProblemsRes> {
+    let res: IMContestServiceGetContestProblemsRes['rows'] | null = null;
+    const cached = await this._getContestProblemsCache(contestId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      const dbRes = await this.contestProblemModel
+        .findAll({
+          attributes: contestProblemDetailFields,
+          where: {
+            contestId,
+          },
+          order: [['index', 'ASC']],
+        })
+        .then((r) => r.map((d) => d.get({ plain: true }) as IMContestProblemLite));
+      const problemIds = dbRes.map((d) => d.problemId);
+      const relativeProblems = await this.problemService.getRelative(problemIds, null);
+      res = dbRes.map((d) => {
+        const problem = relativeProblems[d.problemId] || {};
+        delete problem.tags;
+        return {
+          ...d,
+          ...problem,
+          title: d.title || problem.title || '',
+        };
+      });
+      await this._setContestProblemsCache(contestId, res);
+    }
+    res = res || [];
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 清除比赛题目列表缓存。
+   * @param contestId contestId
+   */
+  async clearContestProblemsCache(contestId: IContestModel['contestId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.contestProblems, [contestId]);
+  }
+
+  /**
+   * 获取指定题目被加入到的所有比赛。
+   * @param problemId problemId
+   * @returns contestId 列表
+   */
+  async findAllContestIdsByProblemId(
+    problemId: IProblemModel['problemId'],
+  ): Promise<IContestModel['contestId'][]> {
+    return this.contestProblemModel
+      .findAll({
+        attributes: ['contestId'],
+        where: {
+          problemId,
+        },
+      })
+      .then((r) => r.map((d) => d.contestId));
+  }
+
+  /**
+   * 清除指定题目被加入到的所有比赛的比赛题目列表缓存。
+   * @param problemId problemId
+   */
+  async clearContestProblemCacheByProblemId(problemId: IProblemModel['problemId']): Promise<void> {
+    const contestIds = await this.findAllContestIdsByProblemId(problemId);
+    for (const contestId of contestIds) {
+      await this.clearContestProblemsCache(contestId);
+    }
   }
 }

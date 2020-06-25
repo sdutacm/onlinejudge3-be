@@ -200,4 +200,12 @@ export default class ContestController {
   })
   @respDetail()
   async [routesBe.getContestDetail.i](_ctx: Context) {}
+
+  @route()
+  @authOrRequireContestSession('admin')
+  @id()
+  async [routesBe.getContestProblems.i](ctx: Context) {
+    const contestId = ctx.id!;
+    return this.service.getContestProblems(contestId);
+  }
 }
