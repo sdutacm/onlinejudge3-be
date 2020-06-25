@@ -94,3 +94,9 @@ export function cdAll(m: number, n: number): number[] {
   res.sort();
   return res;
 }
+
+/**
+ * never。
+ * @param _
+ */
+export function never(..._: never[]): void {}

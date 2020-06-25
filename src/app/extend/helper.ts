@@ -258,11 +258,47 @@ export default {
   },
 
   /**
+   * 获取比赛 session。
+   * @param contestId contestId
+   */
+  getContestSession(contestId: number) {
+    const { ctx } = getThis.call(this);
+    return ctx.session.contests?.[contestId];
+  },
+
+  /**
    * 判断是否已登录指定比赛。
    * @param contestId 要判断的 contestId
    */
   isContestLoggedIn(contestId: number) {
     const { ctx } = getThis.call(this);
     return !!ctx.session.contests?.[contestId];
+  },
+
+  /**
+   * 判断比赛是否未开始。
+   * @param contest 要判断的比赛实例
+   */
+  isContestPending({ startAt }: { startAt: Date }) {
+    const now = new Date();
+    return now < startAt;
+  },
+
+  /**
+   * 判断比赛是否正在进行。
+   * @param contest 要判断的比赛实例
+   */
+  isContestRunning({ startAt, endAt }: { startAt: Date; endAt: Date }) {
+    const now = new Date();
+    return now >= startAt && now < endAt;
+  },
+
+  /**
+   * 判断比赛是否已结束。
+   * @param contest 要判断的比赛实例
+   */
+  isContestEnded({ endAt }: { endAt: Date }) {
+    const now = new Date();
+    return now >= endAt;
   },
 };

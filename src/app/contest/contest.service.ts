@@ -22,11 +22,13 @@ import {
   IMContestServiceCreateRes,
   IMContestServiceUpdateOpt,
   IMContestServiceUpdateRes,
+  IMContestServiceGetUserContestsRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { TUserContestModel } from '@/lib/models/userContest.model';
 import { TUserModel } from '@/lib/models/user.model';
+import { IUserModel } from '../user/user.interface';
 
 export type CContestService = ContestService;
 
@@ -126,6 +128,35 @@ export default class ContestService {
       [contestId],
       data,
       data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取用户比赛列表缓存。
+   * @param userId userId
+   */
+  private async _getUserContestsCache(
+    userId: IUserModel['userId'],
+  ): Promise<IContestModel['contestId'][] | null> {
+    return this.ctx.helper.redisGet<IContestModel['contestId'][]>(this.redisKey.userContests, [
+      userId,
+    ]);
+  }
+
+  /**
+   * 设置用户比赛列表缓存。
+   * @param userId userId
+   * @param data 列表数据
+   */
+  private async _setUserContestsCache(
+    userId: IUserModel['userId'],
+    data: IContestModel['contestId'][] | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userContests,
+      [userId],
+      data,
+      this.durations.cacheFullList,
     );
   }
 
@@ -339,5 +370,55 @@ export default class ContestService {
    */
   async clearDetailCache(contestId: IContestModel['contestId']): Promise<void> {
     return this.ctx.helper.redisDel(this.meta.detailCacheKey, [contestId]);
+  }
+
+  /**
+   * 获取用户比赛列表。
+   * @param userId userId
+   */
+  async getUserContests(userId: IUserModel['userId']): Promise<IMContestServiceGetUserContestsRes> {
+    let res: IMContestServiceGetUserContestsRes['rows'] | null = null;
+    const cached = await this._getUserContestsCache(userId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.userContestModel
+        .findAll({
+          attributes: ['contestId'],
+          where: {
+            userId,
+          },
+        })
+        .then((r) => r.map((d) => d.contestId));
+      await this._setUserContestsCache(userId, res);
+    }
+    res = res || [];
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 添加用户比赛。
+   * @param userId userId
+   * @param contestId contestId
+   */
+  async addUserContest(
+    userId: IUserModel['userId'],
+    contestId: IContestModel['contestId'],
+  ): Promise<void> {
+    await this.userContestModel.create({
+      userId,
+      contestId,
+    });
+  }
+
+  /**
+   * 清除用户比赛列表缓存。
+   * @param userId userId
+   */
+  async clearUserContestsCache(userId: IUserModel['userId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.userContests, [userId]);
   }
 }

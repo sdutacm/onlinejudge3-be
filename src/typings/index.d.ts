@@ -29,8 +29,16 @@ declare module 'egg' {
       nickname: string;
       permission: number;
       avatar: string | null;
-      contests?: {
-        [x: number]: boolean;
+      contests: {
+        [x: number]:
+          | {
+              userId: number;
+              username: string;
+              nickname: string;
+              permission: number;
+              avatar: string | null;
+            }
+          | undefined;
       };
     };
   }

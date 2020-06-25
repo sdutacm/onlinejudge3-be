@@ -72,12 +72,12 @@ export function getDetail(
         ctx.id,
         scope === undefined && ctx.isAdmin ? ctx.scope : scope,
       );
-      await hooks.afterGetDetail?.(ctx);
       if (!detail) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
         return;
       }
       ctx.detail = detail;
+      await hooks.afterGetDetail?.(ctx);
       const result = await method.call(this, ctx, ...rest);
       return result;
     };
@@ -281,8 +281,8 @@ export function getList(
         pagination,
         scope === undefined && ctx.isAdmin ? ctx.scope : scope,
       );
-      await hooks.afterGetList?.(ctx);
       ctx.list = list;
+      await hooks.afterGetList?.(ctx);
       const result = await method.call(this, ctx, ...rest);
       return result;
     };
@@ -338,8 +338,8 @@ export function getFullList(
       const fullList = await service.getFullList(
         scope === undefined && ctx.isAdmin ? ctx.scope : scope,
       );
-      await hooks.afterGetFullList?.(ctx);
       ctx.fullList = fullList;
+      await hooks.afterGetFullList?.(ctx);
       const result = await method.call(this, ctx, ...rest);
       return result;
     };
@@ -536,6 +536,19 @@ function requireSelfImpl(ctx: Context, selectUserId?: (ctx: Context) => number) 
 }
 
 /**
+ * requireContestSession 逻辑实现。
+ * @param ctx
+ * @param selectContestId
+ */
+function requireContestSessionImpl(ctx: Context, selectContestId?: (ctx: Context) => number) {
+  const contestId = selectContestId?.(ctx) || ctx.request.body.contestId;
+  if (!contestId || !ctx.helper.isContestLoggedIn(contestId)) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * 鉴权。
  * @param perm 要求的最低权限
  */
@@ -595,6 +608,54 @@ export function authOrRequireSelf(
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authImpl(ctx, perm) && !requireSelfImpl(ctx, selectUserId)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 校验是否有比赛 Session。
+ *
+ * 用做校验的 contestId 会按照如下顺序尝试获取：
+ * - selectContestId(ctx)
+ * - ctx.request.body.contestId
+ *
+ * @param selectUserId 自定义如何取得 contestId
+ */
+export function requireContestSession(selectContestId?: (ctx: Context) => number): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!requireContestSessionImpl(ctx, selectContestId)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 鉴权或校验是否有比赛 Session。
+ * （先尝试鉴权，如果没有权限则校验比赛 Session）
+ * @param perm 要求的最低权限（参数同 `@auth()`）
+ * @param selectContestId 自定义如何取得 contestId（参数同 `@requireContestSession()`）
+ */
+export function authOrRequireContestSession(
+  perm: 'perm' | 'admin',
+  selectContestId?: (ctx: Context) => number,
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authImpl(ctx, perm) && !requireContestSessionImpl(ctx, selectContestId)) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }

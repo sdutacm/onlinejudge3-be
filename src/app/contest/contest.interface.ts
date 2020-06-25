@@ -1,13 +1,14 @@
 import { IUserModel } from '../user/user.interface';
+import { EContestType, EContestCategory, EContestMode } from '@/common/enums';
 
 export interface IContestModel {
   contestId: number;
   title: string;
   description: string;
   intro: string;
-  type: number;
-  category: number;
-  mode: number;
+  type: EContestType;
+  category: EContestCategory;
+  mode: EContestMode;
   password: string;
   author: number;
   startAt: Date;
@@ -135,4 +136,10 @@ export interface IMContestServiceUpdateOpt {
 }
 
 export type IMContestServiceUpdateRes = boolean;
+//#endregion
+
+//#region service.getUserContests
+export type IMContestServiceGetUserContestsRes = defModel.FullListModelRes<
+  IContestModel['contestId']
+>;
 //#endregion

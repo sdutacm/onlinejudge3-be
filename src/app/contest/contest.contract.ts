@@ -85,6 +85,115 @@ const contestContract = {
     additionalProperties: false,
     required: ['page', 'limit', 'count', 'rows'],
   } as defContract.ContractSchema,
+
+  getContestSessionReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestSessionResp: {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          userId: { type: 'number' },
+          username: { type: 'string' },
+          nickname: { type: 'string' },
+          permission: { type: 'number' },
+          avatar: { type: ['string', 'null'] },
+        },
+        additionalProperties: false,
+        required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+      },
+      {
+        type: 'null',
+      },
+    ],
+  } as defContract.ContractSchema,
+
+  requestContestSessionReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      username: { type: 'string' },
+      password: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  requestContestSessionResp: {
+    properties: {
+      userId: { type: 'number' },
+      username: { type: 'string' },
+      nickname: { type: 'string' },
+      permission: { type: 'number' },
+      avatar: { type: ['string', 'null'] },
+    },
+    additionalProperties: false,
+    required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+  } as defContract.ContractSchema,
+
+  logoutContestReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestDetailReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestDetailResp: {
+    properties: {
+      contestId: { type: 'number' },
+      title: { type: 'string' },
+      type: { type: 'number' },
+      category: { type: 'number' },
+      mode: { type: 'number' },
+      intro: { type: 'string' },
+      description: { type: 'string' },
+      password: { type: 'string' },
+      startAt: { type: 'string', format: 'date-time' },
+      endAt: { type: 'string', format: 'date-time' },
+      frozenLength: { type: 'number' },
+      registerStartAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      registerEndAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      team: { type: 'boolean' },
+      ended: { type: 'boolean' },
+      hidden: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: [
+      'contestId',
+      'title',
+      'type',
+      'category',
+      'mode',
+      'intro',
+      'startAt',
+      'endAt',
+      'frozenLength',
+      'registerStartAt',
+      'registerEndAt',
+      'team',
+      'ended',
+      'hidden',
+    ],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;

@@ -105,6 +105,7 @@ export default class UserController {
       nickname: user.nickname,
       permission: user.permission,
       avatar: user.avatar,
+      contests: {},
     };
   }
 
