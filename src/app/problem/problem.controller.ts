@@ -21,6 +21,7 @@ import {
 } from '@/common/contracts/problem';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
 @controller('/')
@@ -39,6 +40,9 @@ export default class ProblemController {
 
   @inject()
   lodash: ILodash;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @pagination()
@@ -74,8 +78,14 @@ export default class ProblemController {
       problemId,
       ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
     );
+    // 清除题目详情缓存和被加入的比赛的比赛题目缓存
     await this.service.clearDetailCache(problemId);
-    await this.contestService.clearContestProblemCacheByProblemId(problemId);
+    const pq = new this.PromiseQueue(20, Infinity);
+    const contestIds = await this.contestService.getAllContestIdsByProblemId(problemId);
+    const queueTasks = contestIds.map((contestId) =>
+      pq.add(() => this.contestService.clearContestProblemsCache(contestId)),
+    );
+    await Promise.all(queueTasks);
   }
 
   @route()

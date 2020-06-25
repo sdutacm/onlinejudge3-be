@@ -520,7 +520,7 @@ export default class ContestService {
    * @param problemId problemId
    * @returns contestId 列表
    */
-  async findAllContestIdsByProblemId(
+  async getAllContestIdsByProblemId(
     problemId: IProblemModel['problemId'],
   ): Promise<IContestModel['contestId'][]> {
     return this.contestProblemModel
@@ -531,16 +531,5 @@ export default class ContestService {
         },
       })
       .then((r) => r.map((d) => d.contestId));
-  }
-
-  /**
-   * 清除指定题目被加入到的所有比赛的比赛题目列表缓存。
-   * @param problemId problemId
-   */
-  async clearContestProblemCacheByProblemId(problemId: IProblemModel['problemId']): Promise<void> {
-    const contestIds = await this.findAllContestIdsByProblemId(problemId);
-    for (const contestId of contestIds) {
-      await this.clearContestProblemsCache(contestId);
-    }
   }
 }

@@ -14,7 +14,7 @@ import { CTagService } from './tag.service';
 import { ICreateTagResp, ICreateTagReq, IUpdateTagDetailReq } from '@/common/contracts/tag';
 import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
-import PromiseQueue from 'promise-queue';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
 @controller('/')
@@ -33,6 +33,9 @@ export default class TagController {
 
   @inject()
   lodash: ILodash;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @getFullList()
@@ -58,7 +61,7 @@ export default class TagController {
     await this.service.clearFullListCache();
     // 清除有这个标签的题目的缓存
     const problemIds = await this.service.getRelativeProblemIds(tagId);
-    const pq = new PromiseQueue(5, Infinity);
+    const pq = new this.PromiseQueue(20, Infinity);
     const queueTasks = problemIds.map((problemId) =>
       pq.add(() => this.problemService.clearDetailCache(problemId)),
     );
