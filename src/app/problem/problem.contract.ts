@@ -231,7 +231,7 @@ const problemContract = {
     required: ['problemId'],
   } as defContract.ContractSchema,
 
-  updateProblemTagsReq: {
+  setProblemTagsReq: {
     properties: {
       problemId: { type: 'number', minimum: 1 },
       tagIds: { type: 'array', items: { type: 'number', minimum: 1 } },

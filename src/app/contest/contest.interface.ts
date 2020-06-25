@@ -169,3 +169,10 @@ export type IMContestServiceGetContestProblemsRes = defModel.FullListModelRes<
   IMContestProblemDetail
 >;
 //#endregion
+
+//#region service.setContestProblems
+export type IMContestServiceSetContestProblemsOpt = Array<{
+  problemId: IContestProblemModel['problemId'];
+  title: IContestProblemModel['title'];
+}>;
+//#endregion

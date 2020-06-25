@@ -8,6 +8,7 @@ import {
   getDetail,
   respDetail,
   authOrRequireContestSession,
+  auth,
 } from '@/lib/decorators/controller.decorator';
 import { CContestMeta } from './contest.meta';
 import { routesBe } from '@/common/routes';
@@ -18,7 +19,11 @@ import { IMContestDetail } from './contest.interface';
 import { EContestType } from '@/common/enums';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
-import { IRequestContestSessionReq, IGetContestSessionResp } from '@/common/contracts/contest';
+import {
+  IRequestContestSessionReq,
+  IGetContestSessionResp,
+  ISetContestProblemsReq,
+} from '@/common/contracts/contest';
 
 @provide()
 @controller('/')
@@ -50,7 +55,7 @@ export default class ContestController {
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(null)
   async [routesBe.getContestSession.i](ctx: Context): Promise<IGetContestSessionResp> {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
@@ -120,7 +125,7 @@ export default class ContestController {
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(null)
   async [routesBe.requestContestSession.i](ctx: Context) {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
@@ -165,7 +170,7 @@ export default class ContestController {
           ctx.session.contests[contestId] = session;
           return session;
         }
-        throw new ReqError(Codes.CONTESTS_INCORRECT_PASSWORD);
+        throw new ReqError(Codes.CONTEST_INCORRECT_PASSWORD);
       }
       case EContestType.register: {
         // TODO 注册比赛
@@ -188,7 +193,7 @@ export default class ContestController {
   @route()
   @authOrRequireContestSession('admin')
   @id()
-  @getDetail(undefined, {
+  @getDetail(null, {
     afterGetDetail: (ctx) => {
       if (ctx.isAdmin) {
         delete ctx.detail.password;
@@ -204,8 +209,24 @@ export default class ContestController {
   @route()
   @authOrRequireContestSession('admin')
   @id()
+  @getDetail(null)
   async [routesBe.getContestProblems.i](ctx: Context) {
     const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
+    if (!ctx.isAdmin && ctx.helper.isContestPending(detail)) {
+      throw new ReqError(Codes.CONTEST_PENDING);
+    }
     return this.service.getContestProblems(contestId);
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.setContestProblems.i](ctx: Context) {
+    const contestId = ctx.id!;
+    const { problems } = ctx.request.body as ISetContestProblemsReq;
+    await this.service.setContestProblems(contestId, problems);
+    await this.service.clearContestProblemsCache(contestId);
   }
 }

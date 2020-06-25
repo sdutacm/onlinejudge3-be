@@ -27,6 +27,7 @@ import {
   IMContestServiceGetContestProblemsRes,
   TMContestProblemDetailFields,
   IMContestProblemLite,
+  IMContestServiceSetContestProblemsOpt,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -108,6 +109,16 @@ export default class ContestService {
 
   @config('durations')
   durations: IDurationsConfig;
+
+  scopeChecker = {
+    available(data: Partial<IContestModel> | null): boolean {
+      return data?.hidden === false;
+    },
+  };
+
+  private _isDataScopeAvailable(data: Partial<IContestModel> | null) {
+    return data?.hidden === false;
+  }
 
   /**
    * 获取详情缓存。
@@ -281,12 +292,12 @@ export default class ContestService {
     scope: TContestModelScopes | null = 'available',
   ): Promise<IMContestServiceGetDetailRes> {
     let res: IMContestServiceGetDetailRes = null;
-    const cached = scope === 'available' ? await this._getDetailCache(contestId) : null;
+    const cached = await this._getDetailCache(contestId);
     if (cached) {
       res = cached;
     } else if (cached === null) {
       res = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findOne({
           attributes: contestDetailFields,
           where: {
@@ -294,9 +305,13 @@ export default class ContestService {
           },
         })
         .then((d) => d && (d.get({ plain: true }) as IMContestDetail));
-      scope === 'available' && (await this._setDetailCache(contestId, res));
+      await this._setDetailCache(contestId, res);
     }
-    return res;
+    // 使用缓存，业务上自己处理 scope
+    if (scope === null || this.scopeChecker[scope](res)) {
+      return res;
+    }
+    return null;
   }
 
   /**
@@ -505,6 +520,30 @@ export default class ContestService {
       count: res.length,
       rows: res,
     };
+  }
+
+  /**
+   * 设置比赛题目。
+   * @param contestId contestId
+   * @param problems 比赛题目列表
+   */
+  async setContestProblems(
+    contestId: IContestModel['contestId'],
+    problems: IMContestServiceSetContestProblemsOpt,
+  ) {
+    await this.contestProblemModel.destroy({
+      where: {
+        contestId,
+      },
+    });
+    await this.contestProblemModel.bulkCreate(
+      problems.map((problem, index) => ({
+        contestId,
+        problemId: problem.problemId,
+        title: problem.title,
+        index,
+      })),
+    );
   }
 
   /**

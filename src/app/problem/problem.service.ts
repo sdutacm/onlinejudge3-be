@@ -401,11 +401,11 @@ export default class ProblemService {
   }
 
   /**
-   * 更新题目标签（全量覆盖）。
+   * 设置题目标签。
    * @param problemId problemId
    * @param tagIds tagIds
    */
-  async updateProblemTags(
+  async setProblemTags(
     problemId: IProblemModel['problemId'],
     tagIds: ITagModel['tagId'][],
   ): Promise<void> {

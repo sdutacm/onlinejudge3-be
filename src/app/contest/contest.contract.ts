@@ -261,6 +261,26 @@ const contestContract = {
     additionalProperties: false,
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
+
+  setContestProblemsReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      problems: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number', minimum: 1 },
+            title: { type: 'string' },
+          },
+          additionalProperties: false,
+          required: ['problemId', 'title'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['contestId', 'problems'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;

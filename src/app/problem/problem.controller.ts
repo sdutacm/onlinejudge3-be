@@ -17,7 +17,7 @@ import {
   ICreateProblemResp,
   ICreateProblemReq,
   IUpdateProblemDetailReq,
-  IUpdateProblemTagsReq,
+  ISetProblemTagsReq,
 } from '@/common/contracts/problem';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
@@ -92,10 +92,10 @@ export default class ProblemController {
   @auth('perm')
   @id()
   @getDetail(null)
-  async [routesBe.updateProblemTags.i](ctx: Context): Promise<void> {
+  async [routesBe.setProblemTags.i](ctx: Context): Promise<void> {
     const problemId = ctx.id!;
-    const { tagIds } = ctx.request.body as IUpdateProblemTagsReq;
-    await this.service.updateProblemTags(problemId, tagIds);
+    const { tagIds } = ctx.request.body as ISetProblemTagsReq;
+    await this.service.setProblemTags(problemId, tagIds);
     await this.service.clearDetailCache(problemId);
   }
 }
