@@ -35,6 +35,8 @@ import {
   TMContestUserDetailFields,
   IContestUserModel,
   IMContestUserLite,
+  IMContestUserDetail,
+  IMContestServiceGetContestUserDetailRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -292,6 +294,35 @@ export default class ContestService {
     );
   }
 
+  /**
+   * 获取比赛用户详情缓存。
+   * @param contestId contestId
+   */
+  private async _getContestUserDetailCache(
+    contestUserId: IContestUserModel['contestUserId'],
+  ): Promise<IMContestUserDetail | null | ''> {
+    return this.ctx.helper.redisGet<IMContestUserDetail>(this.redisKey.contestUserDetail, [
+      contestUserId,
+    ]);
+  }
+
+  /**
+   * 设置比赛用户详情缓存。
+   * @param contestUserId contestUserId
+   * @param data 详情数据
+   */
+  private async _setContestUserDetailCache(
+    contestUserId: IContestUserModel['contestUserId'],
+    data: IMContestUserDetail | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.contestUserDetail,
+      [contestUserId],
+      data,
+      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
   private _formatListQuery(opts: IMContestServiceGetListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       contestId: opts.contestId,
@@ -405,7 +436,6 @@ export default class ContestService {
 
   /**
    * 获取比赛详情。
-   * 只有默认 scope 的查询会缓存
    * @param contestId contestId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
@@ -724,5 +754,40 @@ export default class ContestService {
           return this._parseContestUser<IMContestUserLite>(plain);
         }),
       }));
+  }
+
+  /**
+   * 获取比赛用户详情。
+   * @param contestUserId contestUserId
+   */
+  async getContestUserDetail(
+    contestUserId: IContestUserModel['contestUserId'],
+  ): Promise<IMContestServiceGetContestUserDetailRes> {
+    let res: IMContestServiceGetContestUserDetailRes = null;
+    const cached = await this._getContestUserDetailCache(contestUserId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.contestUserModel
+        .findOne({
+          attributes: contestUserDetailFields,
+          where: {
+            contestUserId,
+          },
+        })
+        .then((d) => d && this._parseContestUser<IMContestUserDetail>(d.get({ plain: true })));
+      await this._setContestUserDetailCache(contestUserId, res);
+    }
+    return res;
+  }
+
+  /**
+   * 清除比赛用户详情缓存。
+   * @param contestUserId contestUserId
+   */
+  async clearContestUserDetailCache(
+    contestUserId: IContestUserModel['contestUserId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.contestUserDetail, [contestUserId]);
   }
 }

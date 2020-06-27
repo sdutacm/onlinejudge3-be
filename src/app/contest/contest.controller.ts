@@ -9,6 +9,7 @@ import {
   respDetail,
   authOrRequireContestSession,
   auth,
+  login,
 } from '@/lib/decorators/controller.decorator';
 import { CContestMeta } from './contest.meta';
 import { routesBe } from '@/common/routes';
@@ -23,6 +24,7 @@ import {
   IRequestContestSessionReq,
   IGetContestSessionResp,
   ISetContestProblemsReq,
+  IGetContestUserDetailReq,
 } from '@/common/contracts/contest';
 
 @provide()
@@ -239,5 +241,19 @@ export default class ContestController {
     // @ts-ignore
     const list = await this.service.getContestUserList(contestId, ctx.request.body, pagination);
     return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
+  }
+
+  @route()
+  @login()
+  async [routesBe.getContestUserDetail.i](ctx: Context) {
+    const { contestUserId } = ctx.request.body as IGetContestUserDetailReq;
+    const detail = await this.service.getContestUserDetail(contestUserId);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (!ctx.isAdmin && ctx.session.username !== detail.username) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    return detail;
   }
 }
