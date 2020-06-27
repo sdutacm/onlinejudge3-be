@@ -1,7 +1,8 @@
 import { IUserModel } from '../user/user.interface';
-import { EContestType, EContestCategory, EContestMode } from '@/common/enums';
+import { EContestType, EContestCategory, EContestMode, EContestUserStatus } from '@/common/enums';
 import { IMProblemDetail } from '../problem/problem.interface';
 
+//#region contest model
 export interface IContestModel {
   contestId: number;
   title: string;
@@ -62,7 +63,9 @@ export type TMContestDetailFields = Extract<
 export type IMContestLite = Pick<IContestModel, TMContestLiteFields>;
 export type IMContestDetail = Pick<IContestModel, TMContestDetailFields>;
 export type IMContestListPagination = defService.ServiceListOpt<TContestModelFields>;
+//#endregion
 
+//#region contest problem model
 export interface IContestProblemModel {
   contestId: number;
   problemId: number;
@@ -81,6 +84,161 @@ export type IMContestProblemLite = Pick<IContestProblemModel, TMContestProblemDe
 
 export type IMContestProblemDetail = Pick<IContestProblemModel, TMContestProblemDetailFields> &
   Omit<IMProblemDetail, 'tags'>;
+//#endregion
+
+//#region contest user model
+export interface IContestUserModel {
+  contestUserId: number;
+  username: string;
+  nickname: string;
+  subname: string;
+  avatar: string;
+  status: EContestUserStatus;
+  unofficial: boolean;
+  password: string;
+  sitNo: string | null;
+  schoolNo1: string;
+  name1: string;
+  school1: string;
+  college1: string;
+  major1: string;
+  class1: string;
+  tel1: string;
+  email1: string;
+  clothing1: string;
+  schoolNo2: string;
+  name2: string;
+  school2: string;
+  college2: string;
+  major2: string;
+  class2: string;
+  tel2: string;
+  email2: string;
+  clothing2: string;
+  schoolNo3: string;
+  name3: string;
+  school3: string;
+  college3: string;
+  major3: string;
+  class3: string;
+  tel3: string;
+  email3: string;
+  clothing3: string;
+  createdAt: Date | null;
+}
+
+export type TContestUserModelFields = keyof IContestUserModel;
+
+export type TMContestUserLiteFields = Extract<
+  TContestUserModelFields,
+  | 'contestUserId'
+  | 'username'
+  | 'nickname'
+  | 'subname'
+  | 'avatar'
+  | 'status'
+  | 'unofficial'
+  | 'name1'
+  | 'school1'
+  | 'college1'
+  | 'major1'
+  | 'class1'
+  | 'name2'
+  | 'school2'
+  | 'college2'
+  | 'major2'
+  | 'class2'
+  | 'name3'
+  | 'school3'
+  | 'college3'
+  | 'major3'
+  | 'class3'
+  | 'createdAt'
+>;
+
+export type TMContestUserDetailFields = Extract<
+  TContestUserModelFields,
+  | 'contestUserId'
+  | 'username'
+  | 'nickname'
+  | 'subname'
+  | 'avatar'
+  | 'status'
+  | 'unofficial'
+  | 'password'
+  | 'sitNo'
+  | 'schoolNo1'
+  | 'name1'
+  | 'school1'
+  | 'college1'
+  | 'major1'
+  | 'class1'
+  | 'tel1'
+  | 'email1'
+  | 'clothing1'
+  | 'schoolNo2'
+  | 'name2'
+  | 'school2'
+  | 'college2'
+  | 'major2'
+  | 'class2'
+  | 'tel2'
+  | 'email2'
+  | 'clothing2'
+  | 'schoolNo3'
+  | 'name3'
+  | 'school3'
+  | 'college3'
+  | 'major3'
+  | 'class3'
+  | 'tel3'
+  | 'email3'
+  | 'clothing3'
+  | 'createdAt'
+>;
+
+export interface IMContestUserLite {
+  contestUserId: IContestUserModel['contestUserId'];
+  username: IContestUserModel['username'];
+  nickname: IContestUserModel['nickname'];
+  subname: IContestUserModel['subname'];
+  avatar: IContestUserModel['avatar'];
+  status: IContestUserModel['status'];
+  unofficial: IContestUserModel['unofficial'];
+  members: Array<{
+    name: string;
+    school: string;
+    college: string;
+    major: string;
+    class: string;
+  }>;
+  createdAt: IContestUserModel['createdAt'];
+}
+export interface IMContestUserDetail {
+  contestUserId: IContestUserModel['contestUserId'];
+  username: IContestUserModel['username'];
+  nickname: IContestUserModel['nickname'];
+  subname: IContestUserModel['subname'];
+  avatar: IContestUserModel['avatar'];
+  status: IContestUserModel['status'];
+  unofficial: IContestUserModel['unofficial'];
+  password: IContestUserModel['password'];
+  sitNo: IContestUserModel['sitNo'];
+  members: Array<{
+    schoolNo: string;
+    name: string;
+    school: string;
+    college: string;
+    major: string;
+    class: string;
+    tel: string;
+    email: string;
+    clothing: string;
+  }>;
+  createdAt: IContestUserModel['createdAt'];
+}
+export type IMContestUserListPagination = defService.ServiceListOpt<TContestUserModelFields>;
+//#endregion
 
 //#region service.getList
 export interface IMContestServiceGetListOpt {
@@ -175,4 +333,14 @@ export type IMContestServiceSetContestProblemsOpt = Array<{
   problemId: IContestProblemModel['problemId'];
   title: IContestProblemModel['title'];
 }>;
+//#endregion
+
+//#region service.getContestUserList
+export interface IMContestServiceGetContestUserListOpt {
+  contestUserId?: IContestUserModel['contestUserId'];
+  username?: IContestUserModel['username'];
+  nickname?: IContestUserModel['nickname'];
+}
+
+export type IMContestServiceGetContestUserListRes = defModel.ListModelRes<IMContestUserLite>;
 //#endregion

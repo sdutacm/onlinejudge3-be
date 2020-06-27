@@ -229,4 +229,15 @@ export default class ContestController {
     await this.service.setContestProblems(contestId, problems);
     await this.service.clearContestProblemsCache(contestId);
   }
+
+  @route()
+  @pagination()
+  @id()
+  async [routesBe.getContestUserList.i](ctx: Context) {
+    const pagination = ctx.pagination!;
+    const contestId = ctx.id!;
+    // @ts-ignore
+    const list = await this.service.getContestUserList(contestId, ctx.request.body, pagination);
+    return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
+  }
 }

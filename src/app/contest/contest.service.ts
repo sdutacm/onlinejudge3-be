@@ -28,6 +28,13 @@ import {
   TMContestProblemDetailFields,
   IMContestProblemLite,
   IMContestServiceSetContestProblemsOpt,
+  IMContestServiceGetContestUserListOpt,
+  IMContestUserListPagination,
+  IMContestServiceGetContestUserListRes,
+  TMContestUserLiteFields,
+  TMContestUserDetailFields,
+  IContestUserModel,
+  IMContestUserLite,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -37,6 +44,7 @@ import { IUserModel } from '../user/user.interface';
 import { TContestProblemModel } from '@/lib/models/contestProblem.model';
 import { CProblemService } from '../problem/problem.service';
 import { IProblemModel } from '../problem/problem.interface';
+import { TContestUserModel } from '@/lib/models/contestUser.model';
 
 export type CContestService = ContestService;
 
@@ -75,6 +83,72 @@ const contestDetailFields: Array<TMContestDetailFields> = [
 
 const contestProblemDetailFields: Array<TMContestProblemDetailFields> = ['problemId', 'title'];
 
+const contestUserLiteFields: Array<TMContestUserLiteFields> = [
+  'contestUserId',
+  'username',
+  'nickname',
+  'subname',
+  'avatar',
+  'status',
+  'unofficial',
+  'name1',
+  'school1',
+  'college1',
+  'major1',
+  'class1',
+  'name2',
+  'school2',
+  'college2',
+  'major2',
+  'class2',
+  'name3',
+  'school3',
+  'college3',
+  'major3',
+  'class3',
+  'createdAt',
+];
+
+const contestUserDetailFields: Array<TMContestUserDetailFields> = [
+  'contestUserId',
+  'username',
+  'nickname',
+  'subname',
+  'avatar',
+  'status',
+  'unofficial',
+  'password',
+  'sitNo',
+  'schoolNo1',
+  'name1',
+  'school1',
+  'college1',
+  'major1',
+  'class1',
+  'tel1',
+  'email1',
+  'clothing1',
+  'schoolNo2',
+  'name2',
+  'school2',
+  'college2',
+  'major2',
+  'class2',
+  'tel2',
+  'email2',
+  'clothing2',
+  'schoolNo3',
+  'name3',
+  'school3',
+  'college3',
+  'major3',
+  'class3',
+  'tel3',
+  'email3',
+  'clothing3',
+  'createdAt',
+];
+
 @provide()
 export default class ContestService {
   @inject('contestMeta')
@@ -88,6 +162,9 @@ export default class ContestService {
 
   @inject()
   contestProblemModel: TContestProblemModel;
+
+  @inject()
+  contestUserModel: TContestUserModel;
 
   @inject()
   problemService: CProblemService;
@@ -250,6 +327,51 @@ export default class ContestService {
       where,
       include,
     };
+  }
+
+  private _formatContestUserListQuery(opts: IMContestServiceGetContestUserListOpt) {
+    const where: any = this.utils.misc.ignoreUndefined({
+      contestUserId: opts.contestUserId,
+      username: opts.username,
+    });
+    if (opts.nickname) {
+      where.nickname = {
+        [Op.like]: `%${opts.nickname}%`,
+      };
+    }
+    return {
+      where,
+    };
+  }
+
+  private _parseContestUser<T>(data: Partial<IContestUserModel>): T {
+    const MEMBER_NUM = 3;
+    const memberFields = [
+      'schoolNo',
+      'name',
+      'school',
+      'college',
+      'major',
+      'class',
+      'tel',
+      'email',
+      'clothing',
+    ];
+    const res: any = { ...data };
+    const members = [];
+    for (let i = 1; i <= MEMBER_NUM; ++i) {
+      const member: any = {};
+      memberFields.forEach((field) => {
+        const key = `${field}${i}`;
+        // @ts-ignore
+        member[field] = res[key];
+        // @ts-ignore
+        delete res[key];
+      });
+      members.push(member);
+    }
+    res.members = members;
+    return this.utils.misc.ignoreUndefined(res) as T;
   }
 
   /**
@@ -570,5 +692,37 @@ export default class ContestService {
         },
       })
       .then((r) => r.map((d) => d.contestId));
+  }
+
+  /**
+   * 获取比赛用户列表。
+   * @param contestId contestId
+   * @param options 查询参数
+   * @param pagination 分页参数
+   */
+  async getContestUserList(
+    contestId: IContestModel['contestId'],
+    options: IMContestServiceGetContestUserListOpt,
+    pagination: IMContestUserListPagination = {},
+  ): Promise<IMContestServiceGetContestUserListRes> {
+    const query = this._formatContestUserListQuery(options);
+    return this.contestUserModel
+      .findAndCountAll({
+        attributes: contestUserLiteFields,
+        where: {
+          ...query.where,
+          contestId,
+        },
+        limit: pagination.limit,
+        offset: pagination.offset,
+        order: pagination.order,
+      })
+      .then((r) => ({
+        ...r,
+        rows: r.rows.map((d) => {
+          const plain = d.get({ plain: true });
+          return this._parseContestUser<IMContestUserLite>(plain);
+        }),
+      }));
   }
 }

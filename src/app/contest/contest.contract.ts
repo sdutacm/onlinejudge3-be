@@ -281,6 +281,86 @@ const contestContract = {
     additionalProperties: false,
     required: ['contestId', 'problems'],
   } as defContract.ContractSchema,
+
+  getContestUserListReq: {
+    properties: {
+      page: { type: 'number', minimum: 1 },
+      limit: { type: 'number', minimum: 1, maximum: 1000 },
+      order: {
+        type: 'array',
+        items: {
+          type: 'array',
+          items: [
+            { type: 'string', enum: ['contestUserId'] },
+            { type: 'string', enum: ['ASC', 'DESC'] },
+          ],
+          additionalItems: false,
+          minItems: 2,
+        },
+      },
+      contestId: { type: 'number', minimum: 1 },
+      contestUserId: { type: 'number', minimum: 1 },
+      username: { type: 'string' },
+      nickname: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestUserListResp: {
+    properties: {
+      page: { type: 'number', minimum: 1 },
+      limit: { type: 'number', minimum: 0 },
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            contestUserId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            subname: { type: 'string' },
+            avatar: { type: 'string' },
+            status: { type: 'number' },
+            unofficial: { type: 'boolean' },
+            members: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  school: { type: 'string' },
+                  college: { type: 'string' },
+                  major: { type: 'string' },
+                  class: { type: 'string' },
+                },
+                additionalProperties: false,
+                required: ['name', 'school', 'college', 'major', 'class'],
+              },
+            },
+            createdAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+          },
+          additionalProperties: false,
+          required: [
+            'contestUserId',
+            'username',
+            'nickname',
+            'subname',
+            'avatar',
+            'status',
+            'unofficial',
+            'members',
+            'createdAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['page', 'limit', 'count', 'rows'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;
