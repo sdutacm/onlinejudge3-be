@@ -429,6 +429,121 @@ const contestContract = {
       'createdAt',
     ],
   } as defContract.ContractSchema,
+
+  createContestUserReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      nickname: { type: 'string', maxLength: 64 },
+      subname: { type: 'string', maxLength: 64 },
+      status: { type: 'number' },
+      unofficial: { type: 'boolean' },
+      password: { type: 'string', maxLength: 32 },
+      members: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            schoolNo: { type: 'string', maxLength: 32 },
+            name: { type: 'string', maxLength: 32 },
+            school: { type: 'string', maxLength: 64 },
+            college: { type: 'string', maxLength: 64 },
+            major: { type: 'string', maxLength: 64 },
+            class: { type: 'string', maxLength: 64 },
+            tel: { type: 'string', maxLength: 30 },
+            email: { type: 'string', maxLength: 64 },
+            clothing: { type: 'string', maxLength: 32 },
+          },
+          additionalProperties: false,
+          required: [
+            'schoolNo',
+            'name',
+            'school',
+            'college',
+            'major',
+            'class',
+            'tel',
+            'email',
+            'clothing',
+          ],
+        },
+        minItems: 1,
+        maxItems: 3,
+      },
+    },
+    additionalProperties: false,
+    required: ['contestId', 'nickname', 'subname', 'unofficial', 'password', 'members'],
+  } as defContract.ContractSchema,
+
+  createContestUserResp: {
+    properties: {
+      contestUserId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['contestUserId'],
+  } as defContract.ContractSchema,
+
+  updateContestUserReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      contestUserId: { type: 'number', minimum: 1 },
+      nickname: { type: 'string', maxLength: 64 },
+      subname: { type: 'string', maxLength: 64 },
+      status: { type: 'number' },
+      unofficial: { type: 'boolean' },
+      password: { type: 'string', maxLength: 32 },
+      members: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            schoolNo: { type: 'string', maxLength: 32 },
+            name: { type: 'string', maxLength: 32 },
+            school: { type: 'string', maxLength: 64 },
+            college: { type: 'string', maxLength: 64 },
+            major: { type: 'string', maxLength: 64 },
+            class: { type: 'string', maxLength: 64 },
+            tel: { type: 'string', maxLength: 30 },
+            email: { type: 'string', maxLength: 64 },
+            clothing: { type: 'string', maxLength: 32 },
+          },
+          additionalProperties: false,
+          required: [
+            'schoolNo',
+            'name',
+            'school',
+            'college',
+            'major',
+            'class',
+            'tel',
+            'email',
+            'clothing',
+          ],
+        },
+        minItems: 1,
+        maxItems: 3,
+      },
+    },
+    additionalProperties: false,
+    required: [
+      'contestId',
+      'contestUserId',
+      'nickname',
+      'subname',
+      'unofficial',
+      'password',
+      'members',
+    ],
+  } as defContract.ContractSchema,
+
+  auditContestUserReq: {
+    properties: {
+      contestUserId: { type: 'number', minimum: 1 },
+      status: { type: 'number' },
+      reason: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['contestUserId', 'status'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;

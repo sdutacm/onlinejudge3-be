@@ -25,6 +25,9 @@ import {
   IGetContestSessionResp,
   ISetContestProblemsReq,
   IGetContestUserDetailReq,
+  ICreateContestUserReq,
+  ICreateContestUserResp,
+  IUpdateContestUserReq,
 } from '@/common/contracts/contest';
 
 @provide()
@@ -255,5 +258,79 @@ export default class ContestController {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
     return detail;
+  }
+
+  @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.createContestUser.i](ctx: Context): Promise<ICreateContestUserResp> {
+    const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
+    const data = ctx.request.body as ICreateContestUserReq;
+    if (!ctx.isAdmin) {
+      delete data.status;
+    }
+    if (detail.type !== EContestType.register) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_OPEN);
+    }
+    const now = new Date();
+    if (
+      !detail?.registerStartAt ||
+      !detail?.registerEndAt ||
+      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+    ) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
+    }
+    const username = ctx.session.username;
+    const exists = await this.service.isContestUserExists(contestId, {
+      username,
+    });
+    if (exists) {
+      throw new ReqError(Codes.CONTEST_REGISTERED);
+    }
+    const newId = await this.service.createContestUser(contestId, {
+      ...this.lodash.omit(data, ['contestId']),
+      username,
+    });
+    return { contestUserId: newId };
+  }
+
+  @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.updateContestUser.i](ctx: Context): Promise<void> {
+    const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
+    const data = ctx.request.body as IUpdateContestUserReq;
+    const { contestUserId } = data;
+    if (!ctx.isAdmin) {
+      delete data.status;
+    }
+    if (detail.type !== EContestType.register) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_OPEN);
+    }
+    const now = new Date();
+    if (
+      !detail?.registerStartAt ||
+      !detail?.registerEndAt ||
+      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+    ) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
+    }
+    const username = ctx.session.username;
+    const contestUser = await this.service.getContestUserDetail(contestUserId);
+    if (!contestUser) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (!ctx.isAdmin && username !== contestUser.username) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.updateContestUser(
+      contestUserId,
+      this.lodash.omit(data, ['contestId', 'contestUserId']),
+    );
+    await this.service.clearContestUserDetailCache(contestUserId);
   }
 }

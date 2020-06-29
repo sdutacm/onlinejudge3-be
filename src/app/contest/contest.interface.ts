@@ -348,3 +348,59 @@ export type IMContestServiceGetContestUserListRes = defModel.ListModelRes<IMCont
 //#region service.getContestUserDetail
 export type IMContestServiceGetContestUserDetailRes = defModel.DetailModelRes<IMContestUserDetail>;
 //#endregion
+
+//#region service.findOneContestUser
+export type IMContestServiceFindOneContestUserOpt = Partial<IContestUserModel>;
+export type IMContestServiceFindOneContestUserRes = defModel.DetailModelRes<IMContestUserDetail>;
+//#endregion
+
+//#region service.isContestUserExists
+export type IMContestServiceIsContestUserExistsOpt = Partial<IContestUserModel>;
+//#endregion
+
+//#region service.createContestUser
+export interface IMContestServiceCreateContestUserOpt {
+  username: IContestUserModel['username'];
+  nickname: IContestUserModel['nickname'];
+  subname: IContestUserModel['subname'];
+  status?: IContestUserModel['status'];
+  unofficial: IContestUserModel['unofficial'];
+  password: IContestUserModel['password'];
+  members: Array<{
+    schoolNo: string;
+    name: string;
+    school: string;
+    college: string;
+    major: string;
+    class: string;
+    tel: string;
+    email: string;
+    clothing: string;
+  }>;
+}
+
+export type IMContestServiceCreateContestUserRes = IContestUserModel['contestUserId'];
+//#endregion
+
+//#region service.updateContestUser
+export interface IMContestServiceUpdateContestUserOpt {
+  nickname?: IContestUserModel['nickname'];
+  subname?: IContestUserModel['subname'];
+  status?: IContestUserModel['status'];
+  unofficial?: IContestUserModel['unofficial'];
+  password?: IContestUserModel['password'];
+  members?: Array<{
+    schoolNo: string;
+    name: string;
+    school: string;
+    college: string;
+    major: string;
+    class: string;
+    tel: string;
+    email: string;
+    clothing: string;
+  }>;
+}
+
+export type IMContestServiceUpdateContestUserRes = boolean;
+//#endregion

@@ -1,4 +1,4 @@
-import { provide, inject, Context, config } from 'midway';
+import { provide, inject, Context, config, scope } from 'midway';
 import { Op } from 'sequelize';
 import { CContestMeta } from './contest.meta';
 import { IDurationsConfig } from '@/config/durations.config';
@@ -37,6 +37,13 @@ import {
   IMContestUserLite,
   IMContestUserDetail,
   IMContestServiceGetContestUserDetailRes,
+  IMContestServiceFindOneContestUserOpt,
+  IMContestServiceFindOneContestUserRes,
+  IMContestServiceIsContestUserExistsOpt,
+  IMContestServiceCreateContestUserOpt,
+  IMContestServiceCreateContestUserRes,
+  IMContestServiceUpdateContestUserOpt,
+  IMContestServiceUpdateContestUserRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -149,6 +156,20 @@ const contestUserDetailFields: Array<TMContestUserDetailFields> = [
   'email3',
   'clothing3',
   'createdAt',
+];
+
+const MEMBER_NUM = 3;
+
+const memberFields = [
+  'schoolNo',
+  'name',
+  'school',
+  'college',
+  'major',
+  'class',
+  'tel',
+  'email',
+  'clothing',
 ];
 
 @provide()
@@ -376,18 +397,6 @@ export default class ContestService {
   }
 
   private _parseContestUser<T>(data: Partial<IContestUserModel>): T {
-    const MEMBER_NUM = 3;
-    const memberFields = [
-      'schoolNo',
-      'name',
-      'school',
-      'college',
-      'major',
-      'class',
-      'tel',
-      'email',
-      'clothing',
-    ];
     const res: any = { ...data };
     const members = [];
     for (let i = 1; i <= MEMBER_NUM; ++i) {
@@ -402,6 +411,18 @@ export default class ContestService {
       members.push(member);
     }
     res.members = members;
+    return this.utils.misc.ignoreUndefined(res) as T;
+  }
+
+  private _formatContestUser<T>(data: Partial<IMContestUserDetail>): T {
+    const res: any = { ...data };
+    for (let i = 1; i <= MEMBER_NUM; ++i) {
+      memberFields.forEach((field) => {
+        const key = `${field}${i}`;
+        res[key] = res.members[i - 1]?.[field];
+      });
+    }
+    delete res.members;
     return this.utils.misc.ignoreUndefined(res) as T;
   }
 
@@ -779,6 +800,79 @@ export default class ContestService {
       await this._setContestUserDetailCache(contestUserId, res);
     }
     return res;
+  }
+
+  /**
+   * 按条件查询比赛用户详情。
+   * @param contestId contestId
+   * @param options 查询参数
+   */
+  async findOneContestUser(
+    contestId: IContestModel['contestId'],
+    options: IMContestServiceFindOneContestUserOpt,
+  ): Promise<IMContestServiceFindOneContestUserRes> {
+    return this.contestUserModel
+      .findOne({
+        attributes: contestUserDetailFields,
+        where: {
+          ...options,
+          contestId,
+        } as any,
+      })
+      .then((d) => d && this._parseContestUser<IMContestUserDetail>(d.get({ plain: true })));
+  }
+
+  /**
+   * 按条件查询比赛用户是否存在。
+   * @param contestId contestId
+   * @param options 查询参数
+   */
+  async isContestUserExists(
+    contestId: IContestModel['contestId'],
+    options: IMContestServiceIsContestUserExistsOpt,
+  ): Promise<boolean> {
+    const res = await this.contestUserModel.findOne({
+      attributes: ['contestUserId'],
+      where: {
+        ...options,
+        contestId,
+      } as any,
+    });
+    return !!res;
+  }
+
+  /**
+   * 创建比赛用户。
+   * @param contestId contestId
+   * @param data 创建数据
+   * @returns 创建成功的 contestUserId
+   */
+  async createContestUser(
+    contestId: IContestModel['contestId'],
+    data: IMContestServiceCreateContestUserOpt,
+  ): Promise<IMContestServiceCreateContestUserRes> {
+    const res = await this.contestUserModel.create({
+      ...this._formatContestUser(data),
+      contestId,
+    });
+    return res.contestUserId;
+  }
+
+  /**
+   * 更新比赛用户（部分更新）。
+   * @param contestUserId contestUserId
+   * @param data 更新数据
+   */
+  async updateContestUser(
+    contestUserId: IContestUserModel['contestUserId'],
+    data: IMContestServiceUpdateContestUserOpt,
+  ): Promise<IMContestServiceUpdateContestUserRes> {
+    const res = await this.contestUserModel.update(this._formatContestUser(data), {
+      where: {
+        contestUserId,
+      },
+    });
+    return res[0] > 0;
   }
 
   /**
