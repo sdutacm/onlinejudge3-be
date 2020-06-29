@@ -1,4 +1,4 @@
-import { Context, controller, inject, provide } from 'midway';
+import { Context, controller, inject, provide, config } from 'midway';
 import {
   route,
   pagination,
@@ -17,7 +17,7 @@ import { IUtils } from '@/utils';
 import { CContestService } from './contest.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMContestDetail } from './contest.interface';
-import { EContestType } from '@/common/enums';
+import { EContestType, EContestUserStatus } from '@/common/enums';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import {
@@ -28,7 +28,9 @@ import {
   ICreateContestUserReq,
   ICreateContestUserResp,
   IUpdateContestUserReq,
+  IAuditContestUserReq,
 } from '@/common/contracts/contest';
+import { CMailSender } from '@/utils/mail';
 
 @provide()
 @controller('/')
@@ -44,6 +46,12 @@ export default class ContestController {
 
   @inject()
   lodash: ILodash;
+
+  @inject()
+  mailSender: CMailSender;
+
+  @config()
+  siteTeam: string;
 
   @route()
   @pagination()
@@ -301,7 +309,6 @@ export default class ContestController {
   @id()
   @getDetail(null)
   async [routesBe.updateContestUser.i](ctx: Context): Promise<void> {
-    const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
     const data = ctx.request.body as IUpdateContestUserReq;
     const { contestUserId } = data;
@@ -332,5 +339,61 @@ export default class ContestController {
       this.lodash.omit(data, ['contestId', 'contestUserId']),
     );
     await this.service.clearContestUserDetailCache(contestUserId);
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.auditContestUser.i](ctx: Context): Promise<void> {
+    const detail = ctx.detail as IMContestDetail;
+    const data = ctx.request.body as IAuditContestUserReq;
+    const { contestUserId, status, reason } = data;
+    if (
+      ![
+        EContestUserStatus.accepted,
+        EContestUserStatus.return,
+        EContestUserStatus.rejected,
+      ].includes(status)
+    ) {
+      throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
+    }
+    const contestUser = await this.service.getContestUserDetail(contestUserId);
+    if (!contestUser) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    await this.service.updateContestUser(contestUserId, {
+      status,
+    });
+    await this.service.clearContestUserDetailCache(contestUserId);
+    // 发送邮件通知
+    const email = contestUser.members[0]?.email;
+    if (email) {
+      let auditMessage = '';
+      switch (status) {
+        case EContestUserStatus.accepted:
+          auditMessage = '<strong>accepted</strong>';
+          break;
+        case EContestUserStatus.return:
+          auditMessage = '<strong>waiting for further modification</strong>';
+          break;
+        case EContestUserStatus.rejected:
+          auditMessage = '<strong>rejected</strong>';
+          break;
+        default:
+          auditMessage = '?';
+      }
+      if (reason) {
+        auditMessage += ` with reason "${reason}"`;
+      }
+      const subject = 'Your Contest Registration Result';
+      const content = `<p>Dear User:</p>
+<p>Thanks for registering contesst "${detail.title}". Your registration is ${auditMessage}.</p>
+<p>You can review or update your information in contest registration list.</p>
+<p><br/></p>
+<p>${this.siteTeam}</p>`;
+      this.mailSender.singleSend(email, subject, content);
+    }
+    // TODO 发送站内信
   }
 }

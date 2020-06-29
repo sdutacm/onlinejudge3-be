@@ -537,12 +537,13 @@ const contestContract = {
 
   auditContestUserReq: {
     properties: {
+      contestId: { type: 'number', minimum: 1 },
       contestUserId: { type: 'number', minimum: 1 },
       status: { type: 'number' },
       reason: { type: 'string' },
     },
     additionalProperties: false,
-    required: ['contestUserId', 'status'],
+    required: ['contestId', 'contestUserId', 'status'],
   } as defContract.ContractSchema,
 };
 

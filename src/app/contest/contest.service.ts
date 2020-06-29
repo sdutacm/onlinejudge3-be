@@ -419,7 +419,7 @@ export default class ContestService {
     for (let i = 1; i <= MEMBER_NUM; ++i) {
       memberFields.forEach((field) => {
         const key = `${field}${i}`;
-        res[key] = res.members[i - 1]?.[field];
+        res[key] = res.members?.[i - 1]?.[field];
       });
     }
     delete res.members;
