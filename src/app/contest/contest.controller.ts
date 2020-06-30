@@ -17,7 +17,7 @@ import { IUtils } from '@/utils';
 import { CContestService } from './contest.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMContestDetail } from './contest.interface';
-import { EContestType, EContestUserStatus } from '@/common/enums';
+import { EContestType, EContestUserStatus, EUserPermission } from '@/common/enums';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import {
@@ -125,7 +125,26 @@ export default class ContestController {
         break;
       }
       case EContestType.register: {
-        // TODO 注册比赛
+        if (ctx.loggedIn) {
+          const userContests = await this.service.getUserContests(ctx.session.userId);
+          if (userContests.rows.includes(contestId)) {
+            // 参加过此个比赛，把 username 对应的比赛用户信息赋到 session
+            const contestUser = await this.service.findOneContestUser(contestId, {
+              username: ctx.session.username,
+            });
+            if (contestUser) {
+              const session = {
+                userId: contestUser.contestUserId,
+                username: contestUser.username,
+                nickname: contestUser.nickname,
+                permission: ctx.session.permission,
+                avatar: contestUser.avatar,
+              };
+              ctx.session.contests[contestId] = session;
+              return session;
+            }
+          }
+        }
         break;
       }
       default: {
@@ -186,8 +205,47 @@ export default class ContestController {
         throw new ReqError(Codes.CONTEST_INCORRECT_PASSWORD);
       }
       case EContestType.register: {
-        // TODO 注册比赛
-        return null;
+        // 先尝试判断 user contests
+        if (ctx.loggedIn) {
+          const userContests = await this.service.getUserContests(ctx.session.userId);
+          if (userContests.rows.includes(contestId)) {
+            // 参加过此个比赛，把 username 对应的比赛用户信息赋到 session
+            const contestUser = await this.service.findOneContestUser(contestId, {
+              username: ctx.session.username,
+            });
+            if (contestUser) {
+              const session = {
+                userId: contestUser.contestUserId,
+                username: contestUser.username,
+                nickname: contestUser.nickname,
+                permission: ctx.session.permission,
+                avatar: contestUser.avatar,
+              };
+              ctx.session.contests[contestId] = session;
+              return session;
+            }
+          }
+        }
+        // 再尝试根据用户名密码判断
+        if (username && password) {
+          const contestUser = await this.service.findOneContestUser(contestId, {
+            username,
+            password,
+          });
+          if (!contestUser) {
+            throw new ReqError(Codes.CONTEST_INCORRECT_USERNAME_OR_PASSWORD);
+          }
+          const session = {
+            userId: contestUser.contestUserId,
+            username: contestUser.username,
+            nickname: contestUser.nickname,
+            permission: EUserPermission.normal,
+            avatar: contestUser.avatar,
+          };
+          ctx.session.contests[contestId] = session;
+          return session;
+        }
+        throw new ReqError(Codes.CONTEST_INCORRECT_USERNAME_OR_PASSWORD);
       }
       default: {
         this.utils.misc.never(detail.type);
