@@ -1,15 +1,17 @@
-interface IUserModelRatingHistoryItem {
+import { IContestModel } from '../contest/contest.interface';
+
+export interface IUserModelRatingHistoryItem {
   contest: {
-    contestId: number;
+    contestId: IContestModel['contestId'];
     title: string;
   };
   rank: number;
   rating: number;
   ratingChange: number;
-  date: string;
+  date: string; // YYYY-MM-DD
 }
 
-type IUserModelRatingHistory = IUserModelRatingHistoryItem[];
+export type IUserModelRatingHistory = IUserModelRatingHistoryItem[];
 
 interface IUserSettings {}
 
