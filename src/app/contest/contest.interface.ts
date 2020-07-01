@@ -1,4 +1,4 @@
-import { IUserModel } from '../user/user.interface';
+import { IUserModel, IUserModelRatingHistory } from '../user/user.interface';
 import { EContestType, EContestCategory, EContestMode, EContestUserStatus } from '@/common/enums';
 import { IMProblemDetail } from '../problem/problem.interface';
 
@@ -238,6 +238,30 @@ export interface IMContestUserDetail {
   createdAt: IContestUserModel['createdAt'];
 }
 export type IMContestUserListPagination = defService.ServiceListOpt<TContestUserModelFields>;
+//#endregion
+
+//#region contest problem model
+export interface IRatingContestModel {
+  contestId: number;
+  ratingUntil: Record<
+    IUserModel['userId'],
+    {
+      rating: number;
+      ratingHistory: IUserModelRatingHistory;
+    }
+  >;
+  ratingChange: Record<
+    IUserModel['userId'],
+    {
+      oldRating: number;
+      newRating: number;
+      rank: number;
+      ratingChange: number;
+    }
+  >;
+  createdAt: Date;
+  updatedAt: Date;
+}
 //#endregion
 
 //#region service.getList
