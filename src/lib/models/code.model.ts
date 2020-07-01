@@ -60,7 +60,7 @@ export default class CodeModel extends Model<CodeModel> {
     field: 'code_content',
     type: DataType.TEXT({ length: 'long' }),
   })
-  codeContent: string;
+  code: string;
 }
 
 export type TCodeModel = typeof CodeModel;
