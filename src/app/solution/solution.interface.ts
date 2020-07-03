@@ -15,6 +15,7 @@ export interface ISolutionModel {
   username: string;
   ip: string;
   shared: boolean;
+  isContestUser: boolean;
   createdAt: Date;
 }
 
@@ -32,6 +33,7 @@ export type TMSolutionLiteFields = Extract<
   | 'language'
   | 'codeLength'
   | 'shared'
+  | 'isContestUser'
   | 'createdAt'
 >;
 
@@ -47,6 +49,7 @@ export type TMSolutionDetailFields = Extract<
   | 'language'
   | 'codeLength'
   | 'shared'
+  | 'isContestUser'
   | 'createdAt'
 >;
 
@@ -57,6 +60,7 @@ export type IMSolutionRelativeUser = Pick<
 >;
 export type IMSolutionRelativeContest = Pick<IContestModel, 'contestId' | 'title' | 'type'>;
 
+export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
 export type IMSolutionLite = Omit<
   Pick<ISolutionModel, TMSolutionLiteFields>,
   'problemId' | 'userId' | 'contestId'
@@ -67,6 +71,7 @@ export type IMSolutionLite = Omit<
 } & {
   contest?: IMSolutionRelativeContest;
 };
+export type IMSolutionDetailPlain = Pick<ISolutionModel, TMSolutionDetailFields>;
 export type IMSolutionDetail = Omit<
   Pick<ISolutionModel, TMSolutionDetailFields>,
   'problemId' | 'userId' | 'contestId'
@@ -76,7 +81,11 @@ export type IMSolutionDetail = Omit<
   user: IMSolutionRelativeUser;
 } & {
   contest?: IMSolutionRelativeContest;
+} & {
+  compileInfo: string;
+  code: string;
 };
+export type IMSolutionListPagination = defService.ServiceListOpt<TSolutionModelFields>;
 
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {

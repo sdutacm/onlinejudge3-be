@@ -224,6 +224,14 @@ export default class SolutionModel extends Model<SolutionModel> implements ISolu
     type: DataType.BOOLEAN,
   })
   shared: boolean;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    field: 'is_contest_user',
+    type: DataType.BOOLEAN,
+  })
+  isContestUser: boolean;
 }
 
 export type TSolutionModel = typeof SolutionModel;
