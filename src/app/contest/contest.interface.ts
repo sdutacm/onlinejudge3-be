@@ -373,6 +373,13 @@ export type IMContestServiceGetContestUserListRes = defModel.ListModelRes<IMCont
 export type IMContestServiceGetContestUserDetailRes = defModel.DetailModelRes<IMContestUserDetail>;
 //#endregion
 
+//#region service.getRelativeContestUser
+export type IMContestServiceGetRelativeContestUserRes = Record<
+  IContestUserModel['contestUserId'],
+  IMContestUserDetail
+>;
+//#endregion
+
 //#region service.findOneContestUser
 export type IMContestServiceFindOneContestUserOpt = Partial<IContestUserModel>;
 export type IMContestServiceFindOneContestUserRes = defModel.DetailModelRes<IMContestUserDetail>;

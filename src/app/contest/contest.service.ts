@@ -44,6 +44,7 @@ import {
   IMContestServiceCreateContestUserRes,
   IMContestServiceUpdateContestUserOpt,
   IMContestServiceUpdateContestUserRes,
+  IMContestServiceGetRelativeContestUserRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -798,6 +799,49 @@ export default class ContestService {
         })
         .then((d) => d && this._parseContestUser<IMContestUserDetail>(d.get({ plain: true })));
       await this._setContestUserDetailCache(contestUserId, res);
+    }
+    return res;
+  }
+
+  /**
+   * 按 pk 关联查询比赛用户详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表
+   */
+  async getRelativeContestUser(
+    keys: IContestUserModel['contestUserId'][],
+  ): Promise<IMContestServiceGetRelativeContestUserRes> {
+    const ks = this.lodash.uniq(keys);
+    const res: IMContestServiceGetRelativeContestUserRes = {};
+    let uncached: typeof keys = [];
+    for (const k of ks) {
+      const cached = await this._getContestUserDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
+      }
+    }
+    if (uncached.length) {
+      const dbRes = await this.contestUserModel
+        .findAll({
+          attributes: contestUserDetailFields,
+          where: {
+            contestUserId: {
+              [Op.in]: uncached,
+            },
+          },
+        })
+        .then((r) =>
+          r.map((d) => this._parseContestUser<IMContestUserDetail>(d.get({ plain: true }))),
+        );
+      for (const d of dbRes) {
+        res[d.contestUserId] = d;
+        await this._setContestUserDetailCache(d.contestUserId, d);
+      }
+      for (const k of ks) {
+        !res[k] && (await this._setContestUserDetailCache(k, null));
+      }
     }
     return res;
   }
