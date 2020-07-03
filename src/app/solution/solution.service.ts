@@ -191,7 +191,7 @@ export default class SolutionService {
             rating: relativeUser?.rating,
           };
         }
-        return {
+        const ret: IMSolutionLite = {
           ...this.lodash.omit(d, ['problemId', 'userId', 'contestId']),
           problem: {
             problemId: relativeProblem?.problemId,
@@ -199,12 +199,15 @@ export default class SolutionService {
             timeLimit: relativeProblem?.timeLimit,
           },
           user,
-          contest: {
-            contestId: relativeContest?.contestId,
-            title: relativeContest?.title,
-            type: relativeContest?.type,
-          },
         };
+        if (relativeContest) {
+          ret.contest = {
+            contestId: relativeContest.contestId,
+            title: relativeContest.title,
+            type: relativeContest.type,
+          };
+        }
+        return ret;
       }),
     };
   }
