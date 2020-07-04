@@ -94,6 +94,12 @@ export default class ProblemService {
   @config('durations')
   durations: IDurationsConfig;
 
+  scopeChecker = {
+    available(data: Partial<IProblemModel> | null): boolean {
+      return data?.display === true;
+    },
+  };
+
   /**
    * 获取详情缓存。
    * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
@@ -206,7 +212,6 @@ export default class ProblemService {
 
   /**
    * 获取题目详情。
-   * 只有默认 scope 的查询会缓存
    * @param problemId problemId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
@@ -215,12 +220,12 @@ export default class ProblemService {
     scope: TProblemModelScopes | null = 'available',
   ): Promise<IMProblemServiceGetDetailRes> {
     let res: IMProblemServiceGetDetailRes = null;
-    const cached = scope === 'available' ? await this._getDetailCache(problemId) : null;
+    const cached = await this._getDetailCache(problemId);
     if (cached) {
       res = cached;
     } else if (cached === null) {
       res = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findOne({
           attributes: problemDetailFields,
           where: {
@@ -245,7 +250,11 @@ export default class ProblemService {
           }
           return d;
         });
-      scope === 'available' && (await this._setDetailCache(problemId, res));
+      await this._setDetailCache(problemId, res);
+    }
+    // 使用缓存，业务上自己处理 scope
+    if (scope === null || this.scopeChecker[scope](res)) {
+      return res;
     }
     return res;
   }
@@ -263,21 +272,17 @@ export default class ProblemService {
     const ks = this.lodash.uniq(keys);
     const res: IMProblemServiceGetRelativeRes = {};
     let uncached: typeof keys = [];
-    if (scope === 'available') {
-      for (const k of ks) {
-        const cached = await this._getDetailCache(k);
-        if (cached) {
-          res[k] = cached;
-        } else if (cached === null) {
-          uncached.push(k);
-        }
+    for (const k of ks) {
+      const cached = await this._getDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
       }
-    } else {
-      uncached = ks;
     }
     if (uncached.length) {
       const dbRes = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findAll({
           attributes: problemDetailFields,
           where: {
@@ -305,12 +310,19 @@ export default class ProblemService {
         );
       for (const d of dbRes) {
         res[d.problemId] = d;
-        scope === 'available' && (await this._setDetailCache(d.problemId, d));
+        await this._setDetailCache(d.problemId, d);
       }
       for (const k of ks) {
-        !res[k] && scope === 'available' && (await this._setDetailCache(k, null));
+        !res[k] && (await this._setDetailCache(k, null));
       }
     }
+    // 使用缓存，业务上自己处理 scope
+    // @ts-ignore
+    Object.keys(res).forEach((k: number) => {
+      if (!(scope === null || this.scopeChecker[scope](res[k]))) {
+        delete res[k];
+      }
+    });
     return res;
   }
 

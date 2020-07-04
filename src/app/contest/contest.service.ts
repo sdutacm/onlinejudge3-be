@@ -217,10 +217,6 @@ export default class ContestService {
     },
   };
 
-  private _isDataScopeAvailable(data: Partial<IContestModel> | null) {
-    return data?.hidden === false;
-  }
-
   /**
    * 获取详情缓存。
    * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
@@ -501,21 +497,17 @@ export default class ContestService {
     const ks = this.lodash.uniq(keys);
     const res: IMContestServiceGetRelativeRes = {};
     let uncached: typeof keys = [];
-    if (scope === 'available') {
-      for (const k of ks) {
-        const cached = await this._getDetailCache(k);
-        if (cached) {
-          res[k] = cached;
-        } else if (cached === null) {
-          uncached.push(k);
-        }
+    for (const k of ks) {
+      const cached = await this._getDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
       }
-    } else {
-      uncached = ks;
     }
     if (uncached.length) {
       const dbRes = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findAll({
           attributes: contestDetailFields,
           where: {
@@ -527,12 +519,19 @@ export default class ContestService {
         .then((r) => r.map((d) => d.get({ plain: true }) as IMContestDetail));
       for (const d of dbRes) {
         res[d.contestId] = d;
-        scope === 'available' && (await this._setDetailCache(d.contestId, d));
+        await this._setDetailCache(d.contestId, d);
       }
       for (const k of ks) {
-        !res[k] && scope === 'available' && (await this._setDetailCache(k, null));
+        !res[k] && (await this._setDetailCache(k, null));
       }
     }
+    // 使用缓存，业务上自己处理 scope
+    // @ts-ignore
+    Object.keys(res).forEach((k: number) => {
+      if (!(scope === null || this.scopeChecker[scope](res[k]))) {
+        delete res[k];
+      }
+    });
     return res;
   }
 

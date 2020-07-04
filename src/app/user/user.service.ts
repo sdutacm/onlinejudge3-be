@@ -24,6 +24,7 @@ import { IUtils } from '@/utils';
 import { CUserMeta } from './user.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { ILodash } from '@/utils/libs/lodash';
+import { EUserForbidden } from '@/common/enums';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -90,6 +91,12 @@ export default class UserService {
 
   @config('durations')
   durations: IDurationsConfig;
+
+  scopeChecker = {
+    available(data: Partial<IUserModel> | null): boolean {
+      return data?.forbidden === EUserForbidden.normal;
+    },
+  };
 
   /**
    * 获取详情缓存。
@@ -182,7 +189,6 @@ export default class UserService {
 
   /**
    * 获取用户详情。
-   * 只有默认 scope 的查询会缓存
    * @param userId userId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
@@ -191,12 +197,12 @@ export default class UserService {
     scope: TUserModelScopes | null = 'available',
   ): Promise<IMUserServiceGetDetailRes> {
     let res: IMUserServiceGetDetailRes = null;
-    const cached = scope === 'available' ? await this._getDetailCache(userId) : null;
+    const cached = await this._getDetailCache(userId);
     if (cached) {
       res = cached;
     } else if (cached === null) {
       res = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findOne({
           attributes: userDetailFields,
           where: {
@@ -204,7 +210,11 @@ export default class UserService {
           },
         })
         .then((d) => d && (d.get({ plain: true }) as IMUserDetail));
-      scope === 'available' && (await this._setDetailCache(userId, res));
+      await this._setDetailCache(userId, res);
+    }
+    // 使用缓存，业务上自己处理 scope
+    if (scope === null || this.scopeChecker[scope](res)) {
+      return res;
     }
     return res;
   }
@@ -222,21 +232,17 @@ export default class UserService {
     const ks = this.lodash.uniq(keys);
     const res: IMUserServiceGetRelativeRes = {};
     let uncached: typeof keys = [];
-    if (scope === 'available') {
-      for (const k of ks) {
-        const cached = await this._getDetailCache(k);
-        if (cached) {
-          res[k] = cached;
-        } else if (cached === null) {
-          uncached.push(k);
-        }
+    for (const k of ks) {
+      const cached = await this._getDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
       }
-    } else {
-      uncached = ks;
     }
     if (uncached.length) {
       const dbRes = await this.model
-        .scope(scope || undefined)
+        // .scope(scope || undefined)
         .findAll({
           attributes: userDetailFields,
           where: {
@@ -248,13 +254,20 @@ export default class UserService {
         .then((r) => r.map((d) => d.get({ plain: true }) as IMUserDetail));
       for (const d of dbRes) {
         res[d.userId] = d;
-        scope === 'available' && (await this._setDetailCache(d.userId, d));
+        await this._setDetailCache(d.userId, d);
       }
       // 查不到的也要缓存
       for (const k of ks) {
-        !res[k] && scope === 'available' && (await this._setDetailCache(k, null));
+        !res[k] && (await this._setDetailCache(k, null));
       }
     }
+    // 使用缓存，业务上自己处理 scope
+    // @ts-ignore
+    Object.keys(res).forEach((k: number) => {
+      if (!(scope === null || this.scopeChecker[scope](res[k]))) {
+        delete res[k];
+      }
+    });
     return res;
   }
 
