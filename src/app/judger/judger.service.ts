@@ -6,12 +6,12 @@ import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
-import { IAppConfig } from '@/config/config.interface';
 import path from 'path';
 import { IFs } from '@/utils/libs/fs-extra';
 import { IIsBinaryFile } from '@/utils/libs/isbinaryfile';
 import { CAdmZip } from '@/utils/libs/adm-zip';
 import { ISimpleGit, SimpleGit } from '@/utils/libs/simple-git';
+import { IJudgerConfig } from '@/config/judger.config';
 
 export type CJudgerService = JudgerService;
 
@@ -48,13 +48,13 @@ export default class JudgerService {
   durations: IDurationsConfig;
 
   @config('judger')
-  judgerConfig: IAppConfig['judger'];
+  judgerConfig: IJudgerConfig;
 
   git: SimpleGit;
 
   constructor(
     @config('judger')
-    judgerConfig: IAppConfig['judger'],
+    judgerConfig: IJudgerConfig,
 
     @inject()
     simpleGit: ISimpleGit,

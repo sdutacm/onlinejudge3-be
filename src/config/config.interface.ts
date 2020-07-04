@@ -3,6 +3,7 @@ import 'egg-sequelize/index';
 import 'egg-redis/index';
 import { IRedisKeyConfig } from './redisKey.config';
 import { IDurationsConfig } from './durations.config';
+import { IJudgerConfig } from './judger.config';
 
 export interface IAppConfig extends PowerPartial<EggAppConfig> {
   welcomeMsg: string;
@@ -10,6 +11,7 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   siteTeam: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
+  judger: IJudgerConfig;
   staticPath: {
     avatar: string;
     bannerImage: string;
@@ -27,11 +29,5 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     fromAlias: string;
     tagName: string;
     regionId: 'cn-hangzhou';
-  };
-  judger: {
-    dataPath: string;
-    dataGitBranch: string;
-    dataGitUser: string;
-    dataGitEmail: string;
   };
 }

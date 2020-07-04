@@ -1,10 +1,11 @@
 import { EggAppInfo, Context } from 'midway';
 import { IAppConfig } from './config.interface';
+import path from 'path';
 import { Codes, codeMsgs } from '@/common/codes';
 import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
-import path from 'path';
+import judgerConfig from './judger.config';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
@@ -110,6 +111,8 @@ export default (appInfo: EggAppInfo) => {
   config.redisKey = redisKey;
 
   config.durations = durations;
+
+  config.judger = judgerConfig;
   // #endregion
 
   config.mail = {
@@ -119,13 +122,6 @@ export default (appInfo: EggAppInfo) => {
     fromAlias: 'SDUTACM',
     tagName: 'SDUTACM',
     regionId: 'cn-hangzhou',
-  };
-
-  config.judger = {
-    dataPath: path.join(__dirname, '../../judger-data_test'),
-    dataGitBranch: 'master',
-    dataGitUser: 'sdutacm',
-    dataGitEmail: 'sdutacm@163.com',
   };
 
   return config;
