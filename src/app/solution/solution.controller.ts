@@ -7,6 +7,7 @@ import { CSolutionService } from './solution.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
 import { IGetSolutionListReq } from '@/common/contracts/solution';
+import { IMSolutionServiceGetListRes } from './solution.interface';
 
 @provide()
 @controller('/')
@@ -33,6 +34,16 @@ export default class SolutionController {
       const { contestId } = ctx.request.body as IGetSolutionListReq;
       if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
         delete ctx.request.body.contest;
+      }
+    },
+    afterGetList(ctx) {
+      const { contestId } = ctx.request.body as IGetSolutionListReq;
+      if (contestId && !ctx.helper.isContestLoggedIn(contestId) && !ctx.isPerm) {
+        (ctx.list as IMSolutionServiceGetListRes).rows.forEach((d) => {
+          delete d.time;
+          delete d.memory;
+          delete d.codeLength;
+        });
       }
     },
   })
