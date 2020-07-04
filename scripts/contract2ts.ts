@@ -7,6 +7,7 @@ import userContract from '../src/app/user/user.contract';
 import verificationContract from '../src/app/verification/verification.contract';
 import problemContract from '../src/app/problem/problem.contract';
 import tagContract from '../src/app/tag/tag.contract';
+import solutionContract from '../src/app/solution/solution.contract';
 import contestContract from '../src/app/contest/contest.contract';
 import judgerContract from '../src/app/judger/judger.contract';
 
@@ -17,6 +18,7 @@ const contracts = [
   [verificationContract, 'verification'],
   [problemContract, 'problem'],
   [tagContract, 'tag'],
+  [solutionContract, 'solution'],
   [contestContract, 'contest'],
   [judgerContract, 'judger'],
 ];
