@@ -256,7 +256,7 @@ export default class ProblemService {
     if (scope === null || this.scopeChecker[scope](res)) {
       return res;
     }
-    return res;
+    return null;
   }
 
   /**

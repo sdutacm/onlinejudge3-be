@@ -216,7 +216,7 @@ export default class UserService {
     if (scope === null || this.scopeChecker[scope](res)) {
       return res;
     }
-    return res;
+    return null;
   }
 
   /**

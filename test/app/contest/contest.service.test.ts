@@ -212,7 +212,7 @@ describe(basename(__filename), () => {
       // 测试有缓存
       await app.redis.set(
         'cache:contest_detail:1000',
-        '{"contestId":1000,"title":"mock","startAt":"2019-12-31T16:00:00.000Z","endAt":"2019-12-31T16:00:00.000Z"}',
+        '{"contestId":1000,"title":"mock","startAt":"2019-12-31T16:00:00.000Z","endAt":"2019-12-31T16:00:00.000Z","hidden":false}',
       );
       let res = await service.getDetail(1000);
       assert.deepStrictEqual(res, {
@@ -220,6 +220,7 @@ describe(basename(__filename), () => {
         title: 'mock',
         startAt: new Date('2020-01-01T00:00:00+08:00'),
         endAt: new Date('2020-01-01T00:00:00+08:00'),
+        hidden: false,
       });
       await app.redis.del('cache:contest_detail:1000');
       // 测试无缓存
@@ -252,8 +253,7 @@ describe(basename(__filename), () => {
     it('should work with scope', async () => {
       const service = await getService();
       assert.strictEqual(await service.getDetail(1003, 'available'), null);
-      // 默认 scope 时，结果为 null 时也应缓存
-      assert.strictEqual(await app.redis.get('cache:contest_detail:1003'), '');
+      assert(await app.redis.get('cache:contest_detail:1003'));
       // 当 scope 为 null 时，应可以查到数据
       assert(await service.getDetail(1003, null));
     });
@@ -277,7 +277,7 @@ describe(basename(__filename), () => {
       // 测试有缓存
       await app.redis.set(
         'cache:contest_detail:1000',
-        '{"contestId":1000,"title":"mock","startAt":"2019-12-31T16:00:00.000Z","endAt":"2019-12-31T16:00:00.000Z"}',
+        '{"contestId":1000,"title":"mock","startAt":"2019-12-31T16:00:00.000Z","endAt":"2019-12-31T16:00:00.000Z","hidden":false}',
       );
       let res = await service.getRelative([1000]);
       assert.deepStrictEqual(res, {
@@ -286,11 +286,12 @@ describe(basename(__filename), () => {
           title: 'mock',
           startAt: new Date('2020-01-01T00:00:00+08:00'),
           endAt: new Date('2020-01-01T00:00:00+08:00'),
+          hidden: false,
         },
       });
       await app.redis.del('cache:contest_detail:1000');
       // 测试无缓存
-      res = await service.getRelative([1000, 42, 1000]);
+      res = await service.getRelative([1000, 42, 1003, 1000]);
       const expected: IMContestServiceGetRelativeRes = {
         1000: {
           contestId: 1000,
@@ -317,12 +318,12 @@ describe(basename(__filename), () => {
         '{"registerStartAt":null,"registerEndAt":null,"contestId":1000,"title":"c1000","type":3,"category":0,"mode":0,"intro":"","description":"mock_description","password":"","startAt":"2020-01-01T01:00:00.000Z","endAt":"2020-01-01T06:00:00.000Z","frozenLength":0,"team":false,"ended":false,"hidden":false}',
       );
       assert.strictEqual(await app.redis.get('cache:contest_detail:42'), '');
+      // 不在默认 scope 的也应被缓存
+      assert(await app.redis.get('cache:contest_detail:1003'));
     });
 
     it('should work with scope', async () => {
       const service = await getService();
-      await app.redis.set('cache:contest_detail:1003', '');
-      // 即使之前有缓存为 null，也应忽略缓存从数据库拉取
       const res = await service.getRelative([1003], null);
       assert(res[1003]);
     });

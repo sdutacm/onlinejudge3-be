@@ -214,12 +214,13 @@ describe(basename(__filename), () => {
       // 测试有缓存
       await app.redis.set(
         'cache:user_detail:1',
-        '{"userId":1,"username":"root_mock","createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"userId":1,"username":"root_mock","forbidden":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
       let res = await service.getDetail(1);
       assert.deepStrictEqual(res, {
         userId: 1,
         username: 'root_mock',
+        forbidden: 0,
         createdAt: new Date('2020-01-01T00:00:00+08:00'),
       });
       await app.redis.del('cache:user_detail:1');
@@ -261,8 +262,7 @@ describe(basename(__filename), () => {
     it('should work with scope', async () => {
       const service = await getService();
       assert.strictEqual(await service.getDetail(2, 'available'), null);
-      // 默认 scope 时，结果为 null 时也应缓存
-      assert.strictEqual(await app.redis.get('cache:user_detail:2'), '');
+      assert(await app.redis.get('cache:user_detail:2'));
       // 当 scope 为 null 时，应可以查到数据
       assert(await service.getDetail(2, null));
     });
@@ -285,19 +285,20 @@ describe(basename(__filename), () => {
       // 测试有缓存
       await app.redis.set(
         'cache:user_detail:1',
-        '{"userId":1,"username":"root_mock","createdAt":"2019-12-31T16:00:00.000Z"}',
+        '{"userId":1,"username":"root_mock","forbidden":0,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
       let res = await service.getRelative([1]);
       assert.deepStrictEqual(res, {
         1: {
           userId: 1,
           username: 'root_mock',
+          forbidden: 0,
           createdAt: new Date('2020-01-01T00:00:00+08:00'),
         },
       });
       await app.redis.del('cache:user_detail:1');
       // 测试无缓存
-      res = await service.getRelative([1, 1024, 1]);
+      res = await service.getRelative([1, 1024, 2, 1]);
       const expected: IMUserServiceGetRelativeRes = {
         1: {
           userId: 1,
@@ -332,12 +333,13 @@ describe(basename(__filename), () => {
         '{"lastTime":null,"settings":null,"ratingHistory":null,"userId":1,"username":"root","nickname":"hack","email":"root@sdutacm.cn","submitted":0,"accepted":0,"permission":3,"avatar":"","bannerImage":"","school":"","college":"","major":"","class":"","grade":"","forbidden":0,"rating":0,"site":"","defaultLanguage":"javascript","coin":0,"verified":true,"createdAt":"2019-12-31T16:00:00.000Z"}',
       );
       assert.strictEqual(await app.redis.get('cache:user_detail:1024'), '');
+      // 不在默认 scope 的也应被缓存
+      assert(await app.redis.get('cache:user_detail:2'));
     });
 
     it('should work with scope', async () => {
+      await app.redis.del('cache:user_detail:2');
       const service = await getService();
-      await app.redis.set('cache:user_detail:2', '');
-      // 即使之前有缓存为 null，也应忽略缓存从数据库拉取
       const res = await service.getRelative([2], null);
       assert(res[2]);
     });
