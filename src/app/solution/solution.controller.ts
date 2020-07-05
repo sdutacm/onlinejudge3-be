@@ -14,7 +14,7 @@ import { IUtils } from '@/utils';
 import { CSolutionService } from './solution.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
-import { IGetSolutionListReq } from '@/common/contracts/solution';
+import { IGetSolutionListReq, IUpdateSolutionShareReq } from '@/common/contracts/solution';
 import { IMSolutionServiceGetListRes, IMSolutionDetail } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
@@ -36,6 +36,16 @@ export default class SolutionController {
 
   @inject()
   lodash: ILodash;
+
+  private _solutionIsSelf(ctx: Context, detail: IMSolutionDetail) {
+    return (
+      (ctx.loggedIn && ctx.session.userId === detail.user.userId) ||
+      (detail.contest?.contestId &&
+        detail.isContestUser &&
+        detail.user.userId &&
+        ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
+    );
+  }
 
   @route()
   @pagination()
@@ -61,24 +71,31 @@ export default class SolutionController {
   async [routesBe.getSolutionList.i](_ctx: Context) {}
 
   @route()
-  @login()
   @id()
   @getDetail()
   async [routesBe.getSolutionDetail.i](ctx: Context) {
     const detail = ctx.detail as IMSolutionDetail;
-    if (
-      !(
-        ctx.isPerm ||
-        detail.shared ||
-        ctx.session.userId === detail.user.userId ||
-        (detail.contest?.contestId &&
-          detail.isContestUser &&
-          detail.user.userId &&
-          ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
-      )
-    ) {
+    const isSelf = this._solutionIsSelf(ctx, detail);
+    if (!(ctx.isPerm || (ctx.loggedIn && detail.shared) || isSelf)) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
     return detail;
+  }
+
+  @route()
+  @id()
+  @getDetail()
+  async [routesBe.updateSolutionShare.i](ctx: Context) {
+    const solutionId = ctx.id!;
+    const { shared } = ctx.request.body as IUpdateSolutionShareReq;
+    const detail = ctx.detail as IMSolutionDetail;
+    const isSelf = this._solutionIsSelf(ctx, detail);
+    if (!isSelf) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.update(solutionId, {
+      shared,
+    });
+    await this.service.clearDetailCache(solutionId);
   }
 }

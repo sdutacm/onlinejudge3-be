@@ -181,6 +181,15 @@ const solutionContract = {
       'createdAt',
     ],
   } as defContract.ContractSchema,
+
+  updateSolutionShareReq: {
+    properties: {
+      solutionId: { type: 'number', minimum: 1 },
+      shared: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['solutionId', 'shared'],
+  } as defContract.ContractSchema,
 };
 
 export type ISolutionContract = typeof solutionContract;
