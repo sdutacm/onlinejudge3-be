@@ -91,6 +91,11 @@ export type IMSolutionDetail = Omit<
 };
 export type IMSolutionListPagination = defService.ServiceListOpt<TSolutionModelFields>;
 
+export interface IMSolutionUserProblemResultStats {
+  acceptedProblemIds: ISolutionModel['problemId'][];
+  attemptedProblemIds: ISolutionModel['problemId'][];
+}
+
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {
   solutionId?: ISolutionModel['solutionId'];

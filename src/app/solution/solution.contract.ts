@@ -190,6 +190,24 @@ const solutionContract = {
     additionalProperties: false,
     required: ['solutionId', 'shared'],
   } as defContract.ContractSchema,
+
+  getUserProblemResultStatsReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
+  getUserProblemResultStatsResp: {
+    properties: {
+      acceptedProblemIds: { type: 'array', items: { type: 'number' } },
+      attemptedProblemIds: { type: 'array', items: { type: 'number' } },
+    },
+    additionalProperties: false,
+    required: ['acceptedProblemIds', 'attemptedProblemIds'],
+  } as defContract.ContractSchema,
 };
 
 export type ISolutionContract = typeof solutionContract;

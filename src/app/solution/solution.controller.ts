@@ -6,7 +6,6 @@ import {
   respList,
   getDetail,
   id,
-  login,
 } from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
@@ -97,5 +96,11 @@ export default class SolutionController {
       shared,
     });
     await this.service.clearDetailCache(solutionId);
+  }
+
+  @route()
+  async [routesBe.getUserProblemResultStats.i](ctx: Context) {
+    const { userId, contestId } = ctx.request.body;
+    return this.service.getUserProblemResultStats(userId, contestId);
   }
 }

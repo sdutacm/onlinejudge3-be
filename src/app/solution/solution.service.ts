@@ -21,8 +21,9 @@ import {
   IMSolutionServiceCreateRes,
   IMSolutionServiceUpdateOpt,
   IMSolutionServiceUpdateRes,
+  IMSolutionUserProblemResultStats,
 } from './solution.interface';
-import { Op } from 'sequelize';
+import { Op, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
@@ -30,6 +31,7 @@ import { CUserService } from '../user/user.service';
 import { CContestService } from '../contest/contest.service';
 import { TCompileInfoModel } from '@/lib/models/compileInfo.model';
 import { TCodeModel } from '@/lib/models/code.model';
+import { ESolutionResult } from '@/common/enums';
 
 export type CSolutionService = SolutionService;
 
@@ -126,6 +128,37 @@ export default class SolutionService {
     return this.ctx.helper.redisSet(
       this.meta.detailCacheKey,
       [solutionId],
+      data,
+      data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取用户题目提交统计缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param userId userId
+   */
+  private async _getUserProblemResultStatsCache(
+    userId: ISolutionModel['userId'],
+  ): Promise<IMSolutionUserProblemResultStats | null> {
+    return this.ctx.helper.redisGet<IMSolutionUserProblemResultStats>(
+      this.redisKey.userProblemResultStats,
+      [userId],
+    );
+  }
+
+  /**
+   * 设置用户题目提交统计缓存。
+   * @param solutionId solutionId
+   * @param data 数据
+   */
+  private async _setUserProblemResultStatsCache(
+    userId: ISolutionModel['userId'],
+    data: IMSolutionUserProblemResultStats,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userProblemResultStats,
+      [userId],
       data,
       data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
     );
@@ -360,5 +393,55 @@ export default class SolutionService {
    */
   async clearDetailCache(solutionId: ISolutionModel['solutionId']): Promise<void> {
     return this.ctx.helper.redisDel(this.meta.detailCacheKey, [solutionId]);
+  }
+
+  /**
+   * 获取指定用户提交过的 problemId 列表（去重）
+   * @param userId userId
+   * @param contestId contestId
+   * @param result 评测结果
+   */
+  async getUserSubmittedProblemIds(
+    userId: ISolutionModel['userId'],
+    contestId?: ISolutionModel['contestId'],
+    result?: ESolutionResult,
+  ): Promise<ISolutionModel['problemId'][]> {
+    return this.model
+      .findAll({
+        attributes: [[sequelizeFn('DISTINCT', sequelizeCol('problem_id')), 'problemId']],
+        // @ts-ignore
+        where: this.utils.misc.ignoreUndefined({
+          userId,
+          contestId,
+          result: result,
+        }),
+      })
+      .then((r: any) => r.map((d: any) => d.problemId));
+  }
+
+  /**
+   * 获取用户题目的 已通过/已尝试未通过 提交统计
+   * @param userId userId
+   * @param contestId contestId
+   */
+  async getUserProblemResultStats(
+    userId: ISolutionModel['userId'],
+    contestId?: ISolutionModel['contestId'],
+  ): Promise<IMSolutionUserProblemResultStats> {
+    let res: IMSolutionUserProblemResultStats | null = null;
+    if (!contestId) {
+      const cached = await this._getUserProblemResultStatsCache(userId);
+      cached && (res = cached);
+    }
+    if (!res) {
+      const [acceptedProblemIds, submittedProblemIds] = await Promise.all([
+        this.getUserSubmittedProblemIds(userId, contestId, ESolutionResult.AC),
+        this.getUserSubmittedProblemIds(userId, contestId),
+      ]);
+      const attemptedProblemIds = this.lodash.difference(submittedProblemIds, acceptedProblemIds);
+      res = { acceptedProblemIds, attemptedProblemIds };
+      !contestId && (await this._setUserProblemResultStatsCache(userId, res));
+    }
+    return res;
   }
 }
