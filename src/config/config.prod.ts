@@ -6,6 +6,7 @@ export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
 
   config.proxy = true;
+  config.maxIpsCount = 1;
 
   config.security = {
     csrf: {
