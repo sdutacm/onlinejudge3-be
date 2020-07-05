@@ -1,5 +1,13 @@
 import { Context, controller, inject, provide } from 'midway';
-import { route, pagination, getList, respList } from '@/lib/decorators/controller.decorator';
+import {
+  route,
+  pagination,
+  getList,
+  respList,
+  getDetail,
+  id,
+  login,
+} from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -7,7 +15,9 @@ import { CSolutionService } from './solution.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
 import { IGetSolutionListReq } from '@/common/contracts/solution';
-import { IMSolutionServiceGetListRes } from './solution.interface';
+import { IMSolutionServiceGetListRes, IMSolutionDetail } from './solution.interface';
+import { ReqError } from '@/lib/global/error';
+import { Codes } from '@/common/codes';
 
 @provide()
 @controller('/')
@@ -49,4 +59,26 @@ export default class SolutionController {
   })
   @respList()
   async [routesBe.getSolutionList.i](_ctx: Context) {}
+
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.getSolutionDetail.i](ctx: Context) {
+    const detail = ctx.detail as IMSolutionDetail;
+    if (
+      !(
+        ctx.isPerm ||
+        detail.shared ||
+        ctx.session.userId === detail.user.userId ||
+        (detail.contest?.contestId &&
+          detail.isContestUser &&
+          detail.user.userId &&
+          ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
+      )
+    ) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    return detail;
+  }
 }

@@ -1,4 +1,4 @@
-import { provide, inject, Context, config } from 'midway';
+import { provide, inject, Context, config, scope } from 'midway';
 import { CSolutionMeta } from './solution.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
@@ -13,6 +13,12 @@ import {
   IMSolutionServiceGetListRes,
   IMSolutionLitePlain,
   IMSolutionLite,
+  IMSolutionRelativeProblem,
+  IMSolutionRelativeUser,
+  IMSolutionRelativeContest,
+  IMSolutionServiceGetDetailRes,
+  IMSolutionDetailPlain,
+  IMSolutionDetailPlainFull,
 } from './solution.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -20,6 +26,8 @@ import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
 import { CUserService } from '../user/user.service';
 import { CContestService } from '../contest/contest.service';
+import { TCompileInfoModel } from '@/lib/models/compileInfo.model';
+import { TCodeModel } from '@/lib/models/code.model';
 
 export type CSolutionService = SolutionService;
 
@@ -62,6 +70,12 @@ export default class SolutionService {
   model: TSolutionModel;
 
   @inject()
+  compileInfoModel: TCompileInfoModel;
+
+  @inject()
+  codeModel: TCodeModel;
+
+  @inject()
   problemService: CProblemService;
 
   @inject()
@@ -92,9 +106,9 @@ export default class SolutionService {
    */
   private async _getDetailCache(
     solutionId: ISolutionModel['solutionId'],
-  ): Promise<IMSolutionDetail | null | ''> {
+  ): Promise<IMSolutionDetailPlainFull | null | ''> {
     return this.ctx.helper
-      .redisGet<IMSolutionDetail>(this.meta.detailCacheKey, [solutionId])
+      .redisGet<IMSolutionDetailPlainFull>(this.meta.detailCacheKey, [solutionId])
       .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt']));
   }
 
@@ -105,7 +119,7 @@ export default class SolutionService {
    */
   private async _setDetailCache(
     solutionId: ISolutionModel['solutionId'],
-    data: IMSolutionDetail | null,
+    data: IMSolutionDetailPlainFull | null,
   ): Promise<void> {
     return this.ctx.helper.redisSet(
       this.meta.detailCacheKey,
@@ -134,6 +148,80 @@ export default class SolutionService {
     };
   }
 
+  private async _handleRelativeData<T extends IMSolutionLitePlain>(
+    data: T[],
+  ): Promise<
+    Array<
+      Omit<T, 'problemId' | 'userId' | 'contestId'> & {
+        problem: IMSolutionRelativeProblem;
+      } & {
+        user: IMSolutionRelativeUser;
+      } & {
+        contest?: IMSolutionRelativeContest;
+      }
+    >
+  > {
+    const problemIds = data.map((d) => d.problemId);
+    const userIds = data.filter((d) => !d.isContestUser).map((d) => d.userId);
+    const contestUserIds = data.filter((d) => d.isContestUser).map((d) => d.userId);
+    const contestIds = data.filter((d) => d.contestId > 0).map((d) => d.contestId);
+    const [
+      relativeProblems,
+      relativeUsers,
+      relativeContestUsers,
+      relativeContests,
+    ] = await Promise.all([
+      this.problemService.getRelative(problemIds, null),
+      this.userService.getRelative(userIds, null),
+      this.contestService.getRelativeContestUser(contestUserIds),
+      this.contestService.getRelative(contestIds, null),
+    ]);
+    return data.map((d) => {
+      const relativeProblem = relativeProblems[d.problemId];
+      const relativeContest = relativeContests[d.contestId];
+      let user: IMSolutionRelativeUser;
+      if (d.isContestUser) {
+        const relativeUser = relativeContestUsers[d.userId];
+        user = {
+          userId: relativeUser?.contestUserId,
+          username: relativeUser?.username,
+          nickname: relativeUser?.nickname,
+          avatar: relativeUser?.nickname,
+          bannerImage: '',
+          rating: 0, // TODO contest user rating
+        };
+      } else {
+        const relativeUser = relativeUsers[d.userId];
+        user = {
+          userId: relativeUser?.userId,
+          username: relativeUser?.username,
+          nickname: relativeUser?.nickname,
+          avatar: relativeUser?.nickname,
+          bannerImage: relativeUser?.bannerImage,
+          rating: relativeUser?.rating,
+        };
+      }
+      const ret = {
+        ...this.lodash.omit(d, ['problemId', 'userId', 'contestId']),
+        problem: {
+          problemId: relativeProblem?.problemId,
+          title: relativeProblem?.title,
+          timeLimit: relativeProblem?.timeLimit,
+        },
+        user,
+        contest: {
+          contestId: relativeContest?.contestId,
+          title: relativeContest?.title,
+          type: relativeContest?.type,
+        },
+      };
+      if (!relativeContest) {
+        delete ret.contest;
+      }
+      return ret;
+    });
+  }
+
   /**
    * 获取提交列表。
    * @param options 查询参数
@@ -156,59 +244,63 @@ export default class SolutionService {
         ...r,
         rows: r.rows.map((d) => d.get({ plain: true }) as IMSolutionLitePlain),
       }));
-    const problemIds = res.rows.map((d) => d.problemId);
-    const userIds = res.rows.filter((d) => !d.isContestUser).map((d) => d.userId);
-    const contestUserIds = res.rows.filter((d) => d.isContestUser).map((d) => d.userId);
-    const contestIds = res.rows.filter((d) => d.contestId > 0).map((d) => d.contestId);
-    const relativeProblems = await this.problemService.getRelative(problemIds, null);
-    const relativeUsers = await this.userService.getRelative(userIds, null);
-    const relativeContestUsers = await this.contestService.getRelativeContestUser(contestUserIds);
-    const relativeContests = await this.contestService.getRelative(contestIds, null);
     return {
       ...res,
-      rows: res.rows.map((d) => {
-        const relativeProblem = relativeProblems[d.problemId];
-        const relativeContest = relativeContests[d.contestId];
-        let user: IMSolutionLite['user'];
-        if (d.isContestUser) {
-          const relativeUser = relativeContestUsers[d.userId];
-          user = {
-            userId: relativeUser?.contestUserId,
-            username: relativeUser?.username,
-            nickname: relativeUser?.nickname,
-            avatar: relativeUser?.nickname,
-            bannerImage: '',
-            rating: 0, // TODO contest user rating
-          };
-        } else {
-          const relativeUser = relativeUsers[d.userId];
-          user = {
-            userId: relativeUser?.userId,
-            username: relativeUser?.username,
-            nickname: relativeUser?.nickname,
-            avatar: relativeUser?.nickname,
-            bannerImage: relativeUser?.bannerImage,
-            rating: relativeUser?.rating,
-          };
-        }
-        const ret: IMSolutionLite = {
-          ...this.lodash.omit(d, ['problemId', 'userId', 'contestId']),
-          problem: {
-            problemId: relativeProblem?.problemId,
-            title: relativeProblem?.title,
-            timeLimit: relativeProblem?.timeLimit,
-          },
-          user,
-        };
-        if (relativeContest) {
-          ret.contest = {
-            contestId: relativeContest.contestId,
-            title: relativeContest.title,
-            type: relativeContest.type,
-          };
-        }
-        return ret;
-      }),
+      rows: await this._handleRelativeData(res.rows),
     };
+  }
+
+  /**
+   * 获取提交详情。
+   * @param solutionId solutionId
+   */
+  async getDetail(
+    solutionId: ISolutionModel['solutionId'],
+  ): Promise<IMSolutionServiceGetDetailRes> {
+    let res: IMSolutionDetailPlainFull | null = null;
+    const cached = await this._getDetailCache(solutionId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      const dbRes = await this.model
+        .findOne({
+          attributes: solutionDetailFields,
+          where: {
+            solutionId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IMSolutionDetailPlain));
+      const compileInfo =
+        (
+          await this.compileInfoModel.findOne({
+            attributes: ['compileInfo'],
+            where: {
+              solutionId,
+            },
+          })
+        )?.compileInfo || '';
+      const code =
+        (
+          await this.codeModel.findOne({
+            attributes: ['code'],
+            where: {
+              solutionId,
+            },
+          })
+        )?.code || '';
+      res = dbRes
+        ? {
+            ...dbRes,
+            compileInfo,
+            code,
+          }
+        : null;
+      await this._setDetailCache(solutionId, res);
+    }
+    if (!res) {
+      return res;
+    }
+    const [ret] = await this._handleRelativeData([res]);
+    return ret;
   }
 }

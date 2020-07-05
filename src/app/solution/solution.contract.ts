@@ -108,6 +108,79 @@ const solutionContract = {
     additionalProperties: false,
     required: ['page', 'limit', 'count', 'rows'],
   } as defContract.ContractSchema,
+
+  getSolutionDetailReq: {
+    properties: {
+      solutionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['solutionId'],
+  } as defContract.ContractSchema,
+
+  getSolutionDetailResp: {
+    properties: {
+      solutionId: { type: 'number' },
+      problem: {
+        type: 'object',
+        properties: {
+          problemId: { type: 'number' },
+          title: { type: 'string' },
+          timeLimit: { type: 'number' },
+        },
+        additionalProperties: false,
+        required: ['problemId', 'title', 'timeLimit'],
+      },
+      user: {
+        type: 'object',
+        properties: {
+          userId: { type: 'number' },
+          username: { type: 'string' },
+          nickname: { type: 'string' },
+          avatar: { type: ['string', 'null'] },
+          bannerImage: { type: 'string' },
+          rating: { type: 'number' },
+        },
+        additionalProperties: false,
+        required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage', 'rating'],
+      },
+      contest: {
+        type: 'object',
+        properties: {
+          contestId: { type: 'number' },
+          title: { type: 'string' },
+          type: { type: 'number' },
+        },
+        additionalProperties: false,
+        required: ['contestId', 'title', 'type'],
+      },
+      result: { type: 'number' },
+      time: { type: 'number' },
+      memory: { type: 'number' },
+      language: { type: 'string' },
+      codeLength: { type: 'number' },
+      compileInfo: { type: 'string' },
+      code: { type: 'string' },
+      shared: { type: 'boolean' },
+      isContestUser: { type: 'boolean' },
+      createdAt: { type: 'string', format: 'date-time' },
+    },
+    additionalProperties: false,
+    required: [
+      'solutionId',
+      'problem',
+      'user',
+      'result',
+      'time',
+      'memory',
+      'language',
+      'codeLength',
+      'compileInfo',
+      'code',
+      'shared',
+      'isContestUser',
+      'createdAt',
+    ],
+  } as defContract.ContractSchema,
 };
 
 export type ISolutionContract = typeof solutionContract;
