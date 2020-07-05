@@ -1,4 +1,4 @@
-import { provide, inject, Context, config, scope } from 'midway';
+import { provide, inject, Context, config } from 'midway';
 import { CSolutionMeta } from './solution.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
@@ -7,18 +7,20 @@ import {
   TMSolutionLiteFields,
   TMSolutionDetailFields,
   ISolutionModel,
-  IMSolutionDetail,
   IMSolutionServiceGetListOpt,
   IMSolutionListPagination,
   IMSolutionServiceGetListRes,
   IMSolutionLitePlain,
-  IMSolutionLite,
   IMSolutionRelativeProblem,
   IMSolutionRelativeUser,
   IMSolutionRelativeContest,
   IMSolutionServiceGetDetailRes,
   IMSolutionDetailPlain,
   IMSolutionDetailPlainFull,
+  IMSolutionServiceCreateOpt,
+  IMSolutionServiceCreateRes,
+  IMSolutionServiceUpdateOpt,
+  IMSolutionServiceUpdateRes,
 } from './solution.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -302,5 +304,61 @@ export default class SolutionService {
     }
     const [ret] = await this._handleRelativeData([res]);
     return ret;
+  }
+
+  /**
+   * 创建提交。
+   * @param data 创建数据
+   * @returns 创建成功的主键 ID
+   */
+  async create(data: IMSolutionServiceCreateOpt): Promise<IMSolutionServiceCreateRes> {
+    const { code } = data;
+    const res = await this.model.create(this.lodash.omit(data, ['code']));
+    await this.codeModel.create({ solutionId: res.solutionId, code });
+    return res.solutionId;
+  }
+
+  /**
+   * 更新提交（部分更新）。
+   * @param solutionId solutionId
+   * @param data 更新数据
+   */
+  async update(
+    solutionId: ISolutionModel['solutionId'],
+    data: IMSolutionServiceUpdateOpt,
+  ): Promise<IMSolutionServiceUpdateRes> {
+    const { compileInfo } = data;
+    const res = await this.model.update(this.lodash.omit(data, ['compileInfo']), {
+      where: {
+        solutionId,
+      },
+    });
+    if (compileInfo) {
+      await this.compileInfoModel.findOrCreate({
+        where: {
+          solutionId,
+        },
+        defaults: {
+          compileInfo: '',
+        },
+      });
+      await this.compileInfoModel.update(
+        { compileInfo },
+        {
+          where: {
+            solutionId,
+          },
+        },
+      );
+    }
+    return res[0] > 0;
+  }
+
+  /**
+   * 清除详情缓存。
+   * @param solutionId solutionId
+   */
+  async clearDetailCache(solutionId: ISolutionModel['solutionId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.meta.detailCacheKey, [solutionId]);
   }
 }

@@ -72,6 +72,10 @@ export type IMSolutionLite = Omit<
   contest?: IMSolutionRelativeContest;
 };
 export type IMSolutionDetailPlain = Pick<ISolutionModel, TMSolutionDetailFields>;
+export type IMSolutionDetailPlainFull = Pick<ISolutionModel, TMSolutionDetailFields> & {
+  compileInfo: string;
+  code: string;
+};
 export type IMSolutionDetail = Omit<
   Pick<ISolutionModel, TMSolutionDetailFields>,
   'problemId' | 'userId' | 'contestId'
@@ -112,11 +116,34 @@ export type IMSolutionServiceGetRelativeRes = Record<
 >;
 //#endregion
 
-//#region service.findOne
-export type IMSolutionServiceFindOneOpt = Partial<ISolutionModel>;
-export type IMSolutionServiceFindOneRes = defModel.DetailModelRes<IMSolutionDetail>;
+//#region service.create
+export interface IMSolutionServiceCreateOpt {
+  problemId: ISolutionModel['problemId'];
+  userId: ISolutionModel['userId'];
+  contestId?: ISolutionModel['contestId'];
+  result?: ISolutionModel['result'];
+  time?: ISolutionModel['time'];
+  memory?: ISolutionModel['time'];
+  language: ISolutionModel['language'];
+  codeLength: ISolutionModel['codeLength'];
+  username: ISolutionModel['username'];
+  ip: ISolutionModel['ip'];
+  shared?: ISolutionModel['shared'];
+  isContestUser?: ISolutionModel['isContestUser'];
+  code: string;
+}
+
+export type IMSolutionServiceCreateRes = ISolutionModel['solutionId'];
 //#endregion
 
-//#region service.isExists
-export type IMSolutionServiceIsExistsOpt = Partial<ISolutionModel>;
+//#region service.update
+export interface IMSolutionServiceUpdateOpt {
+  result?: ISolutionModel['result'];
+  time?: ISolutionModel['time'];
+  memory?: ISolutionModel['time'];
+  shared?: ISolutionModel['shared'];
+  compileInfo?: string;
+}
+
+export type IMSolutionServiceUpdateRes = boolean;
 //#endregion
