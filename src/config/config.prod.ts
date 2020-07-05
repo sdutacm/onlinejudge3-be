@@ -1,10 +1,11 @@
 import { EggAppInfo } from 'midway';
 import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
-import path from 'path';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
+
+  config.proxy = true;
 
   config.security = {
     csrf: {
