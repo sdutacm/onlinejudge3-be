@@ -96,6 +96,11 @@ export interface IMSolutionUserProblemResultStats {
   attemptedProblemIds: ISolutionModel['problemId'][];
 }
 
+export type IMSolutionContestProblemSolutionStats = Record<
+  number,
+  { accepted: number; submitted: number }
+>;
+
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {
   solutionId?: ISolutionModel['solutionId'];
@@ -151,4 +156,8 @@ export interface IMSolutionServiceUpdateOpt {
 }
 
 export type IMSolutionServiceUpdateRes = boolean;
+//#endregion
+
+//#region service.getContestProblemSolutionStats
+export type IMSolutionServiceGetContestProblemSolutionStatsRes = IMSolutionContestProblemSolutionStats;
 //#endregion

@@ -31,6 +31,7 @@ import {
   IAuditContestUserReq,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
+import { CSolutionService } from '../solution/solution.service';
 
 @provide()
 @controller('/')
@@ -40,6 +41,9 @@ export default class ContestController {
 
   @inject('contestService')
   service: CContestService;
+
+  @inject()
+  solutionService: CSolutionService;
 
   @inject()
   utils: IUtils;
@@ -453,5 +457,16 @@ export default class ContestController {
       this.mailSender.singleSend(email, subject, content);
     }
     // TODO 发送站内信
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authOrRequireContestSession('perm')
+  async [routesBe.getContestProblemSolutionStats.i](ctx: Context) {
+    const contestId = ctx.id!;
+    const problems = await this.service.getContestProblems(contestId);
+    const problemIds = problems.rows.map((problem) => problem.problemId);
+    return this.solutionService.getContestProblemSolutionStats(contestId, problemIds);
   }
 }

@@ -545,6 +545,27 @@ const contestContract = {
     additionalProperties: false,
     required: ['contestId', 'contestUserId', 'status'],
   } as defContract.ContractSchema,
+
+  getContestProblemSolutionStatsReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestProblemSolutionStatsResp: {
+    type: 'object',
+    additionalProperties: {
+      type: 'object',
+      properties: {
+        accepted: { type: 'number' },
+        submitted: { type: 'number' },
+      },
+      additionalProperties: false,
+      required: ['accepted', 'submitted'],
+    },
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;
