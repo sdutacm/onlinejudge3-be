@@ -383,6 +383,15 @@ export default class UserController {
   @route()
   @id()
   @getDetail()
+  async [routesBe.getUserProblemResultStats.i](ctx: Context) {
+    const userId = ctx.id!;
+    const { contestId } = ctx.request.body;
+    return this.solutionService.getUserProblemResultStats(userId, contestId);
+  }
+
+  @route()
+  @id()
+  @getDetail()
   async [routesBe.getUserSolutionCalendar.i](ctx: Context): Promise<IGetUserSolutionCalendarResp> {
     const userId = ctx.id!;
     const { result } = ctx.request.body as IGetUserSolutionCalendarReq;

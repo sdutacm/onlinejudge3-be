@@ -97,10 +97,4 @@ export default class SolutionController {
     });
     await this.service.clearDetailCache(solutionId);
   }
-
-  @route()
-  async [routesBe.getUserProblemResultStats.i](ctx: Context) {
-    const { userId, contestId } = ctx.request.body;
-    return this.service.getUserProblemResultStats(userId, contestId);
-  }
 }

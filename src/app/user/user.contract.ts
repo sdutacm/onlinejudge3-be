@@ -305,6 +305,24 @@ const userContract = {
     required: ['userId'],
   } as defContract.ContractSchema,
 
+  getUserProblemResultStatsReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
+  getUserProblemResultStatsResp: {
+    properties: {
+      acceptedProblemIds: { type: 'array', items: { type: 'number' } },
+      attemptedProblemIds: { type: 'array', items: { type: 'number' } },
+    },
+    additionalProperties: false,
+    required: ['acceptedProblemIds', 'attemptedProblemIds'],
+  } as defContract.ContractSchema,
+
   getUserSolutionCalendarReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
