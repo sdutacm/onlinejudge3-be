@@ -304,6 +304,28 @@ const userContract = {
     additionalProperties: true,
     required: ['userId'],
   } as defContract.ContractSchema,
+
+  getUserSolutionCalendarReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+      result: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['userId', 'result'],
+  } as defContract.ContractSchema,
+
+  getUserSolutionCalendarResp: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        date: { type: 'string', format: 'date' },
+        count: { type: 'number' },
+      },
+      additionalProperties: false,
+      required: ['date', 'count'],
+    },
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;

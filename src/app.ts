@@ -1,7 +1,7 @@
 // import * as tsConfigPaths from 'tsconfig-paths';
 // import * as tsConfig from '../tsconfig.json';
 // import 'tsconfig-paths/register';
-import { DB } from '@/lib/models/db';
+import DB from '@/lib/models/db';
 import { Application } from 'midway';
 import fs from 'fs-extra';
 

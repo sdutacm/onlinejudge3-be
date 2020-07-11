@@ -101,6 +101,13 @@ export type IMSolutionContestProblemSolutionStats = Record<
   { accepted: number; submitted: number }
 >;
 
+export interface IMSolutionCalendarItem {
+  date: string; // YYYY-MM-DD
+  count: number;
+}
+
+export type IMSolutionCalendar = Array<IMSolutionCalendarItem>;
+
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {
   solutionId?: ISolutionModel['solutionId'];
@@ -160,4 +167,8 @@ export type IMSolutionServiceUpdateRes = boolean;
 
 //#region service.getContestProblemSolutionStats
 export type IMSolutionServiceGetContestProblemSolutionStatsRes = IMSolutionContestProblemSolutionStats;
+//#endregion
+
+//#region service.getUserSolutionCalendar
+export type IMSolutionServiceGetUserSolutionCalendarRes = IMSolutionCalendar;
 //#endregion

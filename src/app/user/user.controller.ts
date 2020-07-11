@@ -26,6 +26,8 @@ import {
   IResetUserPasswordByAdminReq,
   IGetUserDetailResp,
   IRegisterResp,
+  IGetUserSolutionCalendarReq,
+  IGetUserSolutionCalendarResp,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -34,6 +36,7 @@ import path from 'path';
 import { ISharp } from '@/utils/libs/sharp';
 import { IFs } from '@/utils/libs/fs-extra';
 import { ILodash } from '@/utils/libs/lodash';
+import { CSolutionService } from '../solution/solution.service';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -49,8 +52,11 @@ export default class UserController {
   @inject('userService')
   service: CUserService;
 
-  @inject('verificationService')
+  @inject()
   verificationService: CVerificationService;
+
+  @inject()
+  solutionService: CSolutionService;
 
   @inject()
   utils: IUtils;
@@ -372,5 +378,14 @@ export default class UserController {
       bannerImage: saveName,
     });
     await this.service.clearDetailCache(userId);
+  }
+
+  @route()
+  @id()
+  @getDetail()
+  async [routesBe.getUserSolutionCalendar.i](ctx: Context): Promise<IGetUserSolutionCalendarResp> {
+    const userId = ctx.id!;
+    const { result } = ctx.request.body as IGetUserSolutionCalendarReq;
+    return this.solutionService.getUserSolutionCalendar(userId, result);
   }
 }

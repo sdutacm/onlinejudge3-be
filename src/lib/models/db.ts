@@ -8,7 +8,7 @@ import path from 'path';
 // of sequelize like "sequelize.transaction"
 @scope(ScopeEnum.Singleton)
 @provide('DB')
-export class DB {
+export default class DB {
   public static sequelize: Sequelize;
 
   public static async initDB(config: SequelizeOptions) {

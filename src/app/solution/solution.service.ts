@@ -24,8 +24,10 @@ import {
   IMSolutionUserProblemResultStats,
   IMSolutionServiceGetContestProblemSolutionStatsRes,
   IMSolutionContestProblemSolutionStats,
+  IMSolutionServiceGetUserSolutionCalendarRes,
+  IMSolutionCalendar,
 } from './solution.interface';
-import { Op, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
+import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
@@ -34,6 +36,7 @@ import { CContestService } from '../contest/contest.service';
 import { TCompileInfoModel } from '@/lib/models/compileInfo.model';
 import { TCodeModel } from '@/lib/models/code.model';
 import { ESolutionResult } from '@/common/enums';
+import DB from '@/lib/models/db';
 
 export type CSolutionService = SolutionService;
 
@@ -193,7 +196,42 @@ export default class SolutionService {
       this.redisKey.contestProblemResultStats,
       [contestId],
       data,
-      data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
+      this.durations.cacheDetailMedium,
+    );
+  }
+
+  /**
+   * 获取用户提交日历图统计缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param userId userId
+   * @param result 提交结果
+   */
+  private async _getUserSolutionCalendarCache(
+    userId: ISolutionModel['userId'],
+    result: ESolutionResult,
+  ): Promise<IMSolutionCalendar | null> {
+    return this.ctx.helper.redisGet<IMSolutionCalendar>(this.redisKey.userSolutionCalendar, [
+      userId,
+      result,
+    ]);
+  }
+
+  /**
+   * 设置用户提交日历图统计缓存。
+   * @param userId userId
+   * @param result 提交结果
+   * @param data 数据
+   */
+  private async _setUserSolutionCalendarCache(
+    userId: ISolutionModel['userId'],
+    result: ESolutionResult,
+    data: IMSolutionCalendar,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userSolutionCalendar,
+      [userId, result],
+      data,
+      this.durations.cacheDetail,
     );
   }
 
@@ -521,6 +559,43 @@ export default class SolutionService {
         };
       }
       await this._setContestProblemSolutionStatsCache(contestId, res);
+    }
+    return res;
+  }
+
+  /**
+   * 获取用户提交日历图统计
+   * @param userId userId
+   * @param result 指定 result
+   */
+  async getUserSolutionCalendar(
+    userId: ISolutionModel['userId'],
+    result: ESolutionResult = ESolutionResult.AC,
+  ): Promise<IMSolutionServiceGetUserSolutionCalendarRes> {
+    let res: IMSolutionCalendar | null = null;
+    const cached = await this._getUserSolutionCalendarCache(userId, result);
+    cached && (res = cached);
+    if (!res) {
+      // Author: MeiK
+      if (result !== ESolutionResult.AC) {
+        res = await DB.sequelize.query(
+          `SELECT DATE(sub_time) as date, COUNT(*) AS count FROM solution WHERE user_id=? AND result=? GROUP BY DATE(sub_time)`,
+          {
+            replacements: [userId, result],
+            type: QueryTypes.SELECT,
+          },
+        );
+      } else {
+        // 如果获取 AC 状态，则每个题目只计算第一次 AC
+        res = await DB.sequelize.query(
+          `SELECT DATE(sub_time) AS date, COUNT(*) AS count FROM (SELECT sub_time FROM solution WHERE user_id=? AND result=? GROUP BY problem_id) AS r GROUP BY DATE(sub_time)`,
+          {
+            replacements: [userId, result],
+            type: QueryTypes.SELECT,
+          },
+        );
+      }
+      await this._setUserSolutionCalendarCache(userId, result, res);
     }
     return res;
   }
