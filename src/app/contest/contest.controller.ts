@@ -30,6 +30,9 @@ import {
   IUpdateContestUserReq,
   IAuditContestUserReq,
   IGetContestRanklistReq,
+  IGetContestRanklistResp,
+  IGetContestRatingStatusResp,
+  IGetContestProblemSolutionStatsResp,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -464,7 +467,9 @@ export default class ContestController {
   @id()
   @getDetail(null)
   @authOrRequireContestSession('perm')
-  async [routesBe.getContestProblemSolutionStats.i](ctx: Context) {
+  async [routesBe.getContestProblemSolutionStats.i](
+    ctx: Context,
+  ): Promise<IGetContestProblemSolutionStatsResp> {
     const contestId = ctx.id!;
     const problems = await this.service.getContestProblems(contestId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
@@ -475,12 +480,21 @@ export default class ContestController {
   @id()
   @getDetail(null)
   @authOrRequireContestSession('perm')
-  async [routesBe.getContestRanklist.i](ctx: Context) {
+  async [routesBe.getContestRanklist.i](ctx: Context): Promise<IGetContestRanklistResp> {
     const detail = ctx.detail as IMContestDetail;
     let { god = false } = ctx.request.body as IGetContestRanklistReq;
     if (!ctx.isPerm) {
       god = false;
     }
     return this.service.getRanklist(detail, god);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authOrRequireContestSession('perm')
+  async [routesBe.getContestRatingStatus.i](ctx: Context): Promise<IGetContestRatingStatusResp> {
+    const contestId = ctx.id!;
+    return this.service.getRatingStatus(contestId);
   }
 }

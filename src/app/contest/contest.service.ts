@@ -48,6 +48,8 @@ import {
   IMContestServiceGetRanklistRes,
   IMContestRanklist,
   IMContestRanklistRow,
+  IMContestServiceGetRatingStatusRes,
+  IMContestRatingStatus,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -1133,5 +1135,17 @@ export default class ContestService {
       ]);
     }
     return this.ctx.helper.redisDel(this.redisKey.contestRanklist, [contestId, god]);
+  }
+
+  /**
+   * 获取比赛 Rating 计算状态。
+   * @param contestId contestId
+   */
+  async getRatingStatus(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestServiceGetRatingStatusRes> {
+    return this.ctx.helper.redisGet<IMContestRatingStatus>(this.redisKey.contestRatingStatus, [
+      contestId,
+    ]);
   }
 }

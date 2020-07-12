@@ -1,5 +1,11 @@
 import { IUserModel, IUserModelRatingHistory } from '../user/user.interface';
-import { EContestType, EContestCategory, EContestMode, EContestUserStatus } from '@/common/enums';
+import {
+  EContestType,
+  EContestCategory,
+  EContestMode,
+  EContestUserStatus,
+  EContestRatingStatus,
+} from '@/common/enums';
 import { IMProblemDetail } from '../problem/problem.interface';
 
 //#region contest model
@@ -290,6 +296,14 @@ export interface IMContestRanklistRow {
 export type IMContestRanklist = IMContestRanklistRow[];
 //#endregion
 
+//#region rating status
+export interface IMContestRatingStatus {
+  status: EContestRatingStatus;
+  progress?: number; // 进度
+  used?: number; // 完成耗时
+}
+//#endregion
+
 //#region service.getList
 export interface IMContestServiceGetListOpt {
   contestId?: IContestModel['contestId'];
@@ -464,4 +478,8 @@ export type IMContestServiceUpdateContestUserRes = boolean;
 
 //#region service.getRanklist
 export type IMContestServiceGetRanklistRes = defModel.FullListModelRes<IMContestRanklistRow>;
+//#endregion
+
+//#region service.getRatingStatus
+export type IMContestServiceGetRatingStatusRes = IMContestRatingStatus | null;
 //#endregion

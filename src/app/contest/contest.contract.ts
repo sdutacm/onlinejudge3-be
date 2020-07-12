@@ -625,6 +625,30 @@ const contestContract = {
     additionalProperties: false,
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
+
+  getContestRatingStatusReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestRatingStatusResp: {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          status: { type: 'number' },
+          progress: { type: 'number' },
+          used: { type: 'number' },
+        },
+        additionalProperties: false,
+        required: ['status'],
+      },
+      { type: 'null' },
+    ],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;
