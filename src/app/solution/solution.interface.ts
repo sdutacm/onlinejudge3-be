@@ -172,3 +172,7 @@ export type IMSolutionServiceGetContestProblemSolutionStatsRes = IMSolutionConte
 //#region service.getUserSolutionCalendar
 export type IMSolutionServiceGetUserSolutionCalendarRes = IMSolutionCalendar;
 //#endregion
+
+//#region service.getAllContestSolutionList
+export type IMSolutionServiceGetAllContestSolutionListRes = IMSolutionLitePlain[];
+//#endregion

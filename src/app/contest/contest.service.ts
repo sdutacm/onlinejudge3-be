@@ -1,4 +1,4 @@
-import { provide, inject, Context, config, scope } from 'midway';
+import { provide, inject, Context, config } from 'midway';
 import { Op } from 'sequelize';
 import { CContestMeta } from './contest.meta';
 import { IDurationsConfig } from '@/config/durations.config';
@@ -45,6 +45,9 @@ import {
   IMContestServiceUpdateContestUserOpt,
   IMContestServiceUpdateContestUserRes,
   IMContestServiceGetRelativeContestUserRes,
+  IMContestServiceGetRanklistRes,
+  IMContestRanklist,
+  IMContestRanklistRow,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -55,6 +58,9 @@ import { TContestProblemModel } from '@/lib/models/contestProblem.model';
 import { CProblemService } from '../problem/problem.service';
 import { IProblemModel } from '../problem/problem.interface';
 import { TContestUserModel } from '@/lib/models/contestUser.model';
+import { CSolutionService } from '../solution/solution.service';
+import { EContestType, ESolutionResult } from '@/common/enums';
+import { CUserService } from '../user/user.service';
 
 export type CContestService = ContestService;
 
@@ -192,6 +198,12 @@ export default class ContestService {
 
   @inject()
   problemService: CProblemService;
+
+  @inject()
+  userService: CUserService;
+
+  @inject()
+  solutionService: CSolutionService;
 
   @inject()
   userModel: TUserModel;
@@ -338,6 +350,40 @@ export default class ContestService {
       [contestUserId],
       data,
       data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取比赛 Ranklist 缓存。
+   * @param contestId contestId
+   * @param god 是否上帝视角
+   */
+  private async _getContestRanklistCache(
+    contestId: IContestModel['contestId'],
+    god: boolean,
+  ): Promise<IMContestRanklist | null> {
+    return this.ctx.helper.redisGet<IMContestRanklist>(this.redisKey.contestRanklist, [
+      contestId,
+      god,
+    ]);
+  }
+
+  /**
+   * 设置比赛 Ranklist 缓存。
+   * @param contestId contestId
+   * @param god 是否上帝视角
+   * @param data 数据
+   */
+  private async _setContestRanklistCache(
+    contestId: IContestModel['contestId'],
+    god: boolean,
+    data: IMContestRanklist,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.contestRanklist,
+      [contestId, god],
+      data,
+      this.durations.cacheDetailShort,
     );
   }
 
@@ -926,5 +972,166 @@ export default class ContestService {
     contestUserId: IContestUserModel['contestUserId'],
   ): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.contestUserDetail, [contestUserId]);
+  }
+
+  /**
+   * 获取比赛 Ranklist。
+   * @param contest 比赛详情对象
+   * @param ignoreFrozen 是否忽略封榜
+   */
+  async getRanklist(
+    contest: RequireSome<
+      IMContestDetail,
+      'contestId' | 'type' | 'frozenLength' | 'startAt' | 'endAt'
+    >,
+    ignoreFrozen = false,
+  ): Promise<IMContestServiceGetRanklistRes> {
+    const { contestId } = contest;
+    const displayAll = contest.frozenLength <= 0 || ignoreFrozen;
+    const god = contest.frozenLength > 0 && ignoreFrozen;
+    let res: IMContestRanklist | null = null;
+    const cached = await this._getContestRanklistCache(contestId, god);
+    cached && (res = cached);
+    if (!res) {
+      const solutions = await this.solutionService.getAllContestSolutionList(contestId);
+      const userIds = this.lodash.uniq(solutions.map((solution) => solution.userId));
+      const relativeUsers =
+        contest.type === EContestType.register
+          ? await this.getRelativeContestUser(userIds)
+          : await this.userService.getRelative(userIds, null);
+      const problems = (await this.getContestProblems(contestId)).rows;
+      const rankMap: Record<IUserModel['userId'], IMContestRanklistRow> = [];
+      const problemIndexMap = new Map<number, number>();
+      problems.forEach((problem, index) => {
+        problemIndexMap.set(problem.problemId, index);
+      });
+      const fb = problems.map((_problem) => true);
+      // @ts-ignore
+      Object.keys(relativeUsers).forEach((userId: number) => {
+        const user = relativeUsers[userId];
+        rankMap[userId] = {
+          rank: -1,
+          user: {
+            userId: +userId,
+            username: user.username,
+            nickname: user.nickname,
+            avatar: user.avatar,
+            // @ts-ignore
+            bannerImage: user.bannerImage || '',
+            // @ts-ignore
+            rating: user.rating || 0,
+            // TODO
+            globalUserId: 0,
+            oldRating: 0,
+            newRating: 0,
+          },
+          solved: 0,
+          time: 0,
+          stats: problems.map((_problem) => ({
+            result: '-',
+            attempted: 0,
+            time: 0,
+          })),
+        };
+      });
+      const frozenStart = new Date(contest.endAt.getTime() - contest.frozenLength * 1000);
+      for (const solution of solutions) {
+        const problemIndex = problemIndexMap.get(solution.problemId);
+        if (problemIndex === undefined) {
+          continue;
+        }
+        const { userId } = solution;
+        const stat = rankMap[userId].stats[problemIndex];
+        if (!stat) {
+          continue;
+        }
+        if (
+          [ESolutionResult.WT, ESolutionResult.JG, ESolutionResult.CE, ESolutionResult.SE].includes(
+            solution.result,
+          )
+        ) {
+          // 非有效提交，忽略
+          continue;
+        } else if (stat.result === 'FB' || stat.result === 'AC') {
+          // 如果该用户这个题目之前已经 AC，则不处理
+          continue;
+        } else if (!displayAll && frozenStart <= solution.createdAt) {
+          // 如果封榜，则尝试 +1
+          stat.attempted++;
+          stat.result = '?';
+        } else if (solution.result !== ESolutionResult.AC) {
+          // 如果为错误的提交
+          stat.attempted++;
+          stat.result = 'X';
+        } else if (solution.result === ESolutionResult.AC) {
+          // 如果该次提交为 AC
+          rankMap[userId].solved++;
+          // @ts-ignore
+          stat.time = Math.floor((solution.createdAt - contest.startAt) / 1000);
+          const problemPenalty = 20 * 60 * stat.attempted;
+          rankMap[userId].time += stat.time + problemPenalty;
+          stat.attempted++;
+          // 判断是否为 FB
+          // 因为提交是按顺序获得的，因此第一个 AC 的提交就是 FB
+          if (fb[problemIndex]) {
+            fb[problemIndex] = false;
+            stat.result = 'FB';
+          } else {
+            stat.result = 'AC';
+          }
+        }
+      }
+      const ranklist: IMContestRanklist = [];
+      // @ts-ignore
+      Object.keys(rankMap).forEach((userId: number) => {
+        ranklist.push(rankMap[userId]);
+      });
+      // 排序
+      ranklist.sort((a, b) => {
+        if (a.solved !== b.solved) {
+          return b.solved - a.solved;
+        }
+        return a.time - b.time;
+      });
+      if (ranklist.length) {
+        // 计算并列排名
+        ranklist[0].rank = 1;
+        for (let i = 1; i < ranklist.length; ++i) {
+          if (
+            ranklist[i].solved === ranklist[i - 1].solved &&
+            ranklist[i].time === ranklist[i - 1].time
+          ) {
+            ranklist[i].rank = ranklist[i - 1].rank;
+          } else {
+            ranklist[i].rank = i + 1;
+          }
+        }
+      }
+      res = ranklist;
+      await this._setContestRanklistCache(contestId, god, res);
+    }
+
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 清除比赛 Ranklist 缓存。
+   * @param contestId contestId
+   * @param god 是否上帝视角（不传则清空全部）
+   */
+  async clearContestRanklistCache(
+    contestId: IContestModel['contestId'],
+    god?: boolean,
+  ): Promise<void | [void, void]> {
+    if (god === undefined) {
+      return Promise.all([
+        this.ctx.helper.redisDel(this.redisKey.contestRanklist, [contestId, true]),
+        this.ctx.helper.redisDel(this.redisKey.contestRanklist, [contestId, false]),
+      ]);
+    }
+    return this.ctx.helper.redisDel(this.redisKey.contestRanklist, [contestId, god]);
   }
 }

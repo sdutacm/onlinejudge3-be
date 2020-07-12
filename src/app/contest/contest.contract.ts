@@ -566,6 +566,65 @@ const contestContract = {
       required: ['accepted', 'submitted'],
     },
   } as defContract.ContractSchema,
+
+  getContestRanklistReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      god: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestRanklistResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'number' },
+            user: {
+              type: 'object',
+              properties: {
+                userId: { type: 'number' },
+                username: { type: 'string' },
+                nickname: { type: 'string' },
+                avatar: { type: ['string', 'null'] },
+                bannerImage: { type: 'string' },
+                rating: { type: 'number' },
+                globalUserId: { type: 'number' },
+                oldRating: { type: 'number' },
+                newRating: { type: 'number' },
+              },
+              additionalProperties: false,
+              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage', 'rating'],
+            },
+            solved: { type: 'number' },
+            time: { type: 'number' },
+            stats: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  result: { type: 'string', enum: ['FB', 'AC', 'X', '-', '?'] },
+                  attempted: { type: 'number' },
+                  time: { type: 'number' },
+                },
+                additionalProperties: false,
+                required: ['result', 'attempted', 'time'],
+              },
+            },
+          },
+          additionalProperties: false,
+          required: ['rank', 'user', 'solved', 'time', 'stats'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;

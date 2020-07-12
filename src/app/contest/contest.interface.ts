@@ -63,6 +63,10 @@ export type TMContestDetailFields = Extract<
 export type IMContestLite = Pick<IContestModel, TMContestLiteFields>;
 export type IMContestDetail = Pick<IContestModel, TMContestDetailFields>;
 export type IMContestListPagination = defService.ServiceListOpt<TContestModelFields>;
+export type IMContestRelativeUser = Pick<
+  IUserModel,
+  'userId' | 'username' | 'nickname' | 'avatar' | 'bannerImage' | 'rating'
+>;
 //#endregion
 
 //#region contest problem model
@@ -264,6 +268,28 @@ export interface IRatingContestModel {
 }
 //#endregion
 
+//#region ranklist
+export interface IMContestRanklistProblemResultStat {
+  result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
+  attempted: number; // 尝试次数。首次 AC 的那次提交也计入
+  time: number; // s
+}
+
+export interface IMContestRanklistRow {
+  rank: number; // 排名。solved 和 time 都相等时 rank 并列
+  user: IMContestRelativeUser & {
+    globalUserId?: number;
+    oldRating?: number;
+    newRating?: number;
+  };
+  solved: number;
+  time: number; // s
+  stats: IMContestRanklistProblemResultStat[];
+}
+
+export type IMContestRanklist = IMContestRanklistRow[];
+//#endregion
+
 //#region service.getList
 export interface IMContestServiceGetListOpt {
   contestId?: IContestModel['contestId'];
@@ -434,4 +460,8 @@ export interface IMContestServiceUpdateContestUserOpt {
 }
 
 export type IMContestServiceUpdateContestUserRes = boolean;
+//#endregion
+
+//#region service.getRanklist
+export type IMContestServiceGetRanklistRes = defModel.FullListModelRes<IMContestRanklistRow>;
 //#endregion

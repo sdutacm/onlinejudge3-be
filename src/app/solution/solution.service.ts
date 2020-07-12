@@ -26,6 +26,7 @@ import {
   IMSolutionContestProblemSolutionStats,
   IMSolutionServiceGetUserSolutionCalendarRes,
   IMSolutionCalendar,
+  IMSolutionServiceGetAllContestSolutionListRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -564,6 +565,16 @@ export default class SolutionService {
   }
 
   /**
+   * 清除比赛题目提交统计缓存。
+   * @param contestId contestId
+   */
+  async clearContestProblemSolutionStatsCache(
+    contestId: ISolutionModel['contestId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.contestProblemResultStats, [contestId]);
+  }
+
+  /**
    * 获取用户提交日历图统计
    * @param userId userId
    * @param result 指定 result
@@ -597,6 +608,36 @@ export default class SolutionService {
       }
       await this._setUserSolutionCalendarCache(userId, result, res);
     }
+    return res;
+  }
+
+  /**
+   * 清除比赛题目提交统计缓存。
+   * @param contestId contestId
+   * @param result 提交结果
+   */
+  async clearUserSolutionCalendarCache(
+    userId: ISolutionModel['userId'],
+    result: ESolutionResult,
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.userSolutionCalendar, [userId, result]);
+  }
+
+  /**
+   * 获取所有比赛提交。
+   * @param contestId contestId
+   */
+  async getAllContestSolutionList(
+    contestId: ISolutionModel['contestId'],
+  ): Promise<IMSolutionServiceGetAllContestSolutionListRes> {
+    const res = await this.model
+      .findAll({
+        attributes: solutionLiteFields,
+        where: {
+          contestId,
+        },
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
     return res;
   }
 }

@@ -29,6 +29,7 @@ import {
   ICreateContestUserResp,
   IUpdateContestUserReq,
   IAuditContestUserReq,
+  IGetContestRanklistReq,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -468,5 +469,18 @@ export default class ContestController {
     const problems = await this.service.getContestProblems(contestId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
     return this.solutionService.getContestProblemSolutionStats(contestId, problemIds);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authOrRequireContestSession('perm')
+  async [routesBe.getContestRanklist.i](ctx: Context) {
+    const detail = ctx.detail as IMContestDetail;
+    let { god = false } = ctx.request.body as IGetContestRanklistReq;
+    if (!ctx.isPerm) {
+      god = false;
+    }
+    return this.service.getRanklist(detail, god);
   }
 }

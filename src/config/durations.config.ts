@@ -1,5 +1,6 @@
 const durations = {
   cacheDetail: 86400, // s
+  cacheDetailShort: 30, // s
   cacheDetailMedium: 60, // s
   cacheDetailLong: 300, // s
   cacheDetailNull: 10, // s

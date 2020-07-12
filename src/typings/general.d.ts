@@ -11,3 +11,5 @@ type TreatDateFieldsAsString<T> = {
     ? string | null | undefined
     : T[P];
 };
+
+type RequireSome<T, U> = Partial<T> & Required<Pick<T, U>>;
