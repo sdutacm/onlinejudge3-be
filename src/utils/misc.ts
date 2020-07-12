@@ -7,7 +7,7 @@ import cryptoRandomString from 'crypto-random-string';
  * @param {any} obj
  * @returns {any}
  */
-export function ignoreUndefined<T = any>(obj: T): Partial<T> {
+export function ignoreUndefined<T = any, R = T>(obj: T): R {
   return JSON.parse(JSON.stringify(obj));
 }
 
