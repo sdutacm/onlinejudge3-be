@@ -256,11 +256,13 @@ export function pagination(
  * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
  * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
  * @param hooks 钩子
+ * - beforeGetList：开始 getList 前。如果返回 false 则不进行 getList 操作并视作列表为空。
+ * - afterGetList：结束 getList 后。
  */
 export function getList(
   scope?: string | null,
   hooks: {
-    beforeGetList?: (ctx: Context) => void | Promise<void>;
+    beforeGetList?: (ctx: Context) => void | Promise<void> | boolean | Promise<boolean>;
     afterGetList?: (ctx: Context) => void | Promise<void>;
   } = {},
 ): MethodDecorator {
@@ -275,13 +277,20 @@ export function getList(
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
-      await hooks.beforeGetList?.(ctx);
-      const list = await service.getList(
-        ctx.request.body,
-        pagination,
-        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
-      );
-      ctx.list = list;
+      const continueGetList = await hooks.beforeGetList?.(ctx);
+      if (continueGetList === false) {
+        ctx.list = {
+          count: 0,
+          rows: [],
+        };
+      } else {
+        const list = await service.getList(
+          ctx.request.body,
+          pagination,
+          scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+        );
+        ctx.list = list;
+      }
       await hooks.afterGetList?.(ctx);
       const result = await method.call(this, ctx, ...rest);
       return result;
