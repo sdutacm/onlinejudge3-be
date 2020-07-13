@@ -58,6 +58,26 @@ export interface IMMessageServiceGetListOpt {
 export type IMMessageServiceGetListRes = defModel.ListModelRes<IMMessageLite>;
 //#endregion
 
-//#region service.getDetail
-export type IMMessageServiceGetDetailRes = defModel.DetailModelRes<IMMessageDetail>;
+//#region service.isExists
+export type IMMessageServiceIsExistsOpt = Partial<IMessageModel>;
+//#endregion
+
+//#region service.create
+export interface IMMessageServiceCreateOpt {
+  fromUserId: IMessageModel['fromUserId'];
+  toUserId: IMessageModel['toUserId'];
+  title: IMessageModel['title'];
+  content: IMessageModel['content'];
+  anonymous: IMessageModel['anonymous'];
+}
+
+export type IMMessageServiceCreateRes = IMessageModel['messageId'];
+//#endregion
+
+//#region service.update
+export interface IMMessageServiceUpdateOpt {
+  read?: IMessageModel['read'];
+}
+
+export type IMMessageServiceUpdateRes = boolean;
 //#endregion

@@ -6,18 +6,22 @@ import { TMessageModel } from '@/lib/models/message.model';
 import {
   TMMessageLiteFields,
   TMMessageDetailFields,
-  IMMessageDetail,
-  IMMessageLite,
   IMessageModel,
   IMMessageServiceGetListOpt,
   IMMessageListPagination,
   IMMessageServiceGetListRes,
   IMMessageLitePlain,
   IMMessageRelativeUser,
+  IMMessageServiceIsExistsOpt,
+  IMMessageServiceCreateOpt,
+  IMMessageServiceCreateRes,
+  IMMessageServiceUpdateOpt,
+  IMMessageServiceUpdateRes,
 } from './message.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { CUserService } from '../user/user.service';
+import { IUserModel } from '../user/user.interface';
 
 export type CMessageService = MessageService;
 
@@ -143,5 +147,64 @@ export default class MessageService {
       ...res,
       rows: await this._handleRelativeData(res.rows),
     };
+  }
+
+  /**
+   * 按条件查询消息是否存在。
+   * @param options 查询参数
+   */
+  async isExists(options: IMMessageServiceIsExistsOpt): Promise<boolean> {
+    const res = await this.model.findOne({
+      attributes: [this.meta.pk],
+      where: options as any,
+    });
+    return !!res;
+  }
+
+  /**
+   * 创建消息。
+   * @param data 创建数据
+   * @returns 创建成功的主键 ID
+   */
+  async create(data: IMMessageServiceCreateOpt): Promise<IMMessageServiceCreateRes> {
+    const res = await this.model.create(data);
+    return res.messageId;
+  }
+
+  /**
+   * 更新消息（部分更新）。
+   * @param messageId messageId
+   * @param data 更新数据
+   */
+  async update(
+    messageId: IMessageModel['messageId'],
+    data: IMMessageServiceUpdateOpt,
+  ): Promise<IMMessageServiceUpdateRes> {
+    const res = await this.model.update(data, {
+      where: {
+        messageId,
+      },
+    });
+    return res[0] > 0;
+  }
+
+  /**
+   * 发送系统消息
+   * @param toUserId 收件人 userId
+   * @param title 标题
+   * @param content 正文
+   */
+  async sendSystemMessage(
+    toUserId: IUserModel['userId'],
+    title: IMessageModel['title'],
+    content: IMessageModel['content'],
+  ) {
+    const res = await this.model.create({
+      fromUserId: 0,
+      toUserId,
+      title,
+      content,
+    });
+    return res.messageId;
   }
 }

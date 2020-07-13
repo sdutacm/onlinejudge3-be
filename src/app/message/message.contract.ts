@@ -83,6 +83,44 @@ const messageContract = {
     additionalProperties: false,
     required: ['page', 'limit', 'count', 'rows'],
   } as defContract.ContractSchema,
+
+  sendMessageReq: {
+    properties: {
+      toUserId: { type: 'number', minimum: 1 },
+      title: { type: 'string', minLength: 1, maxLength: 64 },
+      content: { type: 'string' },
+      anonymous: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['toUserId', 'title', 'content', 'anonymous'],
+  } as defContract.ContractSchema,
+
+  batchSendMessageReq: {
+    properties: {
+      toUserIds: {
+        type: 'array',
+        items: {
+          type: 'number',
+          minimum: 1,
+        },
+      },
+      title: { type: 'string', minLength: 1, maxLength: 64 },
+      content: { type: 'string' },
+      anonymous: { type: 'boolean' },
+      asSystem: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['toUserIds', 'title', 'content', 'anonymous', 'asSystem'],
+  } as defContract.ContractSchema,
+
+  updateMessageReadReq: {
+    properties: {
+      messageId: { type: 'number', minimum: 1 },
+      read: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['messageId', 'read'],
+  } as defContract.ContractSchema,
 };
 
 export type IMessageContract = typeof messageContract;
