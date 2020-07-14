@@ -36,6 +36,8 @@ import {
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
+import { CMessageService } from '../message/message.service';
+import { CUserService } from '../user/user.service';
 
 @provide()
 @controller('/')
@@ -48,6 +50,12 @@ export default class ContestController {
 
   @inject()
   solutionService: CSolutionService;
+
+  @inject()
+  messageService: CMessageService;
+
+  @inject()
+  userService: CUserService;
 
   @inject()
   utils: IUtils;
@@ -432,35 +440,37 @@ export default class ContestController {
       status,
     });
     await this.service.clearContestUserDetailCache(contestUserId);
-    // 发送邮件通知
-    const email = contestUser.members[0]?.email;
-    if (email) {
-      let auditMessage = '';
-      switch (status) {
-        case EContestUserStatus.accepted:
-          auditMessage = '<strong>accepted</strong>';
-          break;
-        case EContestUserStatus.return:
-          auditMessage = '<strong>waiting for further modification</strong>';
-          break;
-        case EContestUserStatus.rejected:
-          auditMessage = '<strong>rejected</strong>';
-          break;
-        default:
-          auditMessage = '?';
-      }
-      if (reason) {
-        auditMessage += ` with reason "${reason}"`;
-      }
-      const subject = 'Your Contest Registration Result';
-      const content = `<p>Dear User:</p>
+
+    let auditMessage = '';
+    switch (status) {
+      case EContestUserStatus.accepted:
+        auditMessage = '<strong>accepted</strong>';
+        break;
+      case EContestUserStatus.return:
+        auditMessage = '<strong>waiting for further modification</strong>';
+        break;
+      case EContestUserStatus.rejected:
+        auditMessage = '<strong>rejected</strong>';
+        break;
+      default:
+        auditMessage = '?';
+    }
+    if (reason) {
+      auditMessage += ` with reason "${reason}"`;
+    }
+    const subject = 'Your Contest Registration Result';
+    const content = `<p>Dear User:</p>
 <p>Thanks for registering contesst "${detail.title}". Your registration is ${auditMessage}.</p>
 <p>You can review or update your information in contest registration list.</p>
 <p><br/></p>
 <p>${this.siteTeam}</p>`;
-      this.mailSender.singleSend(email, subject, content);
-    }
-    // TODO 发送站内信
+    // 发送邮件通知
+    const email = contestUser.members[0]?.email;
+    email && this.mailSender.singleSend(email, subject, content);
+    // 发送站内信
+    this.userService.findOne({ username: contestUser.username }).then((user) => {
+      user && this.messageService.sendSystemMessage(user.userId, subject, content);
+    });
   }
 
   @route()
