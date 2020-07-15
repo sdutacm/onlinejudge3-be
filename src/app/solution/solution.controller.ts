@@ -52,7 +52,7 @@ export default class SolutionController {
     beforeGetList(ctx) {
       const { contestId } = ctx.request.body as IGetSolutionListReq;
       if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
-        delete ctx.request.body.contest;
+        delete ctx.request.body.contestId;
       }
     },
     afterGetList(ctx) {
