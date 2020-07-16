@@ -122,7 +122,7 @@ export default class MessageService {
   }
 
   /**
-   * 获取提交列表。
+   * 获取消息列表。
    * @param options 查询参数
    * @param pagination 分页参数
    */
