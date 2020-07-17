@@ -12,8 +12,6 @@ providerWrapper([
 const favoriteContract = {
   getFavoriteListReq: {
     properties: {
-      page: { type: 'number', minimum: 1 },
-      limit: { type: 'number', minimum: 1, maximum: 1000 },
       order: {
         type: 'array',
         items: {
@@ -34,8 +32,6 @@ const favoriteContract = {
 
   getFavoriteListResp: {
     properties: {
-      page: { type: 'number', minimum: 1 },
-      limit: { type: 'number', minimum: 0 },
       count: { type: 'number', minimum: 0 },
       rows: {
         type: 'array',
@@ -45,6 +41,7 @@ const favoriteContract = {
               type: 'object',
               properties: {
                 favoriteId: { type: 'number' },
+                userId: { type: 'number' },
                 type: { type: 'string', enum: ['problem'] },
                 target: {
                   type: 'object',
@@ -63,6 +60,7 @@ const favoriteContract = {
               additionalProperties: false,
               required: [
                 'favoriteId',
+                'userId',
                 'type',
                 'target',
                 'note',
@@ -75,6 +73,7 @@ const favoriteContract = {
               type: 'object',
               properties: {
                 favoriteId: { type: 'number' },
+                userId: { type: 'number' },
                 type: { type: 'string', enum: ['contest'] },
                 target: {
                   type: 'object',
@@ -93,6 +92,7 @@ const favoriteContract = {
               additionalProperties: false,
               required: [
                 'favoriteId',
+                'userId',
                 'type',
                 'target',
                 'note',
@@ -105,6 +105,7 @@ const favoriteContract = {
               type: 'object',
               properties: {
                 favoriteId: { type: 'number' },
+                userId: { type: 'number' },
                 type: { type: 'string', enum: ['set'] },
                 target: {
                   type: 'object',
@@ -123,6 +124,7 @@ const favoriteContract = {
               additionalProperties: false,
               required: [
                 'favoriteId',
+                'userId',
                 'type',
                 'target',
                 'note',
@@ -135,6 +137,7 @@ const favoriteContract = {
               type: 'object',
               properties: {
                 favoriteId: { type: 'number' },
+                userId: { type: 'number' },
                 type: { type: 'string', enum: ['group'] },
                 target: {
                   type: 'object',
@@ -155,6 +158,7 @@ const favoriteContract = {
               additionalProperties: false,
               required: [
                 'favoriteId',
+                'userId',
                 'type',
                 'target',
                 'note',
@@ -168,7 +172,7 @@ const favoriteContract = {
       },
     },
     additionalProperties: false,
-    required: ['page', 'limit', 'count', 'rows'],
+    required: ['count', 'rows'],
   } as defContract.ContractSchema,
 };
 

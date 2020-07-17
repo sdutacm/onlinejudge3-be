@@ -6,9 +6,8 @@ import { TFavoriteModel, TFavoriteModelScopes } from '@/lib/models/favorite.mode
 import {
   TMFavoriteDetailFields,
   IFavoriteModel,
-  IMFavoriteServiceGetListOpt,
-  IMFavoriteListPagination,
-  IMFavoriteServiceGetListRes,
+  IMFavoriteServiceGetFullListOpt,
+  IMFavoriteServiceGetFullListRes,
   IMFavoriteServiceIsExistsOpt,
   IMFavoriteServiceCreateOpt,
   IMFavoriteServiceCreateRes,
@@ -19,6 +18,7 @@ import {
   IMFavoriteServiceFindOneOpt,
   IMFavoriteServiceFindOneRes,
   IMFavoriteDetailPlain,
+  IMFavoriteFullListPagination,
 } from './favorite.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -68,7 +68,7 @@ export default class FavoriteService {
   @config()
   durations: IDurationsConfig;
 
-  private _formatListQuery(opts: IMFavoriteServiceGetListOpt) {
+  private _formatFullListQuery(opts: IMFavoriteServiceGetFullListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       userId: opts.userId,
       type: opts.type,
@@ -119,33 +119,28 @@ export default class FavoriteService {
   }
 
   /**
-   * 获取收藏列表。
+   * 获取收藏全列表。
    * @param options 查询参数
    * @param pagination 分页参数
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
-  async getList(
-    options: IMFavoriteServiceGetListOpt,
-    pagination: IMFavoriteListPagination = {},
+  async getFullList(
+    options: IMFavoriteServiceGetFullListOpt,
+    pagination: IMFavoriteFullListPagination = {},
     scope: TFavoriteModelScopes | null = 'available',
-  ): Promise<IMFavoriteServiceGetListRes> {
-    const query = this._formatListQuery(options);
+  ): Promise<IMFavoriteServiceGetFullListRes> {
+    const query = this._formatFullListQuery(options);
     const res = await this.model
       .scope(scope || undefined)
-      .findAndCountAll({
+      .findAll({
         attributes: favoriteDetailFields,
         where: query.where,
-        limit: pagination.limit,
-        offset: pagination.offset,
         order: pagination.order,
       })
-      .then((r) => ({
-        ...r,
-        rows: r.rows.map((d) => d.get({ plain: true }) as IMFavoriteDetailPlain),
-      }));
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMFavoriteDetailPlain));
     return {
-      ...res,
-      rows: await this._handleRelativeData(res.rows),
+      count: res.length,
+      rows: await this._handleRelativeData(res),
     };
   }
 

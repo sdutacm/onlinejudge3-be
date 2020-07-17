@@ -62,14 +62,14 @@ export type IMFavoriteDetail =
 export type IMFavoriteListPagination = defService.ServiceListOpt<TFavoriteModelFields>;
 export type IMFavoriteFullListPagination = defService.ServiceFullListOpt<TFavoriteModelFields>;
 
-//#region service.getList
-export interface IMFavoriteServiceGetListOpt {
+//#region service.getFullList
+export interface IMFavoriteServiceGetFullListOpt {
   userId?: IFavoriteModel['userId'];
   type?: IFavoriteModel['type'];
   note?: IFavoriteModel['note'];
 }
 
-export type IMFavoriteServiceGetListRes = defModel.ListModelRes<IMFavoriteDetail>;
+export type IMFavoriteServiceGetFullListRes = defModel.ListModelRes<IMFavoriteDetail>;
 //#endregion
 
 //#region service.getDetail
