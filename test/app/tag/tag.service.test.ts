@@ -115,7 +115,7 @@ describe(basename(__filename), () => {
 
     it('should work with scope', async () => {
       const service = await getService();
-      const res = await service.getFullList(null);
+      const res = await service.getFullList(undefined, undefined, null);
       assert.strictEqual(res.count, 3);
     });
   });

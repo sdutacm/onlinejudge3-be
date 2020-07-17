@@ -14,6 +14,8 @@ import {
   IMTagServiceUpdateRes,
   IMTagServiceGetDetailRes,
   IMTagServiceGetRelativeProblemIdsRes,
+  IMTagServiceGetFullListOpt,
+  IMTagFullListPagination,
 } from './tag.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -80,9 +82,13 @@ export default class TagService {
 
   /**
    * 获取标签全列表。
+   * @param options 查询参数
+   * @param pagination 分页参数
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getFullList(
+    options: IMTagServiceGetFullListOpt = {},
+    pagination: IMTagFullListPagination = {},
     scope: TTagModelScopes | null = 'available',
   ): Promise<IMTagServiceGetFullListRes> {
     let res: IMTagServiceGetFullListRes['rows'] | null = null;
@@ -94,6 +100,7 @@ export default class TagService {
         .scope(scope || undefined)
         .findAll({
           attributes: tagDetailFields,
+          order: pagination.order,
         })
         .then((r) => r.map((d) => d.get({ plain: true }) as IMTagDetail));
       scope === 'available' && (await this._setFullListCache(res));

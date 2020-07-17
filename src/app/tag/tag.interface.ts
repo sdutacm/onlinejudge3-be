@@ -17,8 +17,10 @@ export type TMTagDetailFields = Extract<
 >;
 
 export type IMTagDetail = Pick<ITagModel, TMTagDetailFields>;
+export type IMTagFullListPagination = defService.ServiceFullListOpt<TTagModelFields>;
 
-//#region service.getList
+//#region service.getFullList
+export interface IMTagServiceGetFullListOpt {}
 export type IMTagServiceGetFullListRes = defModel.FullListModelRes<IMTagDetail>;
 //#endregion
 

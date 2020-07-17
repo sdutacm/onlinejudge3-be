@@ -329,11 +329,13 @@ export function respList(): MethodDecorator {
  * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
  * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
  * @param hooks 钩子
+ * - beforeGetFullList：开始 getFullList 前。如果返回 false 则不进行 getFullList 操作并视作列表为空。
+ * - afterGetFullList：结束 getFullList 后。
  */
 export function getFullList(
   scope?: string | null,
   hooks: {
-    beforeGetFullList?: (ctx: Context) => void | Promise<void>;
+    beforeGetFullList?: (ctx: Context) => void | Promise<void> | boolean | Promise<boolean>;
     afterGetFullList?: (ctx: Context) => void | Promise<void>;
   } = {},
 ): MethodDecorator {
@@ -341,13 +343,23 @@ export function getFullList(
     const method = descriptor.value;
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      const pagination = ctx.pagination;
       // @ts-ignore
       const service = this.service;
-      await hooks.beforeGetFullList?.(ctx);
-      const fullList = await service.getFullList(
-        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
-      );
-      ctx.fullList = fullList;
+      const continueGetFullList = await hooks.beforeGetFullList?.(ctx);
+      if (continueGetFullList === false) {
+        ctx.fullList = {
+          count: 0,
+          rows: [],
+        };
+      } else {
+        const fullList = await service.getFullList(
+          ctx.request.body,
+          pagination,
+          scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+        );
+        ctx.fullList = fullList;
+      }
       await hooks.afterGetFullList?.(ctx);
       const result = await method.call(this, ctx, ...rest);
       return result;
