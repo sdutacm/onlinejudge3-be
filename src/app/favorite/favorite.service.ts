@@ -4,7 +4,6 @@ import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { TFavoriteModel, TFavoriteModelScopes } from '@/lib/models/favorite.model';
 import {
-  TMFavoriteLiteFields,
   TMFavoriteDetailFields,
   IFavoriteModel,
   IMFavoriteServiceGetListOpt,
@@ -15,28 +14,20 @@ import {
   IMFavoriteServiceCreateRes,
   IMFavoriteServiceUpdateOpt,
   IMFavoriteServiceUpdateRes,
-  IMFavoriteLite,
   IMFavoriteDetail,
   IMFavoriteServiceGetDetailRes,
   IMFavoriteServiceFindOneOpt,
   IMFavoriteServiceFindOneRes,
+  IMFavoriteDetailPlain,
 } from './favorite.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
+import { CProblemService } from '../problem/problem.service';
+import { CContestService } from '../contest/contest.service';
 
 export type CFavoriteService = FavoriteService;
 
-const favoriteLiteFields: Array<TMFavoriteLiteFields> = [
-  'favoriteId',
-  'userId',
-  'type',
-  'target',
-  'note',
-  'createdAt',
-  'updatedAt',
-  'deleted',
-];
 const favoriteDetailFields: Array<TMFavoriteDetailFields> = [
   'favoriteId',
   'userId',
@@ -55,6 +46,12 @@ export default class FavoriteService {
 
   @inject('favoriteModel')
   model: TFavoriteModel;
+
+  @inject()
+  problemService: CProblemService;
+
+  @inject()
+  contestService: CContestService;
 
   @inject()
   utils: IUtils;
@@ -86,6 +83,41 @@ export default class FavoriteService {
     };
   }
 
+  private async _handleRelativeData(data: IMFavoriteDetailPlain[]): Promise<IMFavoriteDetail[]> {
+    // @ts-ignore
+    const problemIds = data.map((d) => d.target?.problemId).filter((f) => f);
+    // @ts-ignore
+    const contestIds = data.map((d) => d.target?.contestId).filter((f) => f);
+    const relativeProblem = await this.problemService.getRelative(problemIds, null);
+    const relativeContest = await this.contestService.getRelative(contestIds, null);
+    // @ts-ignore
+    return data.map((d) => {
+      switch (d.type) {
+        case 'problem':
+          // @ts-ignore
+          const problemId = d.target?.problemId;
+          return {
+            ...d,
+            target: {
+              problemId,
+              title: relativeProblem[problemId]?.title,
+            },
+          };
+        case 'contest':
+          // @ts-ignore
+          const contestId = d.target?.contestId;
+          return {
+            ...d,
+            target: {
+              contestId,
+              title: relativeContest[contestId]?.title,
+            },
+          };
+      }
+      return d;
+    });
+  }
+
   /**
    * 获取收藏列表。
    * @param options 查询参数
@@ -98,10 +130,10 @@ export default class FavoriteService {
     scope: TFavoriteModelScopes | null = 'available',
   ): Promise<IMFavoriteServiceGetListRes> {
     const query = this._formatListQuery(options);
-    return this.model
+    const res = await this.model
       .scope(scope || undefined)
       .findAndCountAll({
-        attributes: favoriteLiteFields,
+        attributes: favoriteDetailFields,
         where: query.where,
         limit: pagination.limit,
         offset: pagination.offset,
@@ -109,8 +141,12 @@ export default class FavoriteService {
       })
       .then((r) => ({
         ...r,
-        rows: r.rows.map((d) => d.get({ plain: true }) as IMFavoriteLite),
+        rows: r.rows.map((d) => d.get({ plain: true }) as IMFavoriteDetailPlain),
       }));
+    return {
+      ...res,
+      rows: await this._handleRelativeData(res.rows),
+    };
   }
 
   /**
@@ -122,7 +158,7 @@ export default class FavoriteService {
     favoriteId: IFavoriteModel['favoriteId'],
     scope: TFavoriteModelScopes | null = 'available',
   ): Promise<IMFavoriteServiceGetDetailRes> {
-    return this.model
+    const res = await this.model
       .scope(scope || undefined)
       .findOne({
         attributes: favoriteDetailFields,
@@ -130,7 +166,12 @@ export default class FavoriteService {
           favoriteId,
         },
       })
-      .then((d) => d && (d.get({ plain: true }) as IMFavoriteDetail));
+      .then((d) => d && (d.get({ plain: true }) as IMFavoriteDetailPlain));
+    if (!res) {
+      return res;
+    }
+    const [ret] = await this._handleRelativeData([res]);
+    return ret;
   }
 
   /**

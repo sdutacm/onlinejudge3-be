@@ -17,18 +17,48 @@ export interface IFavoriteModel {
 
 export type TFavoriteModelFields = keyof IFavoriteModel;
 
-export type TMFavoriteLiteFields = Extract<
-  TFavoriteModelFields,
-  'favoriteId' | 'userId' | 'type' | 'target' | 'note' | 'createdAt' | 'updatedAt' | 'deleted'
->;
-
 export type TMFavoriteDetailFields = Extract<
   TFavoriteModelFields,
   'favoriteId' | 'userId' | 'type' | 'target' | 'note' | 'createdAt' | 'updatedAt' | 'deleted'
 >;
 
-export type IMFavoriteLite = Pick<IFavoriteModel, TMFavoriteLiteFields>;
-export type IMFavoriteDetail = Pick<IFavoriteModel, TMFavoriteDetailFields>;
+export type IMFavoriteDetailPlain = Pick<IFavoriteModel, TMFavoriteDetailFields>;
+export type IMFavoriteDetailTypeProblem = Omit<IMFavoriteDetailPlain, 'type' | 'target'> & {
+  type: 'problem';
+  target: {
+    problemId: number;
+    title: string;
+  };
+};
+export type IMFavoriteDetailTypeContest = Omit<IMFavoriteDetailPlain, 'type' | 'target'> & {
+  type: 'contest';
+  target: {
+    contestId: number;
+    title: string;
+  };
+};
+export type IMFavoriteDetailTypeSet = Omit<IMFavoriteDetailPlain, 'type' | 'target'> & {
+  type: 'set';
+  target: {
+    setId: number;
+    title: string;
+  };
+};
+export type IMFavoriteDetailTypeGroup = Omit<IMFavoriteDetailPlain, 'type' | 'target'> & {
+  type: 'group';
+  target: {
+    groupId: number;
+    title: string;
+    name: string;
+    verified: boolean;
+  };
+};
+
+export type IMFavoriteDetail =
+  | IMFavoriteDetailTypeProblem
+  | IMFavoriteDetailTypeContest
+  | IMFavoriteDetailTypeSet
+  | IMFavoriteDetailTypeGroup;
 export type IMFavoriteListPagination = defService.ServiceListOpt<TFavoriteModelFields>;
 export type IMFavoriteFullListPagination = defService.ServiceFullListOpt<TFavoriteModelFields>;
 
@@ -39,7 +69,7 @@ export interface IMFavoriteServiceGetListOpt {
   note?: IFavoriteModel['note'];
 }
 
-export type IMFavoriteServiceGetListRes = defModel.ListModelRes<IMFavoriteLite>;
+export type IMFavoriteServiceGetListRes = defModel.ListModelRes<IMFavoriteDetail>;
 //#endregion
 
 //#region service.getDetail
