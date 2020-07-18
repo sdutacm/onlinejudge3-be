@@ -174,6 +174,96 @@ const favoriteContract = {
     additionalProperties: false,
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
+
+  addFavoriteReq: {
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['problem'] },
+          target: {
+            type: 'object',
+            properties: {
+              problemId: { type: 'number', minimum: 1 },
+              contestId: { type: 'number', minimum: 1 },
+            },
+            additionalProperties: false,
+            required: ['problemId'],
+          },
+          note: { type: 'string', maxLength: 10000 },
+        },
+        additionalProperties: false,
+        required: ['type', 'target', 'note'],
+      },
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['contest'] },
+          target: {
+            type: 'object',
+            properties: {
+              contestId: { type: 'number', minimum: 1 },
+            },
+            additionalProperties: false,
+            required: ['contestId'],
+          },
+          note: { type: 'string', maxLength: 10000 },
+        },
+        additionalProperties: false,
+        required: ['type', 'target', 'note'],
+      },
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['set'] },
+          target: {
+            type: 'object',
+            properties: {
+              setId: { type: 'number', minimum: 1 },
+            },
+            additionalProperties: false,
+            required: ['setId'],
+          },
+          note: { type: 'string', maxLength: 10000 },
+        },
+        additionalProperties: false,
+        required: ['type', 'target', 'note'],
+      },
+      {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['group'] },
+          target: {
+            type: 'object',
+            properties: {
+              groupId: { type: 'number', minimum: 1 },
+            },
+            additionalProperties: false,
+            required: ['groupId'],
+          },
+          note: { type: 'string', maxLength: 10000 },
+        },
+        additionalProperties: false,
+        required: ['type', 'target', 'note'],
+      },
+    ],
+  } as defContract.ContractSchema,
+
+  addFavoriteResp: {
+    properties: {
+      favoriteId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['favoriteId'],
+  } as defContract.ContractSchema,
+
+  deleteFavoriteReq: {
+    properties: {
+      favoriteId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['favoriteId'],
+  } as defContract.ContractSchema,
 };
 
 export type IFavoriteContract = typeof favoriteContract;

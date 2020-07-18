@@ -744,6 +744,19 @@ export default class ContestService {
   }
 
   /**
+   * 判断指定题目是否在指定比赛的题目列表中。
+   * @param problemId problemId
+   * @param contestId contestId
+   */
+  async isProblemInContest(
+    problemId: IProblemModel['problemId'],
+    contestId: IContestModel['contestId'],
+  ): Promise<boolean> {
+    const problems = await this.getContestProblems(contestId);
+    return !!problems.rows.find((problem) => problem.problemId === problemId);
+  }
+
+  /**
    * 设置比赛题目。
    * @param contestId contestId
    * @param problems 比赛题目列表
