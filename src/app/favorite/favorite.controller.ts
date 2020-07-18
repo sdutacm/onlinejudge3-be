@@ -14,7 +14,7 @@ import { ILodash } from '@/utils/libs/lodash';
 import { CUserService } from '../user/user.service';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
-import { IAddFavoriteReq } from '@/common/contracts/favorite';
+import { IAddFavoriteReq, IDeleteFavoriteReq } from '@/common/contracts/favorite';
 import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
 
@@ -94,5 +94,23 @@ export default class FavoriteController {
       }
       // TODO set/group
     }
+  }
+
+  @route()
+  @login()
+  async [routesBe.deleteFavorite.i](ctx: Context): Promise<void> {
+    const { favoriteId } = ctx.request.body as IDeleteFavoriteReq;
+    const userId = ctx.session.userId;
+    const favorite = await this.service.getDetail(favoriteId, null);
+    if (!favorite) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    } else if (favorite.userId !== userId) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    } else if (favorite.deleted) {
+      throw new ReqError(Codes.FAVORITE_DELETED);
+    }
+    await this.service.update(favoriteId, {
+      deleted: true,
+    });
   }
 }
