@@ -12,6 +12,7 @@ import contestContract from '../src/app/contest/contest.contract';
 import judgerContract from '../src/app/judger/judger.contract';
 import messageContract from '../src/app/message/message.contract';
 import favoriteContract from '../src/app/favorite/favorite.contract';
+import noteContract from '../src/app/note/note.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -25,6 +26,7 @@ const contracts = [
   [judgerContract, 'judger'],
   [messageContract, 'message'],
   [favoriteContract, 'favorite'],
+  [noteContract, 'note'],
 ];
 
 const banner = `/**
