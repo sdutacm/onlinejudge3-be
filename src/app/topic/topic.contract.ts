@@ -123,6 +123,42 @@ const topicContract = {
     additionalProperties: false,
     required: ['topicId', 'user', 'title', 'content', 'replyCount', 'createdAt', 'deleted'],
   } as defContract.ContractSchema,
+
+  createTopicReq: {
+    properties: {
+      title: { type: 'string', maxLength: 128 },
+      content: { type: 'string' },
+      problemId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['title', 'content'],
+  } as defContract.ContractSchema,
+
+  createTopicResp: {
+    properties: {
+      topicId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['topicId'],
+  } as defContract.ContractSchema,
+
+  updateTopicReq: {
+    properties: {
+      topicId: { type: 'number', minimum: 1 },
+      title: { type: 'string', maxLength: 128 },
+      content: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['topicId', 'title', 'content'],
+  } as defContract.ContractSchema,
+
+  deleteTopicReq: {
+    properties: {
+      topicId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['topicId'],
+  } as defContract.ContractSchema,
 };
 
 export type ITopicContract = typeof topicContract;
