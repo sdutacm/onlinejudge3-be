@@ -27,6 +27,7 @@ import {
   IMSolutionServiceGetUserSolutionCalendarRes,
   IMSolutionCalendar,
   IMSolutionServiceGetAllContestSolutionListRes,
+  IMSolutionServiceGetRelativeRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -409,6 +410,82 @@ export default class SolutionService {
     }
     const [ret] = await this._handleRelativeData([res]);
     return ret;
+  }
+
+  /**
+   * 按 pk 关联查询提交详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表
+   */
+  async getRelative(
+    keys: ISolutionModel['solutionId'][],
+  ): Promise<IMSolutionServiceGetRelativeRes> {
+    const ks = this.lodash.uniq(keys);
+    const res: Record<ISolutionModel['solutionId'], IMSolutionDetailPlainFull> = {};
+    let uncached: typeof keys = [];
+    for (const k of ks) {
+      const cached = await this._getDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
+      }
+    }
+    if (uncached.length) {
+      const dbRes = await this.model
+        .findAll({
+          attributes: solutionDetailFields,
+          where: {
+            solutionId: {
+              [Op.in]: uncached,
+            },
+          },
+        })
+        .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionDetailPlain));
+      for (const d of dbRes) {
+        const { solutionId } = d;
+        const compileInfo =
+          (
+            await this.compileInfoModel.findOne({
+              attributes: ['compileInfo'],
+              where: {
+                solutionId,
+              },
+            })
+          )?.compileInfo || '';
+        const code =
+          (
+            await this.codeModel.findOne({
+              attributes: ['code'],
+              where: {
+                solutionId,
+              },
+            })
+          )?.code || '';
+        const fd = d
+          ? {
+              ...d,
+              compileInfo,
+              code,
+            }
+          : null;
+        fd && (res[solutionId] = fd);
+        await this._setDetailCache(solutionId, fd);
+      }
+      // 查不到的也要缓存
+      for (const k of ks) {
+        !res[k] && (await this._setDetailCache(k, null));
+      }
+    }
+    // @ts-ignore
+    const ids = Object.keys(res) as number[];
+    const resArr = ids.map((k: number) => res[k]);
+    const handledResArr = await this._handleRelativeData(resArr);
+    const handledRes: IMSolutionServiceGetRelativeRes = {};
+    ids.forEach((k, index) => {
+      handledRes[k] = handledResArr[index];
+    });
+    return handledRes;
   }
 
   /**
