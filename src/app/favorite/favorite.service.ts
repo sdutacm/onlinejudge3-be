@@ -174,7 +174,7 @@ export default class FavoriteService {
         attributes: favoriteDetailFields,
         where: options as any,
       })
-      .then((d) => d && (d.get({ plain: true }) as IMFavoriteDetail));
+      .then((d) => d && (d.get({ plain: true }) as IMFavoriteDetailPlain));
   }
 
   /**

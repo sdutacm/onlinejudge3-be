@@ -91,7 +91,7 @@ export default class ProblemService {
   @config()
   redisKey: IRedisKeyConfig;
 
-  @config('durations')
+  @config()
   durations: IDurationsConfig;
 
   scopeChecker = {

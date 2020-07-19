@@ -55,7 +55,7 @@ export default class TagService {
   @config()
   redisKey: IRedisKeyConfig;
 
-  @config('durations')
+  @config()
   durations: IDurationsConfig;
 
   /**

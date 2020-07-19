@@ -78,7 +78,7 @@ export type IMFavoriteServiceGetDetailRes = defModel.DetailModelRes<IMFavoriteDe
 
 //#region service.findOne
 export type IMFavoriteServiceFindOneOpt = Partial<IFavoriteModel>;
-export type IMFavoriteServiceFindOneRes = defModel.DetailModelRes<IMFavoriteDetail>;
+export type IMFavoriteServiceFindOneRes = defModel.DetailModelRes<IMFavoriteDetailPlain>;
 //#endregion
 
 //#region service.isExists

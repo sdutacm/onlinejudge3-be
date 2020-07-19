@@ -222,7 +222,7 @@ export default class ContestService {
   @config()
   redisKey: IRedisKeyConfig;
 
-  @config('durations')
+  @config()
   durations: IDurationsConfig;
 
   scopeChecker = {

@@ -21,7 +21,7 @@ export default class VerificationService {
   @config()
   redisKey: IRedisKeyConfig;
 
-  @config('durations')
+  @config()
   durations: IDurationsConfig;
 
   async getEmailVerificationCode(email: string): Promise<IVerificationCode | null> {

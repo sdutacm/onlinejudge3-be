@@ -89,7 +89,7 @@ export default class UserService {
   @inject()
   lodash: ILodash;
 
-  @config('durations')
+  @config()
   durations: IDurationsConfig;
 
   scopeChecker = {
