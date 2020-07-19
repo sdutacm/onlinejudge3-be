@@ -28,6 +28,7 @@ import {
   IMSolutionCalendar,
   IMSolutionServiceGetAllContestSolutionListRes,
   IMSolutionServiceGetRelativeRes,
+  IMSolutionDetail,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -716,5 +717,20 @@ export default class SolutionService {
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
     return res;
+  }
+
+  /**
+   * 判断提交所有者是否是自己。
+   * @param ctx ctx
+   * @param detail 提交详情
+   */
+  isSolutionSelf(ctx: Context, detail: IMSolutionDetail): boolean {
+    return !!(
+      (ctx.loggedIn && ctx.session.userId === detail.user.userId) ||
+      (detail.contest?.contestId &&
+        detail.isContestUser &&
+        detail.user.userId &&
+        ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
+    );
   }
 }

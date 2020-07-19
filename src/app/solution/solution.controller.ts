@@ -36,16 +36,6 @@ export default class SolutionController {
   @inject()
   lodash: ILodash;
 
-  private _solutionIsSelf(ctx: Context, detail: IMSolutionDetail) {
-    return (
-      (ctx.loggedIn && ctx.session.userId === detail.user.userId) ||
-      (detail.contest?.contestId &&
-        detail.isContestUser &&
-        detail.user.userId &&
-        ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
-    );
-  }
-
   @route()
   @pagination()
   @getList(undefined, {
@@ -74,7 +64,7 @@ export default class SolutionController {
   @getDetail()
   async [routesBe.getSolutionDetail.i](ctx: Context) {
     const detail = ctx.detail as IMSolutionDetail;
-    const isSelf = this._solutionIsSelf(ctx, detail);
+    const isSelf = this.service.isSolutionSelf(ctx, detail);
     if (!(ctx.isPerm || (ctx.loggedIn && detail.shared) || isSelf)) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
@@ -88,7 +78,7 @@ export default class SolutionController {
     const solutionId = ctx.id!;
     const { shared } = ctx.request.body as IUpdateSolutionShareReq;
     const detail = ctx.detail as IMSolutionDetail;
-    const isSelf = this._solutionIsSelf(ctx, detail);
+    const isSelf = this.service.isSolutionSelf(ctx, detail);
     if (!isSelf) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
