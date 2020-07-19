@@ -22,7 +22,6 @@ import {
 } from './favorite.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
-import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
 
@@ -58,15 +57,6 @@ export default class FavoriteService {
 
   @inject()
   ctx: Context;
-
-  @inject()
-  lodash: ILodash;
-
-  @config()
-  redisKey: IRedisKeyConfig;
-
-  @config()
-  durations: IDurationsConfig;
 
   private _formatFullListQuery(opts: IMFavoriteServiceGetFullListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
