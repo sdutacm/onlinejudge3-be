@@ -77,6 +77,10 @@ export type IMTopicServiceGetListRes = defModel.ListModelRes<IMTopicLite>;
 export type IMTopicServiceGetDetailRes = defModel.DetailModelRes<IMTopicDetail>;
 //#endregion
 
+//#region service.getRelative
+export type IMTopicServiceGetRelativeRes = Record<ITopicModel['topicId'], IMTopicDetail>;
+//#endregion
+
 //#region service.findOne
 export type IMTopicServiceFindOneOpt = Partial<ITopicModel>;
 export type IMTopicServiceFindOneRes = defModel.DetailModelRes<IMTopicDetailPlain>;

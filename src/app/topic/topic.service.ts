@@ -21,6 +21,7 @@ import {
   IMTopicDetailPlain,
   IMTopicRelativeUser,
   IMTopicRelativeProblem,
+  IMTopicServiceGetRelativeRes,
 } from './topic.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -234,6 +235,67 @@ export default class TopicService {
       return ret;
     }
     return null;
+  }
+
+  /**
+   * 按 pk 关联查询话题详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表
+   * @param scope 查询 scope，默认 available，如查询全部则传 null
+   */
+  async getRelative(
+    keys: ITopicModel['topicId'][],
+    scope: TTopicModelScopes | null = 'available',
+  ): Promise<IMTopicServiceGetRelativeRes> {
+    const ks = this.lodash.uniq(keys);
+    const res: Record<ITopicModel['topicId'], IMTopicDetailPlain> = {};
+    let uncached: typeof keys = [];
+    for (const k of ks) {
+      const cached = await this._getDetailCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
+      }
+    }
+    if (uncached.length) {
+      const dbRes = await this.model
+        // .scope(scope || undefined)
+        .findAll({
+          attributes: topicDetailFields,
+          where: {
+            topicId: {
+              [Op.in]: uncached,
+            },
+          },
+        })
+        .then((r) => r.map((d) => d.get({ plain: true }) as IMTopicDetailPlain));
+      for (const d of dbRes) {
+        res[d.topicId] = d;
+        await this._setDetailCache(d.topicId, d);
+      }
+      // 查不到的也要缓存
+      for (const k of ks) {
+        !res[k] && (await this._setDetailCache(k, null));
+      }
+    }
+    // 使用缓存，业务上自己处理 scope
+    // @ts-ignore
+    Object.keys(res).forEach((k: number) => {
+      if (!(scope === null || this.scopeChecker[scope](res[k]))) {
+        delete res[k];
+      }
+    });
+    // 处理 relative
+    // @ts-ignore
+    const ids = Object.keys(res) as number[];
+    const resArr = ids.map((k: number) => res[k]);
+    const handledResArr = await this._handleRelativeData(resArr);
+    const handledRes: IMTopicServiceGetRelativeRes = {};
+    ids.forEach((k, index) => {
+      handledRes[k] = handledResArr[index];
+    });
+    return handledRes;
   }
 
   /**
