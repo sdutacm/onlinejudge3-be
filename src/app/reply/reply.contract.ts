@@ -79,6 +79,31 @@ const replyContract = {
     additionalProperties: false,
     required: ['page', 'limit', 'count', 'rows'],
   } as defContract.ContractSchema,
+
+  createReplyReq: {
+    properties: {
+      topicId: { type: 'number', minimum: 1 },
+      content: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['topicId', 'content'],
+  } as defContract.ContractSchema,
+
+  createReplyResp: {
+    properties: {
+      replyId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['replyId'],
+  } as defContract.ContractSchema,
+
+  deleteReplyReq: {
+    properties: {
+      replyId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['replyId'],
+  } as defContract.ContractSchema,
 };
 
 export type IReplyContract = typeof replyContract;
