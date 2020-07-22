@@ -9,6 +9,7 @@ import {
   Default,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
+import { IPostModel } from '@/app/post/post.interface';
 
 export const factory = () => PostModel;
 providerWrapper([
@@ -30,7 +31,7 @@ const scope = {
   freezeTableName: true,
   timestamps: false,
 })
-export class PostModel extends Model<PostModel> {
+export default class PostModel extends Model<PostModel> implements IPostModel {
   @Column({
     field: 'news_id',
     primaryKey: true,
@@ -81,7 +82,7 @@ export class PostModel extends Model<PostModel> {
   @Column({
     type: DataType.BOOLEAN,
   })
-  display: number;
+  display: boolean;
 
   // @Column({
   //   field: 'start_time',
