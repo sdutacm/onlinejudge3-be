@@ -65,7 +65,7 @@ export default class ReplyModel extends Model<ReplyModel> implements IReplyModel
   @Default('')
   @Column({
     field: 'reply_content',
-    type: DataType.STRING,
+    type: DataType.TEXT({ length: 'medium' }),
   })
   content: string;
 

@@ -105,8 +105,7 @@ export default class TopicModel extends Model<TopicModel> implements ITopicModel
   @Default('')
   @Column({
     field: 'topic_content',
-    allowNull: true,
-    type: DataType.STRING,
+    type: DataType.TEXT({ length: 'medium' }),
   })
   content: string;
 
