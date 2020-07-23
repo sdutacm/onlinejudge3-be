@@ -123,7 +123,7 @@ export default class PostService {
     data: T[],
   ): Promise<
     Array<
-      Omit<T, 'userId' | 'problemId'> & {
+      Omit<T, 'userId'> & {
         user?: IMPostRelativeUser;
       }
     >
@@ -133,7 +133,7 @@ export default class PostService {
     return data.map((d) => {
       const user = relativeUsers[d.userId];
       return this.utils.misc.ignoreUndefined({
-        ...this.lodash.omit(d, ['userId', 'problemId']),
+        ...this.lodash.omit(d, ['userId']),
         user: user
           ? {
               userId: user.userId,
