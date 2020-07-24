@@ -140,7 +140,7 @@ const setContract = {
       'setId',
       'user',
       'title',
-      'desctiption',
+      'description',
       'type',
       'props',
       'createdAt',

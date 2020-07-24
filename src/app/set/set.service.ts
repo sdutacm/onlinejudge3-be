@@ -142,7 +142,7 @@ export default class SetService {
     const userIds = data.map((d) => d.userId);
     const problemIds = data.reduce((acc, d) => {
       // @ts-ignore
-      const props = d.props as ISetProps;
+      const props = d.props as ISetProps | undefined;
       if (!props) {
         return [];
       }
@@ -161,7 +161,30 @@ export default class SetService {
     const relativeProblems = await this.problemService.getRelative(problemIds, null);
     return data.map((d) => {
       const user = relativeUsers[d.userId];
-      // TODO 处理 problem title
+      // @ts-ignore
+      const props = d.props as ISetProps | undefined;
+      let handledProps: typeof props;
+      if (props) {
+        const sections = props.sections;
+        handledProps = {
+          ...props,
+          sections: sections.map((section) => ({
+            ...section,
+            problems: section.problems.map((problem) => {
+              if (problem.title) {
+                return {
+                  ...problem,
+                };
+              } else {
+                return {
+                  ...problem,
+                  title: relativeProblems[problem.problemId]?.title || '',
+                };
+              }
+            }),
+          })),
+        };
+      }
       return this.utils.misc.ignoreUndefined({
         ...this.lodash.omit(d, ['userId']),
         user: user
@@ -173,6 +196,7 @@ export default class SetService {
               bannerImage: user.bannerImage,
             }
           : undefined,
+        props: handledProps,
       });
     });
   }
