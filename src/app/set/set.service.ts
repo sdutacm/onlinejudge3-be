@@ -21,11 +21,14 @@ import {
   IMSetDetailPlain,
   IMSetRelativeUser,
   IMSetServiceGetRelativeRes,
+  ISetProps,
 } from './set.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
 import { CUserService } from '../user/user.service';
 import { ILodash } from '@/utils/libs/lodash';
+import { IProblemModel } from '../problem/problem.interface';
+import { CProblemService } from '../problem/problem.service';
 
 export type CSetService = SetService;
 
@@ -33,7 +36,6 @@ const setLiteFields: Array<TMSetLiteFields> = [
   'setId',
   'userId',
   'title',
-  'description',
   'type',
   'createdAt',
   'updatedAt',
@@ -62,6 +64,9 @@ export default class SetService {
 
   @inject()
   userService: CUserService;
+
+  @inject()
+  problemService: CProblemService;
 
   @inject()
   utils: IUtils;
@@ -113,6 +118,7 @@ export default class SetService {
     const where: any = this.utils.misc.ignoreUndefined({
       setId: opts.setId,
       userId: opts.userId,
+      type: opts.type,
     });
     if (opts.title) {
       where.title = {
@@ -134,9 +140,28 @@ export default class SetService {
     >
   > {
     const userIds = data.map((d) => d.userId);
+    const problemIds = data.reduce((acc, d) => {
+      // @ts-ignore
+      const props = d.props as ISetProps;
+      if (!props) {
+        return [];
+      }
+      const sections = props.sections;
+      const ids = sections.reduce((ids, section) => {
+        return [
+          ...ids,
+          ...section.problems
+            .map((problem) => (problem.title ? 0 : problem.problemId))
+            .filter((f) => f), // 已设置自定义 title 的不需要再去拉 title
+        ];
+      }, [] as IProblemModel['problemId'][]);
+      return [...acc, ...ids];
+    }, [] as IProblemModel['problemId'][]);
     const relativeUsers = await this.userService.getRelative(userIds, null);
+    const relativeProblems = await this.problemService.getRelative(problemIds, null);
     return data.map((d) => {
       const user = relativeUsers[d.userId];
+      // TODO 处理 problem title
       return this.utils.misc.ignoreUndefined({
         ...this.lodash.omit(d, ['userId']),
         user: user

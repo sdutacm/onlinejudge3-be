@@ -7,7 +7,7 @@ export interface ISetProps {
     description?: string;
     problems: {
       problemId: IProblemModel['problemId'];
-      title: IProblemModel['title'];
+      title?: IProblemModel['title'];
     }[];
   }[];
 }
@@ -28,7 +28,7 @@ export type TSetModelFields = keyof ISetModel;
 
 export type TMSetLiteFields = Extract<
   TSetModelFields,
-  'setId' | 'userId' | 'title' | 'description' | 'type' | 'createdAt' | 'updatedAt' | 'hidden'
+  'setId' | 'userId' | 'title' | 'type' | 'createdAt' | 'updatedAt' | 'hidden'
 >;
 
 export type TMSetDetailFields = Extract<
