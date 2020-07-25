@@ -77,6 +77,10 @@ export default class UserController {
   @config()
   uploadLimit: IAppConfig['uploadLimit'];
 
+  /**
+   * 获取 Session。
+   * @returns 如果已登录，则返回不带 contests 的 session，否则返回 null
+   */
   @route()
   async [routesBe.getSession.i](ctx: Context): Promise<IGetSessionResp> {
     return ctx.helper.isGlobalLoggedIn()
@@ -90,6 +94,12 @@ export default class UserController {
       : null;
   }
 
+  /**
+   * 登录。
+   *
+   * 按照 username+password 或 email+password 尝试登录。如果登录成功则设置 session。
+   * @returns 不带 contests 的 session
+   */
   @route()
   async [routesBe.login.i](ctx: Context): Promise<ILoginResp> {
     const { loginName, password } = ctx.request.body as ILoginReq;
@@ -123,12 +133,23 @@ export default class UserController {
     };
   }
 
+  /**
+   * 登出。
+   */
   @route()
   async [routesBe.logout.i](ctx: Context): Promise<void> {
     // @ts-ignore
     ctx.session = null;
   }
 
+  /**
+   * 注册。
+   *
+   * 校验逻辑：
+   * 1. 检查用户名、昵称、邮箱均不被占用
+   * 2. 此邮箱的验证码有效
+   * @returns 用户 ID
+   */
   @route()
   async [routesBe.register.i](ctx: Context): Promise<IRegisterResp> {
     const { username, nickname, email, code, password } = ctx.request.body as IRegisterReq;
@@ -154,6 +175,12 @@ export default class UserController {
     return { userId: newId };
   }
 
+  /**
+   * 获取用户列表。
+   *
+   * 如果非管理，则 forbidden 字段不可用。
+   * @returns 用户列表
+   */
   @route()
   @pagination()
   @getList(undefined, {
@@ -164,6 +191,19 @@ export default class UserController {
   @respList()
   async [routesBe.getUserList.i](_ctx: Context) {}
 
+  /**
+   * 获取用户详情。
+   *
+   * 如果查询的用户不是当前登录用户，则需移除以下字段：
+   * - email
+   * - defaultLanguage
+   * - settings
+   * - coin
+   * - verified
+   * - lastTime
+   * - createdAt
+   * @returns 用户详情
+   */
   @route()
   @id()
   @getDetail()
@@ -185,6 +225,11 @@ export default class UserController {
     return detailResp;
   }
 
+  /**
+   * 更新用户信息。
+   *
+   * 只有当前登录用户才有权限更新自己的信息。
+   */
   @route()
   @requireSelf()
   @id()
@@ -196,6 +241,11 @@ export default class UserController {
     await this.service.clearDetailCache(userId);
   }
 
+  /**
+   * 修改密码。
+   *
+   * 校验旧密码正确则可以修改密码。仅当前登录用户可操作。
+   */
   @route()
   @requireSelf()
   @id()
@@ -216,6 +266,11 @@ export default class UserController {
     });
   }
 
+  /**
+   * 重置密码。
+   *
+   * 通过邮箱和验证码重置密码，根据邮箱查到对应用户且需验证码有效。仅当前登录用户可操作。
+   */
   @route()
   async [routesBe.resetUserPassword.i](ctx: Context): Promise<void> {
     const { email, code, password } = ctx.request.body as IResetUserPasswordReq;
@@ -236,6 +291,11 @@ export default class UserController {
     this.verificationService.deleteEmailVerificationCode(email);
   }
 
+  /**
+   * 强制重置密码。
+   *
+   * 需要管理员权限。
+   */
   @route()
   @auth('admin')
   @id()
@@ -248,6 +308,11 @@ export default class UserController {
     });
   }
 
+  /**
+   * 更改邮箱。
+   *
+   * 需要未被使用的新邮箱和有效验证码来更改邮箱。仅当前登录用户可操作。
+   */
   @route()
   @requireSelf()
   @id()
@@ -267,6 +332,15 @@ export default class UserController {
     this.verificationService.deleteEmailVerificationCode(email);
   }
 
+  /**
+   * 上传头像。
+   *
+   * 图片校验逻辑：
+   * 1. 格式限制：jpeg/png
+   * 2. 大小限制
+   *
+   * 上传成功后保留原图和压缩图（s_），且清除旧文件。仅当前登录用户可操作。
+   */
   @route()
   @requireSelf()
   @id()
@@ -314,6 +388,15 @@ export default class UserController {
     ctx.session.avatar = saveName;
   }
 
+  /**
+   * 上传头像。
+   *
+   * 图片校验逻辑：
+   * 1. 格式限制：jpeg/png
+   * 2. 大小限制
+   *
+   * 上传成功后保留原图、压缩图（s_）和等比最小缩放的极压缩图（min_），且清除旧文件。仅当前登录用户可操作。
+   */
   @route()
   @requireSelf()
   @id()
@@ -388,6 +471,12 @@ export default class UserController {
     await this.service.clearDetailCache(userId);
   }
 
+  /**
+   * 获取用户的题目提交结果统计。
+   *
+   * 如传了 contestId，则查找范围限定在指定比赛。
+   * @returns 用户提交结果统计
+   */
   @route()
   @id()
   @getDetail()
@@ -397,6 +486,10 @@ export default class UserController {
     return this.solutionService.getUserProblemResultStats(userId, contestId);
   }
 
+  /**
+   * 获取用户的提交日历图统计。
+   * @returns 用户提交日历图统计
+   */
   @route()
   @id()
   @getDetail()
