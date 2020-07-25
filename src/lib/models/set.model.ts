@@ -31,7 +31,7 @@ const scope = {
 @Table({
   tableName: 'set',
   freezeTableName: true,
-  timestamps: false,
+  timestamps: true,
 })
 export default class SetModel extends Model<SetModel> implements ISetModel {
   @Column({

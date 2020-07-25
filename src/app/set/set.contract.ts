@@ -152,7 +152,7 @@ const setContract = {
   createSetReq: {
     properties: {
       title: { type: 'string', maxLength: 128 },
-      description: { type: 'string' },
+      description: { type: 'string', maxLength: 1024 },
       type: { type: 'string', enum: ['standard'] },
       props: {
         type: 'object',
@@ -162,15 +162,15 @@ const setContract = {
             items: {
               type: 'object',
               properties: {
-                title: { type: 'string' },
-                description: { type: 'string' },
+                title: { type: 'string', maxLength: 32 },
+                description: { type: 'string', maxLength: 1024 },
                 problems: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      problemId: { type: 'number' },
-                      title: { type: 'string' },
+                      problemId: { type: 'number', minimum: 1 },
+                      title: { type: 'string', maxLength: 32 },
                     },
                     additionalProperties: false,
                     required: ['problemId', 'title'],
@@ -203,7 +203,7 @@ const setContract = {
     properties: {
       setId: { type: 'number', minimum: 1 },
       title: { type: 'string', maxLength: 128 },
-      description: { type: 'string' },
+      description: { type: 'string', maxLength: 1024 },
       type: { type: 'string', enum: ['standard'] },
       props: {
         type: 'object',
@@ -213,15 +213,15 @@ const setContract = {
             items: {
               type: 'object',
               properties: {
-                title: { type: 'string' },
-                description: { type: 'string' },
+                title: { type: 'string', maxLength: 32 },
+                description: { type: 'string', maxLength: 1024 },
                 problems: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      problemId: { type: 'number' },
-                      title: { type: 'string' },
+                      problemId: { type: 'number', minimum: 1 },
+                      title: { type: 'string', maxLength: 32 },
                     },
                     additionalProperties: false,
                     required: ['problemId', 'title'],

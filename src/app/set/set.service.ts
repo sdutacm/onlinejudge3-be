@@ -22,6 +22,7 @@ import {
   IMSetRelativeUser,
   IMSetServiceGetRelativeRes,
   ISetProps,
+  ISetPropsSectionProblemItem,
 } from './set.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -199,6 +200,16 @@ export default class SetService {
         props: handledProps,
       });
     });
+  }
+
+  /**
+   * 获取 set 中扁平化的题目列表。
+   * @param props set props
+   */
+  getFlatProblems(props: ISetProps): ISetPropsSectionProblemItem[] {
+    return props.sections.reduce((problems, section) => {
+      return [...problems, ...section.problems];
+    }, [] as ISetPropsSectionProblemItem[]);
   }
 
   /**

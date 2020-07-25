@@ -1,15 +1,19 @@
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 
+export interface ISetPropsSectionProblemItem {
+  problemId: IProblemModel['problemId'];
+  title?: IProblemModel['title'];
+}
+
+export interface ISetPropsSection {
+  title: string;
+  description?: string;
+  problems: ISetPropsSectionProblemItem[];
+}
+
 export interface ISetProps {
-  sections: {
-    title: string;
-    description?: string;
-    problems: {
-      problemId: IProblemModel['problemId'];
-      title?: IProblemModel['title'];
-    }[];
-  }[];
+  sections: ISetPropsSection[];
 }
 
 export interface ISetModel {
