@@ -39,6 +39,18 @@ const userContract = {
     required: ['loginName', 'password'],
   } as defContract.ContractSchema,
 
+  loginResp: {
+    properties: {
+      userId: { type: 'number' },
+      username: { type: 'string' },
+      nickname: { type: 'string' },
+      permission: { type: 'number' },
+      avatar: { type: ['string', 'null'] },
+    },
+    additionalProperties: false,
+    required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+  } as defContract.ContractSchema,
+
   registerReq: {
     properties: {
       username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },

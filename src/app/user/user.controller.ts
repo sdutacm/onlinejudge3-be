@@ -28,6 +28,7 @@ import {
   IRegisterResp,
   IGetUserSolutionCalendarReq,
   IGetUserSolutionCalendarResp,
+  ILoginResp,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -90,7 +91,7 @@ export default class UserController {
   }
 
   @route()
-  async [routesBe.login.i](ctx: Context): Promise<void> {
+  async [routesBe.login.i](ctx: Context): Promise<ILoginResp> {
     const { loginName, password } = ctx.request.body as ILoginReq;
     const pass = this.utils.misc.hashPassword(password);
     const user =
@@ -112,6 +113,13 @@ export default class UserController {
       permission: user.permission,
       avatar: user.avatar,
       contests: {},
+    };
+    return {
+      userId: user.userId,
+      username: user.username,
+      nickname: user.nickname,
+      permission: user.permission,
+      avatar: user.avatar,
     };
   }
 
