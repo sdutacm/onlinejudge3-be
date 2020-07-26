@@ -10,14 +10,9 @@ describe(basename(__filename), () => {
     const url = routesBe.getSession.url;
 
     it('should work with session', async () => {
+      const session = testUtils.getMockNormalSession();
       app.mockContext({
-        session: {
-          userId: 1,
-          username: 'root',
-          nickname: 'hack',
-          permission: 3,
-          avatar: '',
-        },
+        session,
       });
       await app
         .httpRequest()
@@ -25,21 +20,11 @@ describe(basename(__filename), () => {
         .expect(200)
         .expect({
           success: true,
-          data: {
-            userId: 1,
-            username: 'root',
-            nickname: 'hack',
-            permission: 3,
-            avatar: '',
-          },
+          data: pick(session, ['userId', 'username', 'nickname', 'permission', 'avatar']),
         });
     });
 
     it('should work without session', async () => {
-      app.mockClassFunction('userService', 'isExists', (...args: any[]) => {
-        console.log('? args', args);
-        return true;
-      });
       await app.httpRequest().get(url).expect(200).expect({
         success: true,
         data: null,
