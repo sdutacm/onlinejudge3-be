@@ -228,7 +228,7 @@ export default class UserController {
   /**
    * 更新用户信息。
    *
-   * 只有当前登录用户才有权限更新自己的信息。
+   * 权限：当前登录用户
    */
   @route()
   @requireSelf()
@@ -244,7 +244,9 @@ export default class UserController {
   /**
    * 修改密码。
    *
-   * 校验旧密码正确则可以修改密码。仅当前登录用户可操作。
+   * 权限：当前登录用户
+   *
+   * 校验旧密码正确则可以修改密码。
    */
   @route()
   @requireSelf()
@@ -269,7 +271,7 @@ export default class UserController {
   /**
    * 重置密码。
    *
-   * 通过邮箱和验证码重置密码，根据邮箱查到对应用户且需验证码有效。仅当前登录用户可操作。
+   * 通过邮箱和验证码重置密码，根据邮箱查到对应用户且需验证码有效。
    */
   @route()
   async [routesBe.resetUserPassword.i](ctx: Context): Promise<void> {
@@ -294,7 +296,7 @@ export default class UserController {
   /**
    * 强制重置密码。
    *
-   * 需要管理员权限。
+   * 权限：管理员。
    */
   @route()
   @auth('admin')
@@ -311,7 +313,9 @@ export default class UserController {
   /**
    * 更改邮箱。
    *
-   * 需要未被使用的新邮箱和有效验证码来更改邮箱。仅当前登录用户可操作。
+   * 权限：当前登录用户
+   *
+   * 需要未被使用的新邮箱和有效验证码来更改邮箱。
    */
   @route()
   @requireSelf()
@@ -335,11 +339,13 @@ export default class UserController {
   /**
    * 上传头像。
    *
+   * 权限：当前登录用户
+   *
    * 图片校验逻辑：
    * 1. 格式限制：jpeg/png
    * 2. 大小限制
    *
-   * 上传成功后保留原图和压缩图（s_），且清除旧文件。仅当前登录用户可操作。
+   * 上传成功后保留原图和压缩图（s_），且清除旧文件。
    */
   @route()
   @requireSelf()
@@ -389,13 +395,15 @@ export default class UserController {
   }
 
   /**
-   * 上传头像。
+   * 上传巨幅。
+   *
+   * 权限：当前登录用户
    *
    * 图片校验逻辑：
    * 1. 格式限制：jpeg/png
    * 2. 大小限制
    *
-   * 上传成功后保留原图、压缩图（s_）和等比最小缩放的极压缩图（min_），且清除旧文件。仅当前登录用户可操作。
+   * 上传成功后保留原图、压缩图（s_）和等比最小缩放的极压缩图（min_），且清除旧文件。
    */
   @route()
   @requireSelf()
