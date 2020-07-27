@@ -12,6 +12,7 @@ import {
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EGroupJoinChannel } from '@/common/enums';
+import { IGroupModel } from '@/app/group/group.interface';
 
 export const factory = () => GroupModel;
 providerWrapper([
@@ -33,7 +34,7 @@ const scope = {
   freezeTableName: true,
   timestamps: true,
 })
-export default class GroupModel extends Model<GroupModel> {
+export default class GroupModel extends Model<GroupModel> implements IGroupModel {
   @Column({
     field: 'group_id',
     primaryKey: true,
