@@ -17,6 +17,7 @@ import topicContract from '../src/app/topic/topic.contract';
 import replyContract from '../src/app/reply/reply.contract';
 import postContract from '../src/app/post/post.contract';
 import setContract from '../src/app/set/set.contract';
+import groupContract from '../src/app/group/group.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -35,6 +36,7 @@ const contracts = [
   [replyContract, 'reply'],
   [postContract, 'post'],
   [setContract, 'set'],
+  [groupContract, 'group'],
 ];
 
 const banner = `/**
