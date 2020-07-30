@@ -55,6 +55,7 @@ const groupContract = {
             membersCount: { type: 'number' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+            deleted: { type: 'boolean' },
           },
           additionalProperties: false,
           required: [
@@ -68,6 +69,7 @@ const groupContract = {
             'membersCount',
             'createdAt',
             'updatedAt',
+            'deleted',
           ],
         },
       },
@@ -97,6 +99,7 @@ const groupContract = {
       membersCount: { type: 'number' },
       createdAt: { type: 'string', format: 'date-time' },
       updatedAt: { type: 'string', format: 'date-time' },
+      deleted: { type: 'boolean' },
     },
     additionalProperties: false,
     required: [
@@ -110,6 +113,7 @@ const groupContract = {
       'membersCount',
       'createdAt',
       'updatedAt',
+      'deleted',
     ],
   } as defContract.ContractSchema,
 };

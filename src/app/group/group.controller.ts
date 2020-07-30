@@ -35,9 +35,9 @@ export default class GroupController {
   @getList(undefined, {
     beforeGetList: (ctx) => {
       if (!ctx.isAdmin) {
-        delete ctx.request.body.private;
-        const { groupId, name, verified } = ctx.request.body as IGetGroupListReq;
-        if (!groupId && !name && verified === undefined) {
+        ctx.request.body.private = false;
+        const { groupId, name } = ctx.request.body as IGetGroupListReq;
+        if (!groupId && !name) {
           return false;
         }
       }
@@ -48,7 +48,11 @@ export default class GroupController {
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(undefined, {
+    afterGetDetail: (ctx) => {
+      // TODO 对非 group.member+ 或管理，如果群组为 private，则返回群组不存在
+    },
+  })
   @respDetail()
   async [routesBe.getGroupDetail.i](_ctx: Context) {}
 }
