@@ -145,6 +145,10 @@ export type IMGroupServiceUpdateRes = boolean;
 export type IMGroupServiceGetGroupMemberListRes = defModel.ListModelRes<IMGroupMemberDetail>;
 //#endregion
 
+//#region service.getUserGroups
+export type IMGroupServiceGetUserGroupsRes = defModel.ListModelRes<IMGroupDetail>;
+//#endregion
+
 //#region service.findOneGroupMember
 export type IMGroupServiceFindOneGroupMemberOpt = Partial<IGroupMemberModel>;
 export type IMGroupServiceFindOneGroupMemberRes = defModel.DetailModelRes<IMGroupMemberDetail>;

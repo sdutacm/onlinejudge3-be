@@ -12,7 +12,7 @@ import {
 import { CGroupMeta } from './group.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
-import { IGetGroupListReq } from '@/common/contracts/group';
+import { IGetGroupListReq, IGetUserGroupsReq, IGetUserGroupsResp } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
 
 @provide()
@@ -55,4 +55,14 @@ export default class GroupController {
   })
   @respDetail()
   async [routesBe.getGroupDetail.i](_ctx: Context) {}
+
+  @route()
+  async [routesBe.getUserGroups.i](ctx: Context): Promise<IGetUserGroupsResp> {
+    const { userId } = ctx.request.body as IGetUserGroupsReq;
+    let list = await this.service.getUserGroups(userId);
+    if (!(ctx.loggedIn && ctx.session.userId === ctx.request.body.userId)) {
+      list.rows = list.rows.filter((d) => !d.private);
+    }
+    return ctx.helper.formatFullList(list.count, list.rows);
+  }
 }

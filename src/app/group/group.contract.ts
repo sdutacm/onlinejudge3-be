@@ -116,6 +116,55 @@ const groupContract = {
       'deleted',
     ],
   } as defContract.ContractSchema,
+
+  getUserGroupsReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
+  getUserGroupsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            groupId: { type: 'number' },
+            name: { type: 'string' },
+            avatar: { type: 'string' },
+            intro: { type: 'string' },
+            verified: { type: 'boolean' },
+            private: { type: 'boolean' },
+            joinChannel: { type: 'number' },
+            membersCount: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            deleted: { type: 'boolean' },
+          },
+          additionalProperties: false,
+          required: [
+            'groupId',
+            'name',
+            'avatar',
+            'intro',
+            'verified',
+            'private',
+            'joinChannel',
+            'membersCount',
+            'createdAt',
+            'updatedAt',
+            'deleted',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
 };
 
 export type IGroupContract = typeof groupContract;

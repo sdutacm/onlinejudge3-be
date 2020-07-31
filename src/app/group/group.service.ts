@@ -41,6 +41,7 @@ import { ILodash } from '@/utils/libs/lodash';
 import { IUserModel } from '../user/user.interface';
 import { CUserService } from '../user/user.service';
 import { TGroupMemberModel } from '@/lib/models/groupMember.model';
+import { EGroupMemberStatus } from '@/common/enums';
 
 export type CGroupService = GroupService;
 
@@ -159,7 +160,7 @@ export default class GroupService {
   }
 
   /**
-   * 设置群组题目列表缓存。
+   * 设置群组用户列表缓存。
    * @param groupId groupId
    * @param data 列表数据
    */
@@ -170,6 +171,33 @@ export default class GroupService {
     return this.ctx.helper.redisSet(
       this.redisKey.groupMemberList,
       [groupId],
+      data,
+      this.durations.cacheFullList,
+    );
+  }
+
+  /**
+   * 获取用户群组列表缓存。
+   * @param userId userId
+   */
+  private async _getUserGroupsCache(
+    userId: IUserModel['userId'],
+  ): Promise<IGroupModel['groupId'][] | null> {
+    return this.ctx.helper.redisGet<IGroupModel['groupId'][]>(this.redisKey.userGroups, [userId]);
+  }
+
+  /**
+   * 设置用户群组列表缓存。
+   * @param userId userId
+   * @param data 列表数据
+   */
+  private async _setUserGroupsCache(
+    userId: IUserModel['userId'],
+    data: IGroupModel['groupId'][] | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userGroups,
+      [userId],
       data,
       this.durations.cacheFullList,
     );
@@ -422,24 +450,50 @@ export default class GroupService {
   }
 
   /**
-   * 判断指定用户是否在指定群组的成员列表中。
-   * @param userId userId
-   * @param groupId groupId
-   */
-  async isUserInGroup(
-    userId: IUserModel['userId'],
-    groupId: IGroupModel['groupId'],
-  ): Promise<boolean> {
-    const members = await this.getGroupMemberList(groupId);
-    return !!members.rows.find((member) => member.user?.userId === userId);
-  }
-
-  /**
    * 清除群组成员列表缓存。
    * @param groupId groupId
    */
   async clearGroupMemberListCache(groupId: IGroupModel['groupId']): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.groupMemberList, [groupId]);
+  }
+
+  /**
+   * 获取用户加入的群组列表。
+   * @param userId userId
+   */
+  async getUserGroups(userId: IUserModel['userId']) {
+    let res: IGroupModel['groupId'][] | null = null;
+    const cached = await this._getUserGroupsCache(userId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.groupMemberModel
+        .findAll({
+          attributes: ['groupId'],
+          where: {
+            userId,
+            status: EGroupMemberStatus.normal,
+          },
+          order: [['groupMemberId', 'ASC']],
+        })
+        .then((r) => r.map((d) => d.groupId));
+      await this._setUserGroupsCache(userId, res);
+    }
+    res = res || [];
+    const relativeGroups = await this.getRelative(res);
+    const rows = res.map((groupId) => relativeGroups[groupId]).filter((f) => f);
+    return {
+      count: res.length,
+      rows,
+    };
+  }
+
+  /**
+   * 清除用户群组列表缓存。
+   * @param userId userId
+   */
+  async clearUserGroupsCache(userId: IUserModel['userId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.userGroups, [userId]);
   }
 
   /**
@@ -554,5 +608,18 @@ export default class GroupService {
       },
     });
     return res;
+  }
+
+  /**
+   * 判断指定用户是否在指定群组的成员列表中。
+   * @param userId userId
+   * @param groupId groupId
+   */
+  async isUserInGroup(
+    userId: IUserModel['userId'],
+    groupId: IGroupModel['groupId'],
+  ): Promise<boolean> {
+    const members = await this.getGroupMemberList(groupId);
+    return !!members.rows.find((member) => member.user?.userId === userId);
   }
 }
