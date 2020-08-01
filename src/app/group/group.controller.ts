@@ -7,13 +7,15 @@ import {
   route,
   getList,
   respList,
-  respDetail,
 } from '@/lib/decorators/controller.decorator';
 import { CGroupMeta } from './group.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { IGetGroupListReq, IGetUserGroupsReq, IGetUserGroupsResp } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
+import { IMGroupDetail } from './group.interface';
+import { ReqError } from '@/lib/global/error';
+import { Codes } from '@/common/codes';
 
 @provide()
 @controller('/')
@@ -48,13 +50,15 @@ export default class GroupController {
 
   @route()
   @id()
-  @getDetail(undefined, {
-    afterGetDetail: (ctx) => {
-      // TODO 对非 group.member+ 或管理，如果群组为 private，则返回群组不存在
-    },
-  })
-  @respDetail()
-  async [routesBe.getGroupDetail.i](_ctx: Context) {}
+  @getDetail()
+  async [routesBe.getGroupDetail.i](ctx: Context) {
+    const groupId = ctx.id!;
+    const detail = ctx.detail as IMGroupDetail;
+    if (detail.private && !(await this.service.hasGroupViewPerm(groupId))) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    return detail;
+  }
 
   @route()
   async [routesBe.getUserGroups.i](ctx: Context): Promise<IGetUserGroupsResp> {

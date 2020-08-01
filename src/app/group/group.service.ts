@@ -656,7 +656,7 @@ export default class GroupService {
     userId: IUserModel['userId'],
   ): Promise<IMGroupServiceGetPermInGroupByUserIdRes> {
     const info = await this.getMemberInfoInGroupByUserId(groupId, userId, true);
-    return info?.permission || null;
+    return info?.permission ?? null;
   }
 
   /**
@@ -669,7 +669,7 @@ export default class GroupService {
     userId: IUserModel['userId'],
   ): Promise<boolean> {
     const perm = await this.getPermInGroupByUserId(groupId, userId);
-    return !!(perm && perm >= EGroupMemberPermission.master);
+    return perm !== null && perm >= EGroupMemberPermission.master;
   }
 
   /**
@@ -682,7 +682,7 @@ export default class GroupService {
     userId: IUserModel['userId'],
   ): Promise<boolean> {
     const perm = await this.getPermInGroupByUserId(groupId, userId);
-    return !!(perm && perm >= EGroupMemberPermission.admin);
+    return perm !== null && perm >= EGroupMemberPermission.admin;
   }
 
   /**
@@ -695,7 +695,7 @@ export default class GroupService {
     userId: IUserModel['userId'],
   ): Promise<boolean> {
     const perm = await this.getPermInGroupByUserId(groupId, userId);
-    return !!(perm && perm >= EGroupMemberPermission.user);
+    return perm !== null && perm >= EGroupMemberPermission.user;
   }
 
   /**
@@ -710,7 +710,8 @@ export default class GroupService {
     if (strict) {
       return this.isGroupMember(groupId, this.ctx.session.userId);
     }
-    return this.ctx.isAdmin || this.isGroupMember(groupId, this.ctx.session.userId);
+    // eslint-disable-next-line no-return-await
+    return this.ctx.isAdmin || (await this.isGroupMember(groupId, this.ctx.session.userId));
   }
 
   /**
@@ -725,6 +726,7 @@ export default class GroupService {
     if (strict) {
       return this.isGroupAdmin(groupId, this.ctx.session.userId);
     }
-    return this.ctx.isAdmin || this.isGroupAdmin(groupId, this.ctx.session.userId);
+    // eslint-disable-next-line no-return-await
+    return this.ctx.isAdmin || (await this.isGroupAdmin(groupId, this.ctx.session.userId));
   }
 }
