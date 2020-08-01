@@ -35,13 +35,15 @@ import {
   IMGroupServiceUpdateGroupMemberRes,
   IMGroupServiceDeleteGroupMemberRes,
   IMGroupServiceDeleteAllGroupMembersRes,
+  IMGroupServiceGetMemberInfoInGroupByUserIdRes,
+  IMGroupServiceGetPermInGroupByUserIdRes,
 } from './group.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { IUserModel } from '../user/user.interface';
 import { CUserService } from '../user/user.service';
 import { TGroupMemberModel } from '@/lib/models/groupMember.model';
-import { EGroupMemberStatus } from '@/common/enums';
+import { EGroupMemberStatus, EGroupMemberPermission } from '@/common/enums';
 
 export type CGroupService = GroupService;
 
@@ -611,15 +613,118 @@ export default class GroupService {
   }
 
   /**
-   * 判断指定用户是否在指定群组的成员列表中。
-   * @param userId userId
+   * 获取用户在指定群组的成员信息。
    * @param groupId groupId
+   * @param userId userId
+   * @param includePendingUser 是否包括待加入成员
+   */
+  async getMemberInfoInGroupByUserId(
+    groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+    includePendingUser = false,
+  ): Promise<IMGroupServiceGetMemberInfoInGroupByUserIdRes> {
+    let info: IMGroupMemberDetail | null = null;
+    const members = await this.getGroupMemberList(groupId);
+    info = members.rows.find((m) => m.user?.userId === userId) || null;
+    if (!includePendingUser && info?.status !== EGroupMemberStatus.normal) {
+      info = null;
+    }
+    return info;
+  }
+
+  /**
+   * 判断用户是否在指定群组的成员列表中。
+   * @param groupId groupId
+   * @param userId userId
+   * @param includePendingUser 是否包括待加入成员
    */
   async isUserInGroup(
-    userId: IUserModel['userId'],
     groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+    includePendingUser = false,
   ): Promise<boolean> {
-    const members = await this.getGroupMemberList(groupId);
-    return !!members.rows.find((member) => member.user?.userId === userId);
+    return !!(await this.getMemberInfoInGroupByUserId(groupId, userId, includePendingUser));
+  }
+
+  /**
+   * 获取用户在指定群组的权限。
+   * @param groupId groupId
+   * @param userId userId
+   */
+  async getPermInGroupByUserId(
+    groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+  ): Promise<IMGroupServiceGetPermInGroupByUserIdRes> {
+    const info = await this.getMemberInfoInGroupByUserId(groupId, userId, true);
+    return info?.permission || null;
+  }
+
+  /**
+   * 判断用户是否是群组 master。
+   * @param groupId groupId
+   * @param userId userId
+   */
+  async isGroupMaster(
+    groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+  ): Promise<boolean> {
+    const perm = await this.getPermInGroupByUserId(groupId, userId);
+    return !!(perm && perm >= EGroupMemberPermission.master);
+  }
+
+  /**
+   * 判断用户是否是群组 admin。
+   * @param groupId groupId
+   * @param userId userId
+   */
+  async isGroupAdmin(
+    groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+  ): Promise<boolean> {
+    const perm = await this.getPermInGroupByUserId(groupId, userId);
+    return !!(perm && perm >= EGroupMemberPermission.admin);
+  }
+
+  /**
+   * 判断用户是否是群组 member。
+   * @param groupId groupId
+   * @param userId userId
+   */
+  async isGroupMember(
+    groupId: IGroupModel['groupId'],
+    userId: IUserModel['userId'],
+  ): Promise<boolean> {
+    const perm = await this.getPermInGroupByUserId(groupId, userId);
+    return !!(perm && perm >= EGroupMemberPermission.user);
+  }
+
+  /**
+   * 判断当前登录用户是否有群组查看权限。
+   * @param groupId groupId
+   * @param strict 是否使用狭义权限（排除 global admin）
+   */
+  async hasGroupViewPerm(groupId: IGroupModel['groupId'], strict = false): Promise<boolean> {
+    if (!this.ctx.loggedIn) {
+      return false;
+    }
+    if (strict) {
+      return this.isGroupMember(groupId, this.ctx.session.userId);
+    }
+    return this.ctx.isAdmin || this.isGroupMember(groupId, this.ctx.session.userId);
+  }
+
+  /**
+   * 判断当前登录用户是否有群组管理权限。
+   * @param groupId groupId
+   * @param strict 是否使用狭义权限（排除 global admin）
+   */
+  async hasGroupAdminPerm(groupId: IGroupModel['groupId'], strict = false): Promise<boolean> {
+    if (!this.ctx.loggedIn) {
+      return false;
+    }
+    if (strict) {
+      return this.isGroupAdmin(groupId, this.ctx.session.userId);
+    }
+    return this.ctx.isAdmin || this.isGroupAdmin(groupId, this.ctx.session.userId);
   }
 }

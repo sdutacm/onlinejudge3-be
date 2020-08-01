@@ -182,3 +182,13 @@ export type IMGroupServiceDeleteGroupMemberRes = boolean;
 //#region service.deleteAllGroupMembers
 export type IMGroupServiceDeleteAllGroupMembersRes = number;
 //#endregion
+
+//#region service.getMemberInfoInGroupByUserId
+export type IMGroupServiceGetMemberInfoInGroupByUserIdRes = defModel.DetailModelRes<
+  IMGroupMemberDetail
+>;
+//#endregion
+
+//#region service.getPermInGroupByUserId
+export type IMGroupServiceGetPermInGroupByUserIdRes = IGroupMemberModel['permission'] | null;
+//#endregion
