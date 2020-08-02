@@ -1,5 +1,6 @@
 import { providerWrapper } from 'midway';
 import { defContract } from '@/typings/contract';
+import { EGroupJoinChannel } from '../../common/enums';
 
 export const factory = () => groupContract;
 providerWrapper([
@@ -164,6 +165,72 @@ const groupContract = {
     },
     additionalProperties: false,
     required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  createGroupReq: {
+    properties: {
+      name: { type: 'string', minLength: 3, maxLength: 32 },
+      intro: { type: 'string', maxLength: 100 },
+      verified: { type: 'boolean' },
+      private: { type: 'boolean' },
+      joinChannel: {
+        type: 'number',
+        enum: [EGroupJoinChannel.any, EGroupJoinChannel.audit, EGroupJoinChannel.invitation],
+      },
+    },
+    additionalProperties: false,
+    required: ['name', 'intro', 'private', 'joinChannel'],
+  } as defContract.ContractSchema,
+
+  createGroupResp: {
+    properties: {
+      groupId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  createEmptyGroupReq: {
+    properties: {
+      name: { type: 'string', minLength: 3, maxLength: 32 },
+      intro: { type: 'string', maxLength: 100 },
+      verified: { type: 'boolean' },
+      private: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['name', 'intro', 'private'],
+  } as defContract.ContractSchema,
+
+  createEmptyGroupResp: {
+    properties: {
+      groupId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  updateGroupReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+      name: { type: 'string', minLength: 3, maxLength: 32 },
+      intro: { type: 'string', maxLength: 100 },
+      verified: { type: 'boolean' },
+      private: { type: 'boolean' },
+      joinChannel: {
+        type: 'number',
+        enum: [EGroupJoinChannel.any, EGroupJoinChannel.audit, EGroupJoinChannel.invitation],
+      },
+    },
+    additionalProperties: false,
+    required: ['groupId', 'name', 'intro', 'private', 'joinChannel'],
+  } as defContract.ContractSchema,
+
+  deleteGroupReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
   } as defContract.ContractSchema,
 };
 

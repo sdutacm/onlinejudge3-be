@@ -121,6 +121,7 @@ export interface IMGroupServiceCreateOpt {
   verified?: IGroupModel['verified'];
   private: IGroupModel['private'];
   joinChannel: IGroupModel['joinChannel'];
+  membersCount?: IGroupModel['membersCount'];
 }
 
 export type IMGroupServiceCreateRes = IGroupModel['groupId'];
@@ -156,6 +157,16 @@ export type IMGroupServiceFindOneGroupMemberRes = defModel.DetailModelRes<IMGrou
 
 //#region service.isGroupMemberExists
 export type IMGroupServiceIsGroupMemberExistsOpt = Partial<IGroupMemberModel>;
+//#endregion
+
+//#region service.createGroupMember
+export interface IMGroupServiceCreateGroupMemberOpt {
+  userId: IGroupMemberModel['userId'];
+  permission?: IGroupMemberModel['permission'];
+  status?: IGroupMemberModel['status'];
+}
+
+export type IMGroupServiceCreateGroupMemberRes = IGroupMemberModel['groupMemberId'];
 //#endregion
 
 //#region service.batchCreateGroupMember

@@ -37,6 +37,8 @@ import {
   IMGroupServiceDeleteAllGroupMembersRes,
   IMGroupServiceGetMemberInfoInGroupByUserIdRes,
   IMGroupServiceGetPermInGroupByUserIdRes,
+  IMGroupServiceCreateGroupMemberOpt,
+  IMGroupServiceCreateGroupMemberRes,
 } from './group.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -540,6 +542,23 @@ export default class GroupService {
       } as any,
     });
     return !!res;
+  }
+
+  /**
+   * 创建群组用户。
+   * @param groupId groupId
+   * @param data 创建数据
+   * @returns 创建成功的主键 ID
+   */
+  async createGroupMember(
+    groupId: IGroupModel['groupId'],
+    data: IMGroupServiceCreateGroupMemberOpt,
+  ): Promise<IMGroupServiceCreateGroupMemberRes> {
+    const res = await this.groupMemberModel.create({
+      ...data,
+      groupId,
+    });
+    return res.groupMemberId;
   }
 
   /**
