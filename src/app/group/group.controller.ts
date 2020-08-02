@@ -29,6 +29,7 @@ import { IMGroupDetail } from './group.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EGroupMemberPermission, EGroupJoinChannel } from '@/common/enums';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
 @controller('/')
@@ -44,6 +45,9 @@ export default class GroupController {
 
   @inject()
   lodash: ILodash;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @pagination()
@@ -163,5 +167,33 @@ export default class GroupController {
     }
     await this.service.update(groupId, data);
     await this.service.clearDetailCache(groupId);
+  }
+
+  /**
+   * 解散群组。
+   *
+   * 权限：group.master 或 global admin
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.deleteGroup.i](ctx: Context): Promise<void> {
+    const groupId = ctx.id!;
+    if (!ctx.isAdmin && !(await this.service.isGroupMaster(groupId, ctx.session.userId))) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.update(groupId, {
+      deleted: true,
+    });
+    await this.service.clearDetailCache(groupId);
+    const groupMembers = (await this.service.getGroupMemberList(groupId)).rows;
+    await this.service.deleteAllGroupMembers(groupId);
+    await this.service.clearGroupMemberListCache(groupId);
+    const pq = new this.PromiseQueue(20, Infinity);
+    const queueTasks = groupMembers
+      .filter((m) => m.user?.userId)
+      .map((m) => pq.add(() => this.service.clearUserGroupsCache(m.user.userId)));
+    await Promise.all(queueTasks);
   }
 }

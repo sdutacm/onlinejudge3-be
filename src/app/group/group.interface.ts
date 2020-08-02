@@ -131,7 +131,7 @@ export type IMGroupServiceCreateRes = IGroupModel['groupId'];
 export interface IMGroupServiceUpdateOpt {
   name?: IGroupModel['name'];
   avatar?: IGroupModel['avatar'];
-  intro: IGroupModel['intro'];
+  intro?: IGroupModel['intro'];
   verified?: IGroupModel['verified'];
   private?: IGroupModel['private'];
   joinChannel?: IGroupModel['joinChannel'];
