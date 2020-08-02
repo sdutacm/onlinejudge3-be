@@ -22,6 +22,7 @@ import {
   ICreateGroupReq,
   ICreateEmptyGroupResp,
   ICreateEmptyGroupReq,
+  IUpdateGroupReq,
 } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMGroupDetail } from './group.interface';
@@ -89,7 +90,7 @@ export default class GroupController {
    *
    * 逻辑：
    * - 如果群组为 private，则 joinChannel 会被强制置为 invitation
-   * - 仅管理员有权限设置 verified 字段
+   * - 仅 global admin 有权限设置 verified 字段
    * - 创建成功后，当前登录用户成为群组 master
    * @returns 群组 ID
    */
@@ -133,5 +134,34 @@ export default class GroupController {
       joinChannel: EGroupJoinChannel.invitation,
     });
     return { groupId: newId };
+  }
+
+  /**
+   * 更新群组。
+   *
+   * 权限：group.admin+ 或 global admin
+   *
+   * 逻辑：
+   * - 如果群组为 private，则 joinChannel 会被强制置为 invitation
+   * - 仅 global admin 有权限设置 verified 字段
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.updateGroup.i](ctx: Context): Promise<void> {
+    const groupId = ctx.id!;
+    const data = ctx.request.body as IUpdateGroupReq;
+    if (!(await this.service.hasGroupAdminPerm(groupId))) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    if (!ctx.isAdmin) {
+      delete data.verified;
+    }
+    if (data.private) {
+      data.joinChannel = EGroupJoinChannel.invitation;
+    }
+    await this.service.update(groupId, data);
+    await this.service.clearDetailCache(groupId);
   }
 }
