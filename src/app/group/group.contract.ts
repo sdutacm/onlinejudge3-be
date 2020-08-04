@@ -1,6 +1,6 @@
 import { providerWrapper } from 'midway';
 import { defContract } from '@/typings/contract';
-import { EGroupJoinChannel } from '../../common/enums';
+import { EGroupJoinChannel, EGroupMemberPermission, EGroupMemberStatus } from '../../common/enums';
 
 export const factory = () => groupContract;
 providerWrapper([
@@ -226,6 +226,109 @@ const groupContract = {
   } as defContract.ContractSchema,
 
   deleteGroupReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  getGroupMemberListReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  getGroupMemberListResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                userId: { type: 'number' },
+                username: { type: 'string' },
+                nickname: { type: 'string' },
+                avatar: { type: ['string', 'null'] },
+                bannerImage: { type: 'string' },
+              },
+              additionalProperties: false,
+              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+            },
+            permission: { type: 'number' },
+            status: { type: 'number' },
+            joinedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: ['user'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  joinGroupReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  batchAddGroupMembersReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+      userIds: {
+        type: 'array',
+        items: { type: 'number', minimum: 1 },
+      },
+      usernames: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+    },
+    additionalProperties: false,
+    required: ['groupId'],
+  } as defContract.ContractSchema,
+
+  updateGroupMemberReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+      permission: {
+        type: 'number',
+        enum: [
+          EGroupMemberPermission.user,
+          EGroupMemberPermission.admin,
+          EGroupMemberPermission.master,
+        ],
+      },
+      status: {
+        type: 'number',
+        enum: [EGroupMemberStatus.normal, EGroupMemberStatus.auditing],
+      },
+    },
+    additionalProperties: false,
+    required: ['groupId', 'userId'],
+  } as defContract.ContractSchema,
+
+  deleteGroupMemberReq: {
+    properties: {
+      groupId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['groupId', 'userId'],
+  } as defContract.ContractSchema,
+
+  exitGroupReq: {
     properties: {
       groupId: { type: 'number', minimum: 1 },
     },
