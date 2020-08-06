@@ -249,6 +249,8 @@ const groupContract = {
         items: {
           type: 'object',
           properties: {
+            groupMemberId: { type: 'number' },
+            groupId: { type: 'number' },
             user: {
               type: 'object',
               properties: {
@@ -266,7 +268,7 @@ const groupContract = {
             joinedAt: { type: 'string', format: 'date-time' },
           },
           additionalProperties: false,
-          required: ['user'],
+          required: ['groupMemberId', 'groupId', 'user'],
         },
       },
     },

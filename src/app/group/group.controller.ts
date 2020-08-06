@@ -28,7 +28,7 @@ import { ILodash } from '@/utils/libs/lodash';
 import { IMGroupDetail } from './group.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
-import { EGroupMemberPermission, EGroupJoinChannel } from '@/common/enums';
+import { EGroupMemberPermission, EGroupJoinChannel, EGroupMemberStatus } from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
@@ -195,5 +195,43 @@ export default class GroupController {
       .filter((m) => m.user?.userId)
       .map((m) => pq.add(() => this.service.clearUserGroupsCache(m.user.userId)));
     await Promise.all(queueTasks);
+  }
+
+  /**
+   * 获取群组成员列表。
+   *
+   * 逻辑：
+   * - 对非 group.member+ 或 global admin，如果群组为 private，则视作群组不存在
+   * - 对非 group.admin+ 或 global admin，只返回 status=normal 的用户
+   * - permission、joinedAt 仅 group.member+ 或 global admin 可见
+   * - status 仅 group.admin+ 或 global admin 可见
+   *
+   * @returns 群组成员列表
+   */
+  @route()
+  @id()
+  @getDetail()
+  async [routesBe.getGroupMemberList.i](ctx: Context) {
+    const groupId = ctx.id!;
+    const detail = ctx.detail as IMGroupDetail;
+    const hasGroupAdminPerm = await this.service.hasGroupAdminPerm(groupId);
+    const hasGroupViewPerm = await this.service.hasGroupViewPerm(groupId);
+    if (detail.private && !hasGroupViewPerm) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    const groupMemberList = await this.service.getGroupMemberList(groupId);
+    const members = groupMemberList.rows.filter(
+      (m) => hasGroupAdminPerm || m.status === EGroupMemberStatus.normal,
+    );
+    members.forEach((m) => {
+      if (!hasGroupAdminPerm) {
+        delete m.status;
+      }
+      if (!hasGroupViewPerm) {
+        delete m.permission;
+        delete m.joinedAt;
+      }
+    });
+    return ctx.helper.formatFullList(members.length, members);
   }
 }
