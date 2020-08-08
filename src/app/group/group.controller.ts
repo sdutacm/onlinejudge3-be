@@ -23,6 +23,7 @@ import {
   ICreateEmptyGroupResp,
   ICreateEmptyGroupReq,
   IUpdateGroupReq,
+  IBatchAddGroupMembersReq,
 } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMGroupDetail } from './group.interface';
@@ -30,6 +31,7 @@ import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EGroupMemberPermission, EGroupJoinChannel, EGroupMemberStatus } from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { CUserService } from '../user/user.service';
 
 @provide()
 @controller('/')
@@ -39,6 +41,9 @@ export default class GroupController {
 
   @inject('groupService')
   service: CGroupService;
+
+  @inject()
+  userService: CUserService;
 
   @inject()
   utils: IUtils;
@@ -261,6 +266,51 @@ export default class GroupController {
           ? EGroupMemberStatus.auditing
           : EGroupMemberStatus.normal,
     });
+    await this.service.updateGroupMembersCount(groupId);
+    await this.service.clearDetailCache(groupId);
+  }
+
+  /**
+   * 批量添加群组成员。
+   *
+   * 权限：group.admin+ 或 global admin
+   *
+   * 逻辑：
+   * - 若用户已在群组中，当状态为 normal 时忽略；当状态为 auditing 时则置为 normal
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.batchAddGroupMembers.i](ctx: Context) {
+    const groupId = ctx.id!;
+    if (!(await this.service.hasGroupAdminPerm(groupId))) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    let { userIds, usernames } = ctx.request.body as IBatchAddGroupMembersReq;
+    userIds = userIds || [];
+    usernames = usernames || [];
+    // 将所有 username 换成 userId
+    const userIdsMap = await this.userService.getUserIdsByUsernames(usernames);
+    userIds = [...userIds, ...Object.values(userIdsMap)];
+    // 去除无效用户
+    const usersMap = await this.userService.getRelative(userIds);
+    userIds = Object.keys(usersMap).map((userId) => +userId);
+    // 添加成员
+    const members = await this.service.getGroupMemberList(groupId);
+    for (const userId of userIds) {
+      const member = members.rows.find((m) => m.user?.userId === userId);
+      if (!member) {
+        await this.service.createGroupMember(groupId, {
+          userId,
+          status: EGroupMemberStatus.normal,
+        });
+      } else if (member.status === EGroupMemberStatus.auditing) {
+        await this.service.updateGroupMember(groupId, userId, {
+          status: EGroupMemberStatus.normal,
+        });
+      }
+    }
     await this.service.updateGroupMembersCount(groupId);
     await this.service.clearDetailCache(groupId);
   }
