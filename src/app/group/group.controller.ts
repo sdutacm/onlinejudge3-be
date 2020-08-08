@@ -25,6 +25,7 @@ import {
   IUpdateGroupReq,
   IBatchAddGroupMembersReq,
   IUpdateGroupMemberReq,
+  IDeleteGroupMemberReq,
 } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMGroupDetail } from './group.interface';
@@ -342,9 +343,8 @@ export default class GroupController {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
     // 验证权限，只能修改比自己权限低的用户
-    const MAX_PERM = 999;
     const selfPerm = ctx.isAdmin
-      ? MAX_PERM
+      ? Infinity
       : (await this.service.getPermInGroupByUserId(groupId, ctx.session.userId))!;
     const targetPerm = member.permission;
     if (targetPerm >= selfPerm) {
@@ -369,5 +369,63 @@ export default class GroupController {
       await this.service.clearDetailCache(groupId);
       await this.service.clearUserGroupsCache(userId);
     }
+  }
+
+  /**
+   * 踢出群组成员。
+   *
+   * 权限：group.admin+ 或 global admin
+   *
+   * 逻辑：
+   * - 只能踢出比自己权限低的用户
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.deleteGroupMember.i](ctx: Context): Promise<void> {
+    const groupId = ctx.id!;
+    if (!(await this.service.hasGroupAdminPerm(groupId))) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    const { userId } = ctx.request.body as IDeleteGroupMemberReq;
+    const member = await this.service.getMemberInfoInGroupByUserId(groupId, userId, true);
+    if (!member) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    // 验证权限，只能踢出比自己权限低的用户
+    const selfPerm = ctx.isAdmin
+      ? Infinity
+      : (await this.service.getPermInGroupByUserId(groupId, ctx.session.userId))!;
+    const targetPerm = member.permission;
+    if (targetPerm >= selfPerm) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.deleteGroupMember(groupId, userId);
+    await this.service.updateGroupMembersCount(groupId);
+    await this.service.clearDetailCache(groupId);
+    await this.service.clearUserGroupsCache(userId);
+  }
+
+  /**
+   * 退出群组。
+   *
+   * 权限：group.member+ 且 group.admin-
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.exitGroup.i](ctx: Context): Promise<void> {
+    const groupId = ctx.id!;
+    const userId = ctx.session.userId;
+    const permission = await this.service.getPermInGroupByUserId(groupId, userId);
+    if (permission === null || permission >= EGroupMemberPermission.master) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.deleteGroupMember(groupId, userId);
+    await this.service.updateGroupMembersCount(groupId);
+    await this.service.clearDetailCache(groupId);
+    await this.service.clearUserGroupsCache(userId);
   }
 }
