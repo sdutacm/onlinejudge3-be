@@ -234,4 +234,34 @@ export default class GroupController {
     });
     return ctx.helper.formatFullList(members.length, members);
   }
+
+  /**
+   * 申请加入群组。
+   *
+   * 权限：需要登录且非群组成员
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.joinGroup.i](ctx: Context) {
+    const groupId = ctx.id!;
+    const detail = ctx.detail as IMGroupDetail;
+    const userId = ctx.session.userId;
+    if (detail.private || detail.joinChannel === EGroupJoinChannel.invitation) {
+      throw new ReqError(Codes.GROUP_CANNOT_JOIN);
+    }
+    if (await this.service.isUserInGroup(groupId, userId, true)) {
+      throw new ReqError(Codes.GROUP_ALREADY_JOINED_OR_UNDER_AUDITING);
+    }
+    await this.service.createGroupMember(groupId, {
+      userId,
+      status:
+        detail.joinChannel === EGroupJoinChannel.audit
+          ? EGroupMemberStatus.auditing
+          : EGroupMemberStatus.normal,
+    });
+    await this.service.updateGroupMembersCount(groupId);
+    await this.service.clearDetailCache(groupId);
+  }
 }

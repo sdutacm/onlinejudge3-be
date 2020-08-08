@@ -748,4 +748,20 @@ export default class GroupService {
     // eslint-disable-next-line no-return-await
     return this.ctx.isAdmin || (await this.isGroupAdmin(groupId, this.ctx.session.userId));
   }
+
+  /**
+   * 更新群组成员数量。
+   * @param groupId groupId
+   */
+  async updateGroupMembersCount(groupId: IGroupModel['groupId']): Promise<void> {
+    await this.clearGroupMemberListCache(groupId);
+    const members = await this.getGroupMemberList(groupId);
+    const membersCount = members.rows.reduce(
+      (acc, cur) => acc + (cur.status === EGroupMemberStatus.normal ? 1 : 0),
+      0,
+    );
+    await this.update(groupId, {
+      membersCount,
+    });
+  }
 }
