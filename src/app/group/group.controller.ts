@@ -24,6 +24,7 @@ import {
   ICreateEmptyGroupReq,
   IUpdateGroupReq,
   IBatchAddGroupMembersReq,
+  IUpdateGroupMemberReq,
 } from '@/common/contracts/group';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMGroupDetail } from './group.interface';
@@ -249,7 +250,7 @@ export default class GroupController {
   @login()
   @id()
   @getDetail()
-  async [routesBe.joinGroup.i](ctx: Context) {
+  async [routesBe.joinGroup.i](ctx: Context): Promise<void> {
     const groupId = ctx.id!;
     const detail = ctx.detail as IMGroupDetail;
     const userId = ctx.session.userId;
@@ -268,6 +269,7 @@ export default class GroupController {
     });
     await this.service.updateGroupMembersCount(groupId);
     await this.service.clearDetailCache(groupId);
+    await this.service.clearUserGroupsCache(userId);
   }
 
   /**
@@ -282,7 +284,7 @@ export default class GroupController {
   @login()
   @id()
   @getDetail()
-  async [routesBe.batchAddGroupMembers.i](ctx: Context) {
+  async [routesBe.batchAddGroupMembers.i](ctx: Context): Promise<void> {
     const groupId = ctx.id!;
     if (!(await this.service.hasGroupAdminPerm(groupId))) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
@@ -310,8 +312,62 @@ export default class GroupController {
           status: EGroupMemberStatus.normal,
         });
       }
+      await this.service.clearUserGroupsCache(userId);
     }
     await this.service.updateGroupMembersCount(groupId);
     await this.service.clearDetailCache(groupId);
+  }
+
+  /**
+   * 更新群组成员。
+   *
+   * 权限：group.admin+ 或 global admin
+   *
+   * 逻辑：
+   * - 只能修改比自己权限低的用户
+   * - 对于 permission，只能设为比自己权限低的值
+   */
+  @route()
+  @login()
+  @id()
+  @getDetail()
+  async [routesBe.updateGroupMember.i](ctx: Context): Promise<void> {
+    const groupId = ctx.id!;
+    if (!(await this.service.hasGroupAdminPerm(groupId))) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    const { userId, permission, status } = ctx.request.body as IUpdateGroupMemberReq;
+    const member = await this.service.getMemberInfoInGroupByUserId(groupId, userId, true);
+    if (!member) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    // 验证权限，只能修改比自己权限低的用户
+    const MAX_PERM = 999;
+    const selfPerm = ctx.isAdmin
+      ? MAX_PERM
+      : (await this.service.getPermInGroupByUserId(groupId, ctx.session.userId))!;
+    const targetPerm = member.permission;
+    if (targetPerm >= selfPerm) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    let hasMembersCountUpdate = false;
+    // 对于 permission，只能设为比自己权限低的值
+    if (permission !== undefined && permission >= selfPerm) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    if (status === EGroupMemberStatus.normal && member.status !== EGroupMemberStatus.normal) {
+      hasMembersCountUpdate = true;
+    }
+    if (permission !== undefined || status !== undefined) {
+      await this.service.updateGroupMember(groupId, userId, {
+        permission,
+        status,
+      });
+    }
+    if (hasMembersCountUpdate) {
+      await this.service.updateGroupMembersCount(groupId);
+      await this.service.clearDetailCache(groupId);
+      await this.service.clearUserGroupsCache(userId);
+    }
   }
 }

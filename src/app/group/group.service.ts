@@ -751,6 +751,7 @@ export default class GroupService {
 
   /**
    * 更新群组成员数量。
+   * 这个操作会刷新群组成员列表缓存。
    * @param groupId groupId
    */
   async updateGroupMembersCount(groupId: IGroupModel['groupId']): Promise<void> {
