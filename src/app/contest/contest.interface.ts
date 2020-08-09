@@ -304,6 +304,17 @@ export interface IMContestRatingStatus {
 }
 //#endregion
 
+//#region rank data
+export interface IMContestRankDataItem {
+  rank: IMContestRanklistRow['rank'];
+  userId: IUserModel['userId'];
+  username: IUserModel['username'];
+  contestUserId: IContestUserModel['contestUserId'];
+}
+
+export type IMContestRankData = IMContestRankDataItem[];
+//#endregion
+
 //#region service.getList
 export interface IMContestServiceGetListOpt {
   contestId?: IContestModel['contestId'];
@@ -374,6 +385,7 @@ export interface IMContestServiceUpdateOpt {
   registerStartAt?: IContestModel['registerStartAt'];
   registerEndAt?: IContestModel['registerEndAt'];
   team?: IContestModel['team'];
+  ended?: IContestModel['ended'];
   hidden?: IContestModel['hidden'];
 }
 

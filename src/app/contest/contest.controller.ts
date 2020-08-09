@@ -17,7 +17,13 @@ import { IUtils } from '@/utils';
 import { CContestService } from './contest.service';
 import { ILodash } from '@/utils/libs/lodash';
 import { IMContestDetail } from './contest.interface';
-import { EContestType, EContestUserStatus, EUserPermission } from '@/common/enums';
+import {
+  EContestType,
+  EContestUserStatus,
+  EUserPermission,
+  EContestMode,
+  EContestRatingStatus,
+} from '@/common/enums';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import {
@@ -38,6 +44,9 @@ import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
 import { CMessageService } from '../message/message.service';
 import { CUserService } from '../user/user.service';
+import { IAppConfig } from '@/config/config.interface';
+import { exec } from 'child_process';
+import path from 'path';
 
 @provide()
 @controller('/')
@@ -68,6 +77,9 @@ export default class ContestController {
 
   @config()
   siteTeam: string;
+
+  @config('scripts')
+  scriptsConfig: IAppConfig['scripts'];
 
   @route()
   @pagination()
@@ -508,5 +520,61 @@ export default class ContestController {
   async [routesBe.getContestRatingStatus.i](ctx: Context): Promise<IGetContestRatingStatusResp> {
     const contestId = ctx.id!;
     return this.service.getRatingStatus(contestId);
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.endContest.i](ctx: Context) {
+    const contestId = ctx.id!;
+    const contest = ctx.detail as IMContestDetail;
+    if (!ctx.helper.isContestEnded(contest)) {
+      throw new ReqError(Codes.CONTEST_NOT_ENDED);
+    } else if (contest.ended) {
+      throw new ReqError(Codes.CONTEST_ENDED);
+    }
+    // 根据比赛类型判断相应处理逻辑
+    switch (contest.type) {
+      // TODO 比赛结束后更新用户比赛
+      case EContestType.register:
+        break;
+    }
+    // 根据比赛模式判断相应处理逻辑
+    switch (contest.mode) {
+      case EContestMode.rating: {
+        if (!this.scriptsConfig?.dirPath || !this.scriptsConfig?.logPath) {
+          throw new Error('ConfigNotFoundError: scripts');
+        }
+        const ranklist = (await this.service.getRanklist(contest, true)).rows;
+        const contestUsernames = ranklist.map((row) => row.user.username);
+        const userIdMap = await this.userService.getUserIdsByUsernames(contestUsernames);
+        const rankData = ranklist.map((row) => ({
+          rank: row.rank,
+          userId: userIdMap[row.user.username],
+          username: row.user.username,
+          contestUserId: row.user.userId,
+        }));
+        await Promise.all([
+          this.service.setRankData(contestId, rankData),
+          this.service.setRatingStatus(contestId, {
+            status: EContestRatingStatus.PD,
+            progress: 0,
+          }),
+        ]);
+        // 调用 calRating 脚本
+        const cmd = `nohup node ${path.join(
+          this.scriptsConfig.dirPath,
+          'calRating.js',
+        )} ${contestId} >> ${path.join(this.scriptsConfig.logPath, 'calRating.log')} 2>&1 &`;
+        ctx.logger.info('exec:', cmd);
+        exec(cmd);
+        break;
+      }
+    }
+    await this.service.update(contestId, {
+      ended: true,
+    });
+    await this.service.clearDetailCache(contestId);
   }
 }

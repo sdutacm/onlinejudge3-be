@@ -649,6 +649,14 @@ const contestContract = {
       { type: 'null' },
     ],
   } as defContract.ContractSchema,
+
+  endContestReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
 };
 
 export type IContestContract = typeof contestContract;
