@@ -216,7 +216,47 @@ export default {
   },
 
   /**
-   * 判断是否登录 OJ
+   * redis rpush
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param values 要推入的数据
+   */
+  async redisRpush(key: string, args: any[] = [], ...values: any[]): Promise<void> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const v = values.map((value) => (typeof value === 'object' ? JSON.stringify(value) : value));
+    const number = await redis.rpush(k, ...v);
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.rpush](${Date.now() - _start}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ...values,
+        number,
+      );
+  },
+
+  /**
+   * 获取 OJ session。
+   */
+  getGlobalSession() {
+    const { ctx } = getThis.call(this);
+    if (ctx.session.userId) {
+      return {
+        userId: ctx.session.userId,
+        username: ctx.session.username,
+        nickname: ctx.session.nickname,
+        permission: ctx.session.permission,
+        avatar: ctx.session.avatar,
+      };
+    }
+    return null;
+  },
+
+  /**
+   * 判断是否登录 OJ。
    */
   isGlobalLoggedIn() {
     const { ctx } = getThis.call(this);
@@ -263,7 +303,7 @@ export default {
    */
   getContestSession(contestId: number) {
     const { ctx } = getThis.call(this);
-    return ctx.session.contests?.[contestId];
+    return ctx.session.contests?.[contestId] ?? null;
   },
 
   /**
