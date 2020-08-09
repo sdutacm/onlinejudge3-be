@@ -250,6 +250,8 @@ export default class ContestController {
           });
           if (!contestUser) {
             throw new ReqError(Codes.CONTEST_INCORRECT_USERNAME_OR_PASSWORD);
+          } else if (contestUser.status !== EContestUserStatus.accepted) {
+            throw new ReqError(Codes.CONTEST_USER_NOT_ACCEPTED);
           }
           const session = {
             userId: contestUser.contestUserId,
