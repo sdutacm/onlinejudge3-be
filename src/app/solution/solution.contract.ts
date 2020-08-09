@@ -190,6 +190,25 @@ const solutionContract = {
     additionalProperties: false,
     required: ['solutionId', 'shared'],
   } as defContract.ContractSchema,
+
+  submitSolutionReq: {
+    properties: {
+      problemId: { type: 'number', minimum: 1 },
+      contestId: { type: 'number', minimum: 1 },
+      language: { type: 'string', enum: ['gcc', 'g++', 'java', 'python2', 'python3', 'c#'] },
+      code: { type: 'string', minLength: 1, maxLength: 10 * 1024 * 1024 },
+    },
+    additionalProperties: false,
+    required: ['problemId', 'language', 'code'],
+  } as defContract.ContractSchema,
+
+  submitSolutionResp: {
+    properties: {
+      solutionId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['solutionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ISolutionContract = typeof solutionContract;
