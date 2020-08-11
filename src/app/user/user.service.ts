@@ -1,5 +1,5 @@
 import { provide, inject, Context, config } from 'midway';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import {
   TMUserDetailFields,
   IMUserDetail,
@@ -18,6 +18,7 @@ import {
   IMUserServiceFindOneOpt,
   IMUserServiceFindOneRes,
   IMUserServiceIsExistsOpt,
+  IMUserServiceGetUserIdsByUsernamesRes,
 } from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -25,6 +26,7 @@ import { CUserMeta } from './user.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { ILodash } from '@/utils/libs/lodash';
 import { EUserForbidden } from '@/common/enums';
+import DB from '@/lib/models/db';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -368,5 +370,30 @@ export default class UserService {
       },
       null,
     );
+  }
+
+  /**
+   * 通过用户名批量换取 userId。
+   * @param usernames 用户名列表
+   */
+  async getUserIdsByUsernames(
+    usernames: IUserModel['username'][],
+  ): Promise<IMUserServiceGetUserIdsByUsernamesRes> {
+    if (usernames.length === 0) {
+      return {};
+    }
+    const dbRes = await DB.sequelize.query(
+      `SELECT user_id AS userId, user_name AS username FROM user WHERE binary user_name IN (?)`,
+      {
+        replacements: [usernames],
+        type: QueryTypes.SELECT,
+      },
+    );
+    const res: IMUserServiceGetUserIdsByUsernamesRes = {};
+    dbRes.forEach((d) => {
+      // @ts-ignore
+      res[d.username] = d.userId;
+    });
+    return res;
   }
 }

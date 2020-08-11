@@ -169,3 +169,10 @@ export interface IMUserServiceUpdateOpt {
 
 export type IMUserServiceUpdateRes = boolean;
 //#endregion
+
+//#region service.getUserIdsByUsernames
+export type IMUserServiceGetUserIdsByUsernamesRes = Record<
+  IUserModel['username'],
+  IUserModel['userId']
+>;
+//#endregion

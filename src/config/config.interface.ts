@@ -30,4 +30,8 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     tagName: string;
     regionId: 'cn-hangzhou';
   };
+  scripts: {
+    dirPath: string;
+    logPath: string;
+  };
 }
