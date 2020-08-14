@@ -58,4 +58,5 @@ describe(basename(__filename), () => {
       assert.strictEqual(actual, null);
     });
   });
+
 });
