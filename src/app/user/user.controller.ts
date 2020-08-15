@@ -328,6 +328,9 @@ export default class UserController {
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
+    if (await this.service.isEmailExists(email)) {
+      throw new ReqError(Codes.USER_EMAIL_EXISTS);
+    }
     await this.service.update(userId, {
       email,
       verified: true,
