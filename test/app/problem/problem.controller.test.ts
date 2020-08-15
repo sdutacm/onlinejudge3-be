@@ -7,37 +7,70 @@ import { pick } from 'lodash';
 import { stringify } from 'querystring';
 import { EUserPermission } from '@/common/enums';
 
+const commonProblemDetailMap = {
+  problemId: 1,
+  title: 'string',
+  description: 'string',
+  input: 'string',
+  output: 'string',
+  sampleInput: 'string',
+  sampleOutput: 'string',
+  hint: 'string',
+  source: 'string',
+  author: 1,
+  timeLimit: 1,
+  memoryLimit: 1,
+  difficulty: 1,
+  accepted: 1,
+  submitted: 1,
+  spj: true,
+  display: true,
+  tags: [
+    {
+      tagId: 1,
+      nameEn: 'string',
+      nameZhHans: 'string',
+      nameZhHant: 'string',
+      hidden: true,
+      createdAt: '2020-08-01T16:00:00.000Z',
+    },
+  ],
+  createdAt: '2020-08-01T16:00:00.000Z',
+  updatedAt: '2020-08-01T16:00:00.000Z',
+};
+
 describe(basename(__filename), () => {
   describe(testUtils.controllerDesc(routesBe.getProblemList), () => {
     const url = routesBe.getProblemList.url;
 
     it('should work with correct info', async () => {
       const re = {
-        page: 1,
-        limit: 10,
-        count: 10,
-        rows: {
-          problemId: 1,
-          title: 'string',
-          source: 'string',
-          author: 1,
-          difficulty: 1,
-          accepted: 1,
-          submitted: 1,
-          display: 1,
-          tags: [
-            {
-              tagId: 1,
-              nameEn: 'string',
-              nameZhHans: 'string',
-              nameZhHant: 'string',
-              hidden: 1,
-              createdAt: '',
-            },
-          ],
-          createdAt: '',
-          updatedAt: '',
-        },
+        count: 1,
+        rows: [
+          {
+            problemId: 1,
+            title: 'string',
+            source: 'string',
+            author: 1,
+            difficulty: 1,
+            accepted: 1,
+            submitted: 1,
+            display: true,
+            tags: [
+              {
+                tagId: 1,
+                nameEn: 'string',
+                nameZhHans: 'string',
+                nameZhHant: 'string',
+                hidden: true,
+                createdAt: '2020-08-02T16:00:00.000Z',
+              },
+            ],
+
+            createdAt: '2020-08-02T16:00:00.000Z',
+            updatedAt: '2020-08-02T16:00:00.000Z',
+          },
+        ],
       };
       app.mockClassFunction('problemService', 'getList', async () => re);
 
@@ -62,7 +95,7 @@ describe(basename(__filename), () => {
         .send(data)
         .expect({
           success: true,
-          data: { ...re },
+          data: { page: 1, limit: 10, ...re },
         });
     });
   });
@@ -71,38 +104,7 @@ describe(basename(__filename), () => {
     const url = routesBe.getProblemDetail.url;
 
     it('should work with correct info', async () => {
-      const re = {
-        problemId: 1,
-        title: 'string',
-        description: 'string',
-        input: 'string',
-        output: 'string',
-        sampleInput: 'string',
-        sampleOutput: 'string',
-        hint: 'string',
-        source: 'string',
-        author: 1,
-        timeLimit: 1,
-        memoryLimit: 1,
-        difficulty: 1,
-        accepted: 1,
-        submitted: 1,
-        spj: 1,
-        display: 1,
-        tags: [
-          {
-            tagId: 1,
-            nameEn: 'string',
-            nameZhHans: 'string',
-            nameZhHant: 'string',
-            hidden: 1,
-            createdAt: '',
-          },
-        ],
-        createdAt: '',
-        updatedAt: '',
-      };
-      app.mockClassFunction('problemService', 'getDetail', async () => re);
+      app.mockClassFunction('problemService', 'getDetail', async () => commonProblemDetailMap);
 
       const data = {
         problemId: 1,
@@ -114,7 +116,7 @@ describe(basename(__filename), () => {
         .send(data)
         .expect({
           success: true,
-          data: { ...re },
+          data: commonProblemDetailMap,
         });
     });
   });
@@ -172,38 +174,7 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
-      const re = {
-        problemId: 1,
-        title: 'string',
-        description: 'string',
-        input: 'string',
-        output: 'string',
-        sampleInput: 'string',
-        sampleOutput: 'string',
-        hint: 'string',
-        source: 'string',
-        author: 1,
-        timeLimit: 1,
-        memoryLimit: 1,
-        difficulty: 1,
-        accepted: 1,
-        submitted: 1,
-        spj: true,
-        display: true,
-        tags: [
-          {
-            tagId: 1,
-            nameEn: 'string',
-            nameZhHans: 'string',
-            nameZhHant: 'string',
-            hidden: true,
-            createdAt: '',
-          },
-        ],
-        createdAt: '',
-        updatedAt: '',
-      };
-      app.mockClassFunction('problemService', 'getDetail', async () => re);
+      app.mockClassFunction('problemService', 'getDetail', async () => commonProblemDetailMap);
       app.mockClassFunction('problemService', 'update', async () => null);
 
       const data = {
@@ -243,38 +214,8 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
-      const re = {
-        problemId: 1,
-        title: 'string',
-        description: 'string',
-        input: 'string',
-        output: 'string',
-        sampleInput: 'string',
-        sampleOutput: 'string',
-        hint: 'string',
-        source: 'string',
-        author: 1,
-        timeLimit: 1,
-        memoryLimit: 1,
-        difficulty: 1,
-        accepted: 1,
-        submitted: 1,
-        spj: 1,
-        display: 1,
-        tags: [
-          {
-            tagId: 1,
-            nameEn: 'string',
-            nameZhHans: 'string',
-            nameZhHant: 'string',
-            hidden: 1,
-            createdAt: '',
-          },
-        ],
-        createdAt: '',
-        updatedAt: '',
-      };
-      app.mockClassFunction('problemService', 'getDetail', async () => re);
+
+      app.mockClassFunction('problemService', 'getDetail', async () => commonProblemDetailMap);
 
       const data = {
         problemId: 1,
