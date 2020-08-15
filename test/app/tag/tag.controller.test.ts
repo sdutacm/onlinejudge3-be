@@ -20,8 +20,8 @@ describe(basename(__filename), () => {
             nameEn: 'string',
             nameZhHans: 'string',
             nameZhHant: 'string',
-            hidden: 1,
-            createdAt: 'string',
+            hidden: true,
+            createdAt: '2020-08-01T16:00:00.000Z',
           },
         ],
       };
@@ -30,14 +30,10 @@ describe(basename(__filename), () => {
       const data = {
         _scope: 'available',
       };
-      await app
-        .httpRequest()
-        .post(url)
-        .send(data)
-        .expect({
-          success: true,
-          data: { ...fList },
-        });
+      await app.httpRequest().post(url).send(data).expect({
+        success: true,
+        data: fList,
+      });
     });
   });
 
@@ -56,8 +52,8 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
-      const tagId = 1;
-      app.mockClassFunction('tagService', 'create', async () => tagId);
+      const newId = 1;
+      app.mockClassFunction('tagService', 'create', async () => newId);
 
       const data = {
         nameEn: 'string',
@@ -67,7 +63,7 @@ describe(basename(__filename), () => {
       };
       await app.httpRequest().post(url).send(data).expect({
         success: true,
-        data: { tagId },
+        data: { tagId: newId},
       });
     });
   });
@@ -112,11 +108,11 @@ describe(basename(__filename), () => {
             nameZhHans: 'string',
             nameZhHant: 'string',
             hidden: true,
-            createdAt: '',
+            createdAt: '2020-08-01T16:00:00.000Z',
           },
         ],
-        createdAt: '',
-        updatedAt: '',
+        createdAt: '2020-08-01T16:00:00.000Z',
+        updatedAt: '2020-08-01T16:00:00.000Z',
       };
 
       const problemIds = 1;
