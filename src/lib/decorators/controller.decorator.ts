@@ -489,8 +489,8 @@ export function route(
       decorators.unshift(validate('req', contractSchema, module));
     }
     if (!customResp) {
-      if (process.env.NODE_ENV === 'development' && contract.resp) {
-        // 仅在开发环境下校验响应
+      if (process.env.NODE_ENV !== 'production' && contract.resp) {
+        // 仅在开发/测试环境下校验响应
         const [module, contractSchema] = contract.resp.split('.');
         decorators.unshift(validate('resp', contractSchema, module));
       }
