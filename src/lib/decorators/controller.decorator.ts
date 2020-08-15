@@ -702,38 +702,40 @@ function rateLimitFactoryFactory(
       const method = descriptor.value;
 
       descriptor.value = async function (ctx: Context, ...rest: any[]) {
-        let keyConfig: string;
-        let keyArgs: any[] = [propertyKey];
-        switch (type) {
-          case 'ip': {
-            keyConfig = redisKey.rateIp;
-            const ip = ctx.ip;
-            if (!isPrivateIp(ctx.ip)) {
-              keyArgs.push(ip);
+        if (process.env.NODE_ENV !== 'test') {
+          let keyConfig: string;
+          let keyArgs: any[] = [propertyKey];
+          switch (type) {
+            case 'ip': {
+              keyConfig = redisKey.rateIp;
+              const ip = ctx.ip;
+              if (!isPrivateIp(ctx.ip)) {
+                keyArgs.push(ip);
+              }
+              break;
             }
-            break;
+            case 'user': {
+              keyConfig = redisKey.rateUser;
+              const userId = ctx.session.userId;
+              if (userId) {
+                keyArgs.push(userId);
+              }
+            }
           }
-          case 'user': {
-            keyConfig = redisKey.rateUser;
-            const userId = ctx.session.userId;
-            if (userId) {
-              keyArgs.push(userId);
+          if (keyConfig && keyArgs.length === 2) {
+            const rate = await ctx.helper.redisGet(keyConfig, keyArgs);
+            if (rate) {
+              if (+rate >= maxCount) {
+                ctx.body = ctx.helper.rFail(Codes.GENERAL_FLE, {
+                  duration,
+                  maxCount,
+                });
+                return;
+              }
+              await ctx.helper.redisIncr(keyConfig, keyArgs);
+            } else {
+              await ctx.helper.redisSet(keyConfig, keyArgs, 1, duration);
             }
-          }
-        }
-        if (keyConfig && keyArgs.length === 2) {
-          const rate = await ctx.helper.redisGet(keyConfig, keyArgs);
-          if (rate) {
-            if (+rate >= maxCount) {
-              ctx.body = ctx.helper.rFail(Codes.GENERAL_FLE, {
-                duration,
-                maxCount,
-              });
-              return;
-            }
-            await ctx.helper.redisIncr(keyConfig, keyArgs);
-          } else {
-            await ctx.helper.redisSet(keyConfig, keyArgs, 1, duration);
           }
         }
         const result = await method.call(this, ctx, ...rest);
