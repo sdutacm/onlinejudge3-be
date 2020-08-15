@@ -3,9 +3,75 @@ import { app } from 'midway-mock/bootstrap';
 import testUtils from 'test/utils';
 import { routesBe } from '@/common/routes';
 import { Codes, codeMsgs } from '@/common/codes';
-import { pick } from 'lodash';
-import { stringify } from 'querystring';
-import { EUserPermission } from '@/common/enums';
+import { pick, omit } from 'lodash';
+import { EUserPermission, EUserForbidden } from '@/common/enums';
+import { IMUserServiceGetListOpt } from '@/app/user/user.interface';
+
+const commonUserDetailMap = {
+  1: {
+    userId: 1,
+    username: 'root',
+    nickname: 'hack',
+    email: 'sdutacm@sdutacm.cn',
+    verified: true,
+    school: 'school',
+    createdAt: '2020-08-01T16:00:00.000Z',
+    submitted: 5,
+    accepted: 2,
+    defaultLanguage: 'g++',
+    lastTime: '2020-08-01T16:00:00.000Z',
+    permission: EUserPermission.admin,
+    forbidden: EUserForbidden.normal,
+    avatar: 'string',
+    college: 'string',
+    major: 'string',
+    grade: 'grade',
+    class: 'class',
+    site: 'site',
+    bannerImage: 'string',
+    settings: {},
+    coin: 0,
+    rating: 0,
+    ratingHistory: [],
+  },
+  2: {
+    userId: 2,
+    username: 'username',
+    nickname: 'nickname',
+    email: '1870893666@qq.com',
+    verified: true,
+    school: 'school',
+    createdAt: '2020-08-01T16:00:00.000Z',
+    submitted: 200,
+    accepted: 100,
+    defaultLanguage: 'python2',
+    lastTime: '2020-08-01T16:00:00.000Z',
+    permission: EUserPermission.normal,
+    forbidden: EUserForbidden.normal,
+    avatar: 'string',
+    college: 'string',
+    major: 'string',
+    grade: 'grade',
+    class: 'class',
+    site: 'site',
+    bannerImage: 'string',
+    settings: {},
+    coin: 1,
+    rating: 1,
+    ratingHistory: [
+      {
+        contest: {
+          contestId: 1,
+          title: 'title',
+        },
+        rank: 1,
+        rating: 1,
+        ratingChange: 1,
+        date: '2020-01-01',
+      },
+    ],
+  },
+};
 
 describe(basename(__filename), () => {
   describe(testUtils.controllerDesc(routesBe.getSession), () => {
@@ -107,8 +173,7 @@ describe(basename(__filename), () => {
     });
 
     it('should work with existed username in register info', async () => {
-      const userExists = 1;
-      app.mockClassFunction('userService', 'isUsernameExists', async () => userExists);
+      app.mockClassFunction('userService', 'isUsernameExists', async () => true);
       const data = {
         username: 'username',
         nickname: 'nickname',
@@ -124,8 +189,7 @@ describe(basename(__filename), () => {
     });
 
     it('should work with existed nickname in register info', async () => {
-      const nickExists = 1;
-      app.mockClassFunction('userService', 'isNicknameExists', async () => nickExists);
+      app.mockClassFunction('userService', 'isNicknameExists', async () => true);
       const data = {
         username: 'username',
         nickname: 'nickname',
@@ -141,8 +205,7 @@ describe(basename(__filename), () => {
     });
 
     it('should work with existed email in register info', async () => {
-      const emailExists = 1;
-      app.mockClassFunction('userService', 'isEmailExists', async () => emailExists);
+      app.mockClassFunction('userService', 'isEmailExists', async () => true);
       const data = {
         username: 'username',
         nickname: 'nickname',
@@ -184,15 +247,22 @@ describe(basename(__filename), () => {
 
   describe(testUtils.controllerDesc(routesBe.getUserList), () => {
     const url = routesBe.getUserList.url;
-    it('should work with admin about getUserList ', async () => {
+
+    it('should work', async () => {
       const list = {
-        // page: 1,
-        // limit: 20,
-        count: 20,
+        count: 1,
         rows: [
           {
             userId: 2,
             username: 'username',
+            nickname: 'nickname',
+            submitted: 0,
+            accepted: 0,
+            avatar: null,
+            bannerImage: '',
+            rating: 0,
+            grade: '',
+            forbidden: EUserForbidden.normal,
           },
         ],
       };
@@ -211,54 +281,110 @@ describe(basename(__filename), () => {
           data: { page: 1, limit: 10, ...list },
         });
     });
+
+    it('should work with forbidden field', async () => {
+      app.mockContext({
+        session: testUtils.getMockAdminSession(),
+      });
+      const list = {
+        count: 1,
+        rows: [
+          {
+            userId: 2,
+            username: 'username',
+            nickname: 'nickname',
+            submitted: 0,
+            accepted: 0,
+            avatar: null,
+            bannerImage: '',
+            rating: 0,
+            grade: '',
+            forbidden: EUserForbidden.banned,
+          },
+        ],
+      };
+      app.mockClassFunction('userService', 'getList', async (options: IMUserServiceGetListOpt) => {
+        if (options.forbidden === EUserForbidden.banned) {
+          return list;
+        }
+        return { count: 0, rows: [] };
+      });
+
+      const data = {
+        page: 1,
+        limit: 10,
+        forbidden: EUserForbidden.banned,
+      };
+      // 是 admin 的情况，允许 forbidden 字段
+      await app
+        .httpRequest()
+        .post(url)
+        .send(data)
+        .expect({
+          success: true,
+          data: { page: 1, limit: 10, ...list },
+        });
+
+      // 非 admin 的情况，不允许 forbidden 字段
+      app.mockContext({
+        session: testUtils.getMockNormalSession(),
+      });
+      await app
+        .httpRequest()
+        .post(url)
+        .send(data)
+        .expect({
+          success: true,
+          data: { page: 1, limit: 10, count: 0, rows: [] },
+        });
+    });
   });
 
   describe(testUtils.controllerDesc(routesBe.getUserDetail), () => {
     const url = routesBe.getUserDetail.url;
-    it('should work  when checking others ', async () => {
-      const detail = {
-        userId: 2,
-        username: 'username',
-        nickname: 'nickname',
-        // email: '1870893666@qq.com',
-        // verified: 1,
-        password: 'qwer123',
-        school: 'school',
-        // createdAt: '2020-08-01T16:00:00.000Z',
-        submitted: 200,
-        accepted: 100,
-        // defaultLanguage: 'string',
-        lastIp: 'string',
-        // lastTime: '2020-08-01T16:00:00.000Z',
-        permission: 100,
-        forbidden: 10,
-        avatar: 'string',
-        college: 'string',
-        major: 'string',
-        grade: 'grade',
-        class: 'class',
-        site: 'site',
-        bannerImage: 'string',
-        // settings: {},
-        // coin: 1,
-        rating: 1,
-        //     ratingHistory:
-        // [ {
-        //         contest: {
-        //           contestId: 1,
-        //           title: 'title',
-        //         },
-        //         rank: 1,
-        //         rating: 1,
-        //         ratingChange: 1,
-        //         date: 'data',
-        // }],
-      };
+
+    it('should work when checking others', async () => {
+      const detail = commonUserDetailMap[2];
       app.mockClassFunction('userService', 'getDetail', async () => detail);
 
       const data = {
         userId: 2,
-        _scope: 'available',
+      };
+      await app
+        .httpRequest()
+        .post(url)
+        .send(data)
+        .expect({
+          success: true,
+          data: omit(detail, [
+            'email',
+            'defaultLanguage',
+            'settings',
+            'coin',
+            'verified',
+            'lastTime',
+            'createdAt',
+          ]),
+        });
+    });
+
+    it('should work when checking self', async () => {
+      const session = {
+        userId: 2,
+        username: 'username',
+        nickname: 'nickname',
+        permission: 0,
+        avatar: '',
+        contests: {},
+      };
+      app.mockContext({
+        session,
+      });
+      const detail = commonUserDetailMap[2];
+      app.mockClassFunction('userService', 'getDetail', async () => detail);
+
+      const data = {
+        userId: 2,
       };
       await app
         .httpRequest()
@@ -273,7 +399,8 @@ describe(basename(__filename), () => {
 
   describe(testUtils.controllerDesc(routesBe.updateUserDetail), () => {
     const url = routesBe.updateUserDetail.url;
-    it('should work when  logged ', async () => {
+
+    it('should work when updating self', async () => {
       const session = {
         userId: 1,
         username: 'test',
@@ -285,7 +412,9 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
-      app.mockClassFunction('userService', 'update', async () => null);
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
+      app.mockClassFunction('userService', 'update', async () => true);
+      app.mockClassFunction('userService', 'clearDetailCache', async () => {});
 
       const data = {
         userId: 1,
@@ -301,8 +430,8 @@ describe(basename(__filename), () => {
       });
     });
 
-    it('should work when not logged ', async () => {
-      app.mockClassFunction('userService', 'update', async () => null);
+    it('should work when updating others', async () => {
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
 
       const data = {
         userId: 2,
@@ -324,7 +453,7 @@ describe(basename(__filename), () => {
   describe(testUtils.controllerDesc(routesBe.updateUserPassword), () => {
     const url = routesBe.updateUserPassword.url;
 
-    it('should work with correct old pwd  when logged', async () => {
+    it('should work with correct old pwd when logged', async () => {
       const session = {
         userId: 1,
         username: 'test',
@@ -336,7 +465,9 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
-      app.mockClassFunction('userService', 'update', async () => 1);
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
+      app.mockClassFunction('userService', 'isExists', async () => true);
+      app.mockClassFunction('userService', 'update', async () => true);
 
       const data = {
         userId: 1,
@@ -346,22 +477,7 @@ describe(basename(__filename), () => {
       await app.httpRequest().post(url).send(data).expect({ success: true });
     });
 
-    it('should work with correct old pwd  when not logged', async () => {
-      app.mockClassFunction('userService', 'update', async () => 1);
-
-      const data = {
-        userId: 2,
-        oldPassword: 'olderPwd',
-        password: 'newPwd',
-      };
-      await app.httpRequest().post(url).send(data).expect({
-        success: false,
-        code: Codes.GENERAL_NO_PERMISSION,
-        msg: codeMsgs[Codes.GENERAL_NO_PERMISSION],
-      });
-    });
-
-    it('should work with incorrect old pwd when logged  ', async () => {
+    it('should work with incorrect old pwd when logged', async () => {
       app.mockClassFunction('userService', 'update', async () => 0);
       const session = {
         userId: 1,
@@ -374,6 +490,8 @@ describe(basename(__filename), () => {
       app.mockContext({
         session,
       });
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
+      app.mockClassFunction('userService', 'isExists', async () => false);
       const data = {
         userId: 1,
         oldPassword: 'oldPwd',
@@ -385,31 +503,17 @@ describe(basename(__filename), () => {
         msg: codeMsgs[Codes.USER_INCORRECT_OLD_PASSWORD],
       });
     });
-  });
 
-  describe(testUtils.controllerDesc(routesBe.resetUserPasswordByAdmin), () => {
-    const url = routesBe.resetUserPasswordByAdmin.url;
-
-    it('should work with admin', async () => {
-      const session = {
-        userId: 1,
-        username: 'test',
-        nickname: 'nick',
-        permission: EUserPermission.admin,
-        avatar: '',
-        contests: {},
-      };
-      app.mockContext({
-        session,
-      });
-
-      app.mockClassFunction('userService', 'update', async () => null);
+    it('should work with correct old pwd when not logged', async () => {
       const data = {
-        userId: 1,
-        password: 'password',
+        userId: 2,
+        oldPassword: 'olderPwd',
+        password: 'newPwd',
       };
       await app.httpRequest().post(url).send(data).expect({
-        success: true,
+        success: false,
+        code: Codes.GENERAL_NO_PERMISSION,
+        msg: codeMsgs[Codes.GENERAL_NO_PERMISSION],
       });
     });
   });
@@ -428,6 +532,8 @@ describe(basename(__filename), () => {
       };
       app.mockClassFunction('userService', 'findOne', async () => user);
       app.mockClassFunction('verificationService', 'getEmailVerificationCode', async () => code);
+      app.mockClassFunction('userService', 'update', async () => true);
+      app.mockClassFunction('verificationService', 'deleteEmailVerificationCode', async () => {});
       const data = {
         email: '1870893666@qq.com',
         code: 312658,
@@ -481,7 +587,26 @@ describe(basename(__filename), () => {
       });
     });
   });
-  // /////////////////////////新邮箱不在这一层？
+
+  describe(testUtils.controllerDesc(routesBe.resetUserPasswordByAdmin), () => {
+    const url = routesBe.resetUserPasswordByAdmin.url;
+
+    it('should work with admin', async () => {
+      app.mockContext({
+        session: testUtils.getMockAdminSession(),
+      });
+
+      app.mockClassFunction('userService', 'update', async () => true);
+      const data = {
+        userId: 1,
+        password: 'password',
+      };
+      await app.httpRequest().post(url).send(data).expect({
+        success: true,
+      });
+    });
+  });
+
   describe(testUtils.controllerDesc(routesBe.updateUserEmail), () => {
     const url = routesBe.updateUserEmail.url;
 
@@ -490,7 +615,7 @@ describe(basename(__filename), () => {
         userId: 1,
         username: 'test',
         nickname: 'nick',
-        permission: EUserPermission.admin,
+        permission: EUserPermission.normal,
         avatar: '',
         contests: {},
       };
@@ -503,8 +628,10 @@ describe(basename(__filename), () => {
         createdAt: '2020-08-02T16:00:00.000Z',
       };
       app.mockClassFunction('verificationService', 'getEmailVerificationCode', async () => code);
+      app.mockClassFunction('userService', 'isEmailExists', async () => false);
       app.mockClassFunction('userService', 'update', async () => null);
-      app.mockClassFunction('userService', 'isEmailExists', async () => null);
+      app.mockClassFunction('userService', 'clearDetailCache', async () => {});
+      app.mockClassFunction('verificationService', 'deleteEmailVerificationCode', async () => {});
       const data = {
         userId: 1,
         email: '1870893666@qq.com',
@@ -520,7 +647,7 @@ describe(basename(__filename), () => {
         userId: 1,
         username: 'test',
         nickname: 'nick',
-        permission: EUserPermission.admin,
+        permission: EUserPermission.normal,
         avatar: '',
         contests: {},
       };
@@ -533,8 +660,7 @@ describe(basename(__filename), () => {
         createdAt: '2020-08-02T16:00:00.000Z',
       };
       app.mockClassFunction('verificationService', 'getEmailVerificationCode', async () => code);
-      app.mockClassFunction('userService', 'update', async () => null);
-      app.mockClassFunction('userService', 'isEmailExists', async () => 1);
+      app.mockClassFunction('userService', 'isEmailExists', async () => true);
       const data = {
         userId: 1,
         email: '1870893666@qq.com',
@@ -544,16 +670,15 @@ describe(basename(__filename), () => {
         success: false,
         code: Codes.USER_EMAIL_EXISTS,
         msg: codeMsgs[Codes.USER_EMAIL_EXISTS],
-
       });
     });
 
-    it('should work with incorrect verified code ', async () => {
+    it('should work with incorrect verified code', async () => {
       const session = {
         userId: 1,
         username: 'test',
         nickname: 'nick',
-        permission: EUserPermission.admin,
+        permission: EUserPermission.normal,
         avatar: '',
         contests: {},
       };
@@ -566,7 +691,6 @@ describe(basename(__filename), () => {
         createdAt: '2020-08-02T16:00:00.000Z',
       };
       app.mockClassFunction('verificationService', 'getEmailVerificationCode', async () => code);
-      app.mockClassFunction('userService', 'update', async () => null);
       const data = {
         userId: 1,
         email: '1870893666@qq.com',
@@ -712,50 +836,11 @@ describe(basename(__filename), () => {
     const url = routesBe.getUserProblemResultStats.url;
 
     it('should work with contestId ', async () => {
-      const detail = {
-        userId: 1,
-        username: 'username',
-        nickname: 'nickname',
-        email: '1870893666@qq.com',
-        verified: 1,
-        password: 'qwer123',
-        school: 'school',
-        createdAt: '2020-08-01T16:00:00.000Z',
-        submitted: 3,
-        accepted: 3,
-        defaultLanguage: 'string',
-        lastIp: 'string',
-        lastTime: '2020-08-01T16:00:00.000Z',
-        permission: 100,
-        forbidden: 10,
-        avatar: 'string',
-        college: 'string',
-        major: 'string',
-        grade: 'grade',
-        class: 'class',
-        site: 'site',
-        bannerImage: 'string',
-        settings: {},
-        coin: 1,
-        rating: 1,
-        ratingHistory: [
-          {
-            contest: {
-              contestId: 1,
-              title: 'title',
-            },
-            rank: 1,
-            rating: 1,
-            ratingChange: 1,
-            date: 'data',
-          },
-        ],
-      };
       const re = {
         acceptedProblemIds: [1, 2, 3],
         attemptedProblemIds: [1, 2, 3],
       };
-      app.mockClassFunction('userService', 'getDetail', async () => detail);
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
       app.mockClassFunction('solutionService', 'getUserProblemResultStats', async () => re);
 
       const data = {
@@ -774,50 +859,11 @@ describe(basename(__filename), () => {
     });
 
     it('should work without contestId ', async () => {
-      const detail = {
-        userId: 1,
-        username: 'username',
-        nickname: 'nickname',
-        email: '1870893666@qq.com',
-        verified: 1,
-        password: 'qwer123',
-        school: 'school',
-        createdAt: '2020-08-01T16:00:00.000Z',
-        submitted: 3,
-        accepted: 3,
-        defaultLanguage: 'string',
-        lastIp: 'string',
-        lastTime: '2020-08-01T16:00:00.000Z',
-        permission: 100,
-        forbidden: 10,
-        avatar: 'string',
-        college: 'string',
-        major: 'string',
-        grade: 'grade',
-        class: 'class',
-        site: 'site',
-        bannerImage: 'string',
-        settings: {},
-        coin: 1,
-        rating: 1,
-        ratingHistory: [
-          {
-            contest: {
-              contestId: 1,
-              title: 'title',
-            },
-            rank: 1,
-            rating: 1,
-            ratingChange: 1,
-            date: 'data',
-          },
-        ],
-      };
       const re = {
         acceptedProblemIds: [1, 2, 3],
         attemptedProblemIds: [1, 2, 3],
       };
-      app.mockClassFunction('userService', 'getDetail', async () => detail);
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
       app.mockClassFunction('solutionService', 'getUserProblemResultStats', async () => re);
 
       const data = {
@@ -839,50 +885,13 @@ describe(basename(__filename), () => {
     const url = routesBe.getUserSolutionCalendar.url;
 
     it('should work with correct info ', async () => {
-      const detail = {
-        userId: 1,
-        username: 'username',
-        nickname: 'nickname',
-        email: '1870893666@qq.com',
-        verified: 1,
-        password: 'qwer123',
-        school: 'school',
-        createdAt: '2020-08-01T16:00:00.000Z',
-        submitted: 3,
-        accepted: 3,
-        defaultLanguage: 'string',
-        lastIp: 'string',
-        lastTime: '2020-08-01T16:00:00.000Z',
-        permission: 100,
-        forbidden: 10,
-        avatar: 'string',
-        college: 'string',
-        major: 'string',
-        grade: 'grade',
-        class: 'class',
-        site: 'site',
-        bannerImage: 'string',
-        settings: {},
-        coin: 1,
-        rating: 1,
-        ratingHistory: [
-          {
-            contest: {
-              contestId: 1,
-              title: 'title',
-            },
-            rank: 1,
-            rating: 1,
-            ratingChange: 1,
-            date: 'data',
-          },
-        ],
-      };
-      const re = {
-        date: '2020-08-11', // YYYY-MM-DD
-        count: 3,
-      };
-      app.mockClassFunction('userService', 'getDetail', async () => detail);
+      const re = [
+        {
+          date: '2020-08-11', // YYYY-MM-DD
+          count: 3,
+        },
+      ];
+      app.mockClassFunction('userService', 'getDetail', async () => commonUserDetailMap[1]);
       app.mockClassFunction('solutionService', 'getUserSolutionCalendar', async () => re);
 
       const data = {
@@ -890,14 +899,10 @@ describe(basename(__filename), () => {
         result: 1,
       };
 
-      await app
-        .httpRequest()
-        .post(url)
-        .send(data)
-        .expect({
-          success: true,
-          data: { ...re },
-        });
+      await app.httpRequest().post(url).send(data).expect({
+        success: true,
+        data: re,
+      });
     });
   });
 });
