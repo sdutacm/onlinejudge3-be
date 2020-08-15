@@ -18,6 +18,8 @@ import replyContract from '../src/app/reply/reply.contract';
 import postContract from '../src/app/post/post.contract';
 import setContract from '../src/app/set/set.contract';
 import groupContract from '../src/app/group/group.contract';
+import miscContract from '../src/app/misc/misc.contract';
+import statContract from '../src/app/stat/stat.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -37,6 +39,8 @@ const contracts = [
   [postContract, 'post'],
   [setContract, 'set'],
   [groupContract, 'group'],
+  [miscContract, 'misc'],
+  [statContract, 'stat'],
 ];
 
 const banner = `/**
