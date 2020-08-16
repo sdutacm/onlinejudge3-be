@@ -56,7 +56,7 @@ const userContract = {
       username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
       nickname: { type: 'string', minLength: 3, maxLength: 20 },
       email: { type: 'string', minLength: 5, maxLength: 60, format: 'email' },
-      code: { type: 'number', minimum: 100000, maximum: 999999 },
+      code: { type: 'number' },
       password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
     },
     additionalProperties: false,
@@ -273,7 +273,7 @@ const userContract = {
   resetUserPasswordReq: {
     properties: {
       email: { type: 'string', format: 'email' },
-      code: { type: 'number', minimum: 100000, maximum: 999999 },
+      code: { type: 'number' },
       password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
     },
     additionalProperties: false,
@@ -293,7 +293,7 @@ const userContract = {
     properties: {
       userId: { type: 'number', minimum: 1 },
       email: { type: 'string', format: 'email' },
-      code: { type: 'number', minimum: 100000, maximum: 999999 },
+      code: { type: 'number' },
     },
     additionalProperties: false,
     required: ['userId', 'email', 'code'],
