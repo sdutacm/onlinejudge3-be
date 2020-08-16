@@ -38,6 +38,7 @@ import { ISharp } from '@/utils/libs/sharp';
 import { IFs } from '@/utils/libs/fs-extra';
 import { ILodash } from '@/utils/libs/lodash';
 import { CSolutionService } from '../solution/solution.service';
+import { EUserPermission } from '@/common/enums';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -148,6 +149,10 @@ export default class UserController {
    * 校验逻辑：
    * 1. 检查用户名、昵称、邮箱均不被占用
    * 2. 此邮箱的验证码有效
+   *
+   * 注册成功后逻辑：
+   * 1. 设置新用户 session
+   * 2. 清除已使用的验证码
    * @returns 用户 ID
    */
   @route()
@@ -172,6 +177,14 @@ export default class UserController {
       password: this.utils.misc.hashPassword(password),
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    ctx.session = {
+      userId: newId,
+      username: username,
+      nickname: nickname,
+      permission: EUserPermission.normal,
+      avatar: '',
+      contests: {},
+    };
     return { userId: newId };
   }
 
