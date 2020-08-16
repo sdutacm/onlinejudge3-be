@@ -58,7 +58,8 @@ const statContract = {
       userIds: {
         type: 'array',
         items: {
-          type: 'string',
+          type: 'number',
+          minimum: 1,
         },
       },
     },
@@ -81,7 +82,7 @@ const statContract = {
                 properties: {
                   pid: { type: 'number' },
                   sid: { type: 'number' },
-                  at: { type: 'string', format: 'date-time' },
+                  at: { type: 'number', description: 'timestamp s' },
                 },
                 additionalProperties: false,
                 required: ['pid', 'sid', 'at'],
@@ -106,7 +107,8 @@ const statContract = {
       userIds: {
         type: 'array',
         items: {
-          type: 'string',
+          type: 'number',
+          minimum: 1,
         },
       },
     },
@@ -136,7 +138,7 @@ const statContract = {
                       properties: {
                         sid: { type: 'number' },
                         res: { type: 'number' },
-                        at: { type: 'string', format: 'date-time' },
+                        at: { type: 'number', description: 'timestamp s' },
                       },
                       additionalProperties: false,
                       required: ['sid', 'res', 'at'],

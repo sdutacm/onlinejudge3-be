@@ -41,7 +41,7 @@ export default class MiscController {
    */
   @route()
   @login()
-  @rateLimitUser(20, 120)
+  @rateLimitUser(120, 20)
   async [routesBe.uploadMedia.i](ctx: Context): Promise<IUploadMediaResp> {
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
     const image = ctx.request.files?.filter((f) => f.field === 'image')[0];
@@ -60,7 +60,7 @@ export default class MiscController {
     const ext = image.mime.split('/')[1];
     const saveName = `${ctx.session.userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     //存储图片
-    await this.fs.copyFile(image.filepath, path.join(this.staticPath.avatar, saveName));
+    await this.fs.copyFile(image.filepath, path.join(this.staticPath.media, saveName));
     return {
       url: saveName,
     };

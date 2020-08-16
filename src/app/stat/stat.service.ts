@@ -3,8 +3,18 @@ import { CStatMeta } from './stat.meta';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
-import { IMStatServiceGetUserACRankRes, IMStatUserACRankPlain } from './stat.interface';
+import {
+  IMStatServiceGetUserACRankRes,
+  IMStatUserACRankPlain,
+  IMStatServiceGetUserAcceptedProblemsRes,
+  IMStatUserAcceptedProblems,
+  IMStatServiceGetUserSubmittedProblemsRes,
+  IMStatUserSubmittedProblems,
+  IMStatServiceGetUASPRunInfoRes,
+  IMStatUASPRunInfo,
+} from './stat.interface';
 import { CUserService } from '../user/user.service';
+import { IUserModel } from '../user/user.interface';
 
 export type CStatService = StatService;
 
@@ -48,14 +58,49 @@ export default class StatService {
         return this.utils.misc.ignoreUndefined({
           ...this.lodash.omit(d, ['userId']),
           user: {
-            userId: user?.userId,
-            username: user?.username,
-            nickname: user?.nickname,
-            avatar: user?.avatar,
-            bannerImage: user?.bannerImage,
+            userId: user?.userId || d.userId,
+            username: user?.username || '',
+            nickname: user?.nickname || '',
+            avatar: user?.avatar || '',
+            bannerImage: user?.bannerImage || '',
           },
         });
       }),
     };
+  }
+
+  /**
+   * 获取用户 AC 题目概览。
+   * @param userId userId
+   * @returns 用户每个题目首次 AC 信息
+   */
+  async getUserAcceptedProblems(
+    userId: IUserModel['userId'],
+  ): Promise<IMStatServiceGetUserAcceptedProblemsRes> {
+    return this.ctx.helper.redisGet<IMStatUserAcceptedProblems>(
+      this.redisKey.userAcceptedProblemsStats,
+      [userId],
+    );
+  }
+
+  /**
+   * 获取用户提交题目概览。
+   * @param userId userId
+   * @returns 用户每个题目的提交列表，截至首次 AC
+   */
+  async getUserSubmittedProblems(
+    userId: IUserModel['userId'],
+  ): Promise<IMStatServiceGetUserSubmittedProblemsRes> {
+    return this.ctx.helper.redisGet<IMStatUserSubmittedProblems>(
+      this.redisKey.userSubmittedProblemsStats,
+      [userId],
+    );
+  }
+
+  /**
+   * 获取用户 AC 及提交题目统计运行状态。
+   */
+  async getUASPRunInfo(): Promise<IMStatServiceGetUASPRunInfoRes> {
+    return this.ctx.helper.redisGet<IMStatUASPRunInfo>(this.redisKey.userASProblemsStatsRunInfo);
   }
 }
