@@ -163,7 +163,7 @@ export default class ProblemService {
         required: false,
       },
     ];
-    if (opts.tagIds) {
+    if (Array.isArray(opts.tagIds) && opts.tagIds.length > 0) {
       include[0].where.tagId = {
         [Op.in]: opts.tagIds,
       };
