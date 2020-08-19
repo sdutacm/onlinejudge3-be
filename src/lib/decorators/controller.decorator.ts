@@ -138,6 +138,7 @@ export function validate<T>(
           const errorMessage = ctx.app.schemaValidator
             .errorsText(validate.errors)
             .replace(/data./g, '');
+          ctx.status = 422;
           ctx.body = ctx.helper.rFail(Codes.GENERAL_REQUEST_PARAMS_ERROR, {
             msg: errorMessage,
             errors: validate.errors?.map((err) => ({
