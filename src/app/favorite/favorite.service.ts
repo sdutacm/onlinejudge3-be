@@ -1,7 +1,5 @@
 import { provide, inject, Context, config } from 'midway';
 import { CFavoriteMeta } from './favorite.meta';
-import { IDurationsConfig } from '@/config/durations.config';
-import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { TFavoriteModel, TFavoriteModelScopes } from '@/lib/models/favorite.model';
 import {
   TMFavoriteDetailFields,
@@ -24,6 +22,8 @@ import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
 import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
+import { CSetService } from '../set/set.service';
+import { CGroupService } from '../group/group.service';
 
 export type CFavoriteService = FavoriteService;
 
@@ -53,6 +53,12 @@ export default class FavoriteService {
   contestService: CContestService;
 
   @inject()
+  setService: CSetService;
+
+  @inject()
+  groupService: CGroupService;
+
+  @inject()
   utils: IUtils;
 
   @inject()
@@ -78,8 +84,14 @@ export default class FavoriteService {
     const problemIds = data.map((d) => d.target?.problemId).filter((f) => f);
     // @ts-ignore
     const contestIds = data.map((d) => d.target?.contestId).filter((f) => f);
+    // @ts-ignore
+    const setIds = data.map((d) => d.target?.setId).filter((f) => f);
+    // @ts-ignore
+    const groupIds = data.map((d) => d.target?.groupId).filter((f) => f);
     const relativeProblem = await this.problemService.getRelative(problemIds, null);
     const relativeContest = await this.contestService.getRelative(contestIds, null);
+    const relativeSet = await this.setService.getRelative(setIds, null);
+    const relativeGroup = await this.groupService.getRelative(groupIds, null);
     // @ts-ignore
     return data.map((d) => {
       switch (d.type) {
@@ -101,6 +113,28 @@ export default class FavoriteService {
             target: {
               contestId,
               title: relativeContest[contestId]?.title,
+            },
+          };
+        case 'set':
+          // @ts-ignore
+          const setId = d.target?.setId;
+          return {
+            ...d,
+            target: {
+              setId,
+              title: relativeSet[setId]?.title,
+            },
+          };
+        case 'group':
+          // @ts-ignore
+          const groupId = d.target?.groupId;
+          return {
+            ...d,
+            target: {
+              groupId,
+              title: relativeGroup[groupId]?.name,
+              name: relativeGroup[groupId]?.name,
+              verified: relativeGroup[groupId]?.verified,
             },
           };
       }
