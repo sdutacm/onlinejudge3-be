@@ -64,9 +64,17 @@ export default class MessageController {
     afterGetList(ctx) {
       const list = ctx.list as IMMessageServiceGetListRes;
       list.rows.forEach((item) => {
-        // 只有收信人有 read 字段
-        if (ctx.session.userId !== item.to.userId) {
+        // 是发件人
+        if (ctx.session.userId === item.from?.userId) {
+          // 发件人没有 read 字段
           delete item.read;
+        }
+        // 是收件人
+        if (ctx.session.userId === item.to.userId) {
+          // 如果匿名，则对收件人删除发件人人字段
+          if (item.anonymous) {
+            delete item.from;
+          }
         }
       });
     },
