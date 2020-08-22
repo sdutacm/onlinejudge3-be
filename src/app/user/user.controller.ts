@@ -9,6 +9,7 @@ import {
   respList,
   auth,
   requireSelf,
+  login,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
@@ -355,7 +356,7 @@ export default class UserController {
   /**
    * 上传头像。
    *
-   * 权限：当前登录用户
+   * 权限：登录
    *
    * 图片校验逻辑：
    * 1. 格式限制：jpeg/png
@@ -364,11 +365,13 @@ export default class UserController {
    * 上传成功后保留原图和压缩图（s_），且清除旧文件。
    */
   @route()
-  @requireSelf()
-  @id()
-  @getDetail()
+  @login()
   async [routesBe.uploadUserAvatar.i](ctx: Context): Promise<void> {
-    const userId = ctx.id!;
+    const userId = ctx.session.userId;
+    const detail = await this.service.getDetail(userId);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
     const image = ctx.request.files?.filter((f) => f.field === 'avatar')[0];
     if (!image) {
@@ -395,7 +398,7 @@ export default class UserController {
         .toFile(path.join(this.staticPath.avatar, sFileName)),
     ]);
     // 清除旧文件
-    const { avatar: oldImage } = ctx.detail as IMUserDetail;
+    const { avatar: oldImage } = detail;
     if (oldImage) {
       await Promise.all([
         this.fs.remove(path.join(this.staticPath.avatar, oldImage)),
@@ -413,7 +416,7 @@ export default class UserController {
   /**
    * 上传巨幅。
    *
-   * 权限：当前登录用户
+   * 权限：登录
    *
    * 图片校验逻辑：
    * 1. 格式限制：jpeg/png
@@ -422,11 +425,13 @@ export default class UserController {
    * 上传成功后保留原图、压缩图（s_）和等比最小缩放的极压缩图（min_），且清除旧文件。
    */
   @route()
-  @requireSelf()
-  @id()
-  @getDetail()
+  @login()
   async [routesBe.uploadUserBannerImage.i](ctx: Context): Promise<void> {
-    const userId = ctx.id!;
+    const userId = ctx.session.userId;
+    const detail = await this.service.getDetail(userId);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
     const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
     const SIZE_WITH_SCALE = 400;
     const image = ctx.request.files?.filter((f) => f.field === 'bannerImage')[0];
@@ -480,7 +485,7 @@ export default class UserController {
       minImageInstance.toFile(path.join(this.staticPath.bannerImage, minFileName)),
     ]);
     // 清除旧文件
-    const { bannerImage: oldImage } = ctx.detail as IMUserDetail;
+    const { bannerImage: oldImage } = detail;
     if (oldImage) {
       await Promise.all([
         this.fs.remove(path.join(this.staticPath.bannerImage, oldImage)),

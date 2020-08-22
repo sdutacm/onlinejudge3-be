@@ -301,20 +301,18 @@ const userContract = {
 
   uploadUserAvatarReq: {
     properties: {
-      userId: { type: 'number', minimum: 1 },
       // avatar: { type: 'image' },
     },
     additionalProperties: true,
-    required: ['userId'],
+    required: [],
   } as defContract.ContractSchema,
 
   uploadUserBannerImageReq: {
     properties: {
-      userId: { type: 'number', minimum: 1 },
       // bannerImage: { type: 'image' },
     },
     additionalProperties: true,
-    required: ['userId'],
+    required: [],
   } as defContract.ContractSchema,
 
   getUserProblemResultStatsReq: {
