@@ -62,14 +62,14 @@ export default class SolutionController {
       }
     },
     afterGetList(ctx) {
-      const { contestId } = ctx.request.body as IGetSolutionListReq;
-      if (contestId && !ctx.helper.isContestLoggedIn(contestId) && !ctx.isPerm) {
-        (ctx.list as IMSolutionServiceGetListRes).rows.forEach((d) => {
+      const list = ctx.list as IMSolutionServiceGetListRes;
+      list.rows.forEach((d) => {
+        if (d.contest && !ctx.helper.isContestLoggedIn(d.contest.contestId) && !ctx.isPerm) {
           delete d.time;
           delete d.memory;
           delete d.codeLength;
-        });
-      }
+        }
+      });
     },
   })
   @respList()
@@ -82,7 +82,14 @@ export default class SolutionController {
     const detail = ctx.detail as IMSolutionDetail;
     const isSelf = this.service.isSolutionSelf(ctx, detail);
     if (!(ctx.isPerm || (ctx.loggedIn && detail.shared) || isSelf)) {
-      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+      const contestId = detail.contest?.contestId;
+      if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
+        delete detail.time;
+        delete detail.memory;
+        delete detail.codeLength;
+      }
+      delete detail.code;
+      delete detail.compileInfo;
     }
     return detail;
   }
