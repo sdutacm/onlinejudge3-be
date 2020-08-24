@@ -122,7 +122,7 @@ export default class ContestController {
     switch (detail.type) {
       case EContestType.public: {
         if (!ctx.loggedIn) {
-          break;
+          throw new ReqError(Codes.CONTEST_NEED_LOGIN_OJ);
         }
         const session = {
           userId: ctx.session.userId,
@@ -136,7 +136,7 @@ export default class ContestController {
       }
       case EContestType.private: {
         if (!ctx.loggedIn) {
-          break;
+          throw new ReqError(Codes.CONTEST_NEED_LOGIN_OJ);
         }
         const userContests = await this.service.getUserContests(ctx.session.userId);
         if (userContests.rows.includes(contestId)) {
@@ -150,7 +150,7 @@ export default class ContestController {
           ctx.session.contests[contestId] = session;
           return session;
         }
-        break;
+        throw new ReqError(Codes.CONTEST_NEED_LOGIN_PRIVATE_CONTEST);
       }
       case EContestType.register: {
         if (ctx.loggedIn) {
@@ -173,7 +173,7 @@ export default class ContestController {
             }
           }
         }
-        break;
+        throw new ReqError(Codes.CONTEST_NEED_LOGIN_REGISTER_CONTEST);
       }
       default: {
         this.utils.misc.never(detail.type);
@@ -193,7 +193,7 @@ export default class ContestController {
     switch (detail.type) {
       case EContestType.public: {
         if (!ctx.loggedIn) {
-          throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
+          throw new ReqError(Codes.CONTEST_NEED_LOGIN_OJ);
         }
         const session = {
           userId: ctx.session.userId,
@@ -207,7 +207,7 @@ export default class ContestController {
       }
       case EContestType.private: {
         if (!ctx.loggedIn) {
-          throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
+          throw new ReqError(Codes.CONTEST_NEED_LOGIN_OJ);
         }
         const userContests = await this.service.getUserContests(ctx.session.userId);
         let approved = false;
