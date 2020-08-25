@@ -100,9 +100,6 @@ export default class ContestController {
   async [routesBe.getContestSession.i](ctx: Context): Promise<IGetContestSessionResp> {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
-    if (!ctx.loggedIn) {
-      return null;
-    }
     if (ctx.helper.isContestLoggedIn(contestId)) {
       return ctx.helper.getContestSession(contestId)!;
     }
