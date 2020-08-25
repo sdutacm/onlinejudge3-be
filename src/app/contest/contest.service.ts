@@ -1057,7 +1057,7 @@ export default class ContestService {
           continue;
         }
         const { userId } = solution;
-        const stat = rankMap[userId].stats[problemIndex];
+        const stat = rankMap[userId]?.stats?.[problemIndex];
         if (!stat) {
           continue;
         }
