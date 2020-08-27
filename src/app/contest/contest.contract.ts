@@ -413,6 +413,8 @@ const contestContract = {
       createdAt: {
         anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
       },
+      globalUserId: { type: 'number' },
+      rating: { type: 'number' },
     },
     additionalProperties: false,
     required: [

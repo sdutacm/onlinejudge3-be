@@ -35,6 +35,7 @@ import {
   TMContestUserDetailFields,
   IContestUserModel,
   IMContestUserLite,
+  IMContestUserDetailPlain,
   IMContestUserDetail,
   IMContestServiceGetContestUserDetailRes,
   IMContestServiceFindOneContestUserOpt,
@@ -51,6 +52,9 @@ import {
   IMContestServiceGetRatingStatusRes,
   IMContestRatingStatus,
   IMContestRankData,
+  IMContestRatingContestDetail,
+  IMContestServiceGetRatingContestDetailRes,
+  TMContestRatingContestDetailFields,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -62,8 +66,9 @@ import { CProblemService } from '../problem/problem.service';
 import { IProblemModel } from '../problem/problem.interface';
 import { TContestUserModel } from '@/lib/models/contestUser.model';
 import { CSolutionService } from '../solution/solution.service';
-import { EContestType, ESolutionResult } from '@/common/enums';
+import { EContestType, ESolutionResult, EContestMode } from '@/common/enums';
 import { CUserService } from '../user/user.service';
+import { TRatingContestModel } from '@/lib/models/ratingContest.model';
 
 export type CContestService = ContestService;
 
@@ -168,6 +173,14 @@ const contestUserDetailFields: Array<TMContestUserDetailFields> = [
   'createdAt',
 ];
 
+const ratingContestDetailFields: Array<TMContestRatingContestDetailFields> = [
+  'contestId',
+  'ratingUntil',
+  'ratingChange',
+  'createdAt',
+  'updatedAt',
+];
+
 const MEMBER_NUM = 3;
 
 const memberFields = [
@@ -198,6 +211,9 @@ export default class ContestService {
 
   @inject()
   contestUserModel: TContestUserModel;
+
+  @inject()
+  ratingContestModel: TRatingContestModel;
 
   @inject()
   problemService: CProblemService;
@@ -333,8 +349,8 @@ export default class ContestService {
    */
   private async _getContestUserDetailCache(
     contestUserId: IContestUserModel['contestUserId'],
-  ): Promise<IMContestUserDetail | null | ''> {
-    return this.ctx.helper.redisGet<IMContestUserDetail>(this.redisKey.contestUserDetail, [
+  ): Promise<IMContestUserDetailPlain | null | ''> {
+    return this.ctx.helper.redisGet<IMContestUserDetailPlain>(this.redisKey.contestUserDetail, [
       contestUserId,
     ]);
   }
@@ -346,7 +362,7 @@ export default class ContestService {
    */
   private async _setContestUserDetailCache(
     contestUserId: IContestUserModel['contestUserId'],
-    data: IMContestUserDetail | null,
+    data: IMContestUserDetailPlain | null,
   ): Promise<void> {
     return this.ctx.helper.redisSet(
       this.redisKey.contestUserDetail,
@@ -387,6 +403,36 @@ export default class ContestService {
       [contestId, god],
       data,
       this.durations.cacheDetailShort,
+    );
+  }
+
+  /**
+   * 获取 Rating 比赛详情缓存。
+   * @param contestId contestId
+   */
+  private async _getRatingContestDetailCache(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestRatingContestDetail | null> {
+    return this.ctx.helper.redisGet<IMContestRatingContestDetail>(
+      this.redisKey.ratingContestDetail,
+      [contestId],
+    );
+  }
+
+  /**
+   * 设置 Rating 比赛详情缓存。
+   * @param contestId contestId
+   * @param data 数据
+   */
+  private async _setRatingContestDetailCache(
+    contestId: IContestModel['contestId'],
+    data: IMContestRatingContestDetail,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.ratingContestDetail,
+      [contestId],
+      data,
+      this.durations.cacheDetail,
     );
   }
 
@@ -460,7 +506,7 @@ export default class ContestService {
     return this.utils.misc.ignoreUndefined(res) as T;
   }
 
-  private _formatContestUser<T>(data: Partial<IMContestUserDetail>): T {
+  private _formatContestUser<T>(data: Partial<IMContestUserDetailPlain>): T {
     const res: any = { ...data };
     for (let i = 1; i <= MEMBER_NUM; ++i) {
       memberFields.forEach((field) => {
@@ -470,6 +516,23 @@ export default class ContestService {
     }
     delete res.members;
     return this.utils.misc.ignoreUndefined(res) as T;
+  }
+
+  private async _handleRelativeContestUserData(
+    data: IMContestUserDetailPlain[],
+  ): Promise<IMContestUserDetail[]> {
+    const usernames = data.map((d) => d.username).filter((f) => f);
+    const username2userIdMap = await this.userService.getUserIdsByUsernames(usernames);
+    const userIds = Object.values(username2userIdMap);
+    const relativeUser = await this.userService.getRelative(userIds, null);
+    return data.map((d) => {
+      const user = relativeUser[username2userIdMap[d.username]];
+      return {
+        ...d,
+        globalUserId: user?.userId,
+        rating: user?.rating || 0,
+      };
+    });
   }
 
   /**
@@ -858,10 +921,14 @@ export default class ContestService {
             contestUserId,
           },
         })
-        .then((d) => d && this._parseContestUser<IMContestUserDetail>(d.get({ plain: true })));
+        .then((d) => d && this._parseContestUser<IMContestUserDetailPlain>(d.get({ plain: true })));
       await this._setContestUserDetailCache(contestUserId, res);
     }
-    return res;
+    if (!res) {
+      return null;
+    }
+    const [ret] = await this._handleRelativeContestUserData([res]);
+    return ret;
   }
 
   /**
@@ -894,7 +961,7 @@ export default class ContestService {
           },
         })
         .then((r) =>
-          r.map((d) => this._parseContestUser<IMContestUserDetail>(d.get({ plain: true }))),
+          r.map((d) => this._parseContestUser<IMContestUserDetailPlain>(d.get({ plain: true }))),
         );
       for (const d of dbRes) {
         res[d.contestUserId] = d;
@@ -904,6 +971,11 @@ export default class ContestService {
         !res[k] && (await this._setContestUserDetailCache(k, null));
       }
     }
+    const resIds = Object.keys(res).map((id) => +id);
+    const handled = await this._handleRelativeContestUserData(resIds.map((id) => res[id]));
+    resIds.forEach((id, index) => {
+      res[id] = handled[index];
+    });
     return res;
   }
 
@@ -916,7 +988,7 @@ export default class ContestService {
     contestId: IContestModel['contestId'],
     options: IMContestServiceFindOneContestUserOpt,
   ): Promise<IMContestServiceFindOneContestUserRes> {
-    return this.contestUserModel
+    const res = await this.contestUserModel
       .findOne({
         attributes: contestUserDetailFields,
         where: {
@@ -924,7 +996,12 @@ export default class ContestService {
           contestId,
         } as any,
       })
-      .then((d) => d && this._parseContestUser<IMContestUserDetail>(d.get({ plain: true })));
+      .then((d) => d && this._parseContestUser<IMContestUserDetailPlain>(d.get({ plain: true })));
+    if (!res) {
+      return null;
+    }
+    const [ret] = await this._handleRelativeContestUserData([res]);
+    return ret;
   }
 
   /**
@@ -1015,6 +1092,26 @@ export default class ContestService {
         contest.type === EContestType.register
           ? await this.getRelativeContestUser(userIds)
           : await this.userService.getRelative(userIds, null);
+      const userRatingChangeInfo: Record<
+        number,
+        {
+          oldRating: number;
+          newRating: number;
+        }
+      > = {}; // 关联用户 id 到 rating change 的映射（如果比赛为 register，则 id 为比赛用户 id）
+      if (contest.mode === EContestMode.rating) {
+        const ratingContestDetail = await this.getRatingContestDetail(contestId);
+        const ratingChange = ratingContestDetail?.ratingChange || {};
+        Object.keys(relativeUsers).forEach((id) => {
+          const user = relativeUsers[+id];
+          // @ts-ignore
+          const userId = user.globalUserId || +id;
+          userRatingChangeInfo[+id] = {
+            oldRating: ratingChange[userId]?.oldRating,
+            newRating: ratingChange[userId]?.newRating,
+          };
+        });
+      }
       const problems = (await this.getContestProblems(contestId)).rows;
       const rankMap: Record<IUserModel['userId'], IMContestRanklistRow> = [];
       const problemIndexMap = new Map<number, number>();
@@ -1036,10 +1133,10 @@ export default class ContestService {
             bannerImage: user.bannerImage || '',
             // @ts-ignore
             rating: user.rating || 0,
-            // TODO
-            globalUserId: 0,
-            oldRating: 0,
-            newRating: 0,
+            // @ts-ignore
+            globalUserId: user.globalUserId,
+            oldRating: userRatingChangeInfo[userId]?.oldRating,
+            newRating: userRatingChangeInfo[userId]?.newRating,
           },
           solved: 0,
           time: 0,
@@ -1182,5 +1279,30 @@ export default class ContestService {
    */
   async setRankData(contestId: IContestModel['contestId'], data: IMContestRankData) {
     return this.ctx.helper.redisSet(this.redisKey.contestRankData, [contestId], data);
+  }
+
+  /**
+   * 获取 Rating 比赛详情。
+   * @param contestId contestId
+   */
+  async getRatingContestDetail(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestServiceGetRatingContestDetailRes> {
+    let res: IMContestServiceGetRatingContestDetailRes = null;
+    const cached = await this._getRatingContestDetailCache(contestId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.ratingContestModel
+        .findOne({
+          attributes: ratingContestDetailFields,
+          where: {
+            contestId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IMContestRatingContestDetail));
+      res && (await this._setRatingContestDetailCache(contestId, res));
+    }
+    return res;
   }
 }

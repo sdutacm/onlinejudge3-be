@@ -224,7 +224,7 @@ export interface IMContestUserLite {
   }>;
   createdAt: IContestUserModel['createdAt'];
 }
-export interface IMContestUserDetail {
+export interface IMContestUserDetailPlain {
   contestUserId: IContestUserModel['contestUserId'];
   username: IContestUserModel['username'];
   nickname: IContestUserModel['nickname'];
@@ -247,6 +247,10 @@ export interface IMContestUserDetail {
   }>;
   createdAt: IContestUserModel['createdAt'];
 }
+export type IMContestUserDetail = IMContestUserDetailPlain & {
+  globalUserId?: IUserModel['userId'];
+  rating?: IUserModel['rating'];
+};
 export type IMContestUserListPagination = defService.ServiceListOpt<TContestUserModelFields>;
 //#endregion
 
@@ -272,6 +276,18 @@ export interface IRatingContestModel {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type TRatingContestModelFields = keyof IRatingContestModel;
+
+export type TMContestRatingContestDetailFields = Extract<
+  TRatingContestModelFields,
+  'contestId' | 'ratingUntil' | 'ratingChange' | 'createdAt' | 'updatedAt'
+>;
+
+export type IMContestRatingContestDetail = Pick<
+  IRatingContestModel,
+  TMContestRatingContestDetailFields
+>;
 //#endregion
 
 //#region ranklist
@@ -494,4 +510,8 @@ export type IMContestServiceGetRanklistRes = defModel.FullListModelRes<IMContest
 
 //#region service.getRatingStatus
 export type IMContestServiceGetRatingStatusRes = IMContestRatingStatus | null;
+//#endregion
+
+//#region service.getRatingContestDetail
+export type IMContestServiceGetRatingContestDetailRes = IMContestRatingContestDetail | null;
 //#endregion
