@@ -310,7 +310,7 @@ export default class SolutionService {
           rating: relativeUser?.rating,
         };
       }
-      const ret = {
+      const ret = this.utils.misc.ignoreUndefined({
         ...this.lodash.omit(d, ['problemId', 'userId', 'contestId']),
         problem: {
           problemId: relativeProblem?.problemId,
@@ -318,12 +318,16 @@ export default class SolutionService {
           timeLimit: relativeProblem?.timeLimit,
         },
         user,
-        contest: {
-          contestId: relativeContest?.contestId,
-          title: relativeContest?.title,
-          type: relativeContest?.type,
-        },
-      };
+        contest: relativeContest
+          ? {
+              contestId: relativeContest.contestId,
+              title: relativeContest.title,
+              type: relativeContest.type,
+              startAt: relativeContest.startAt,
+              endAt: relativeContest.endAt,
+            }
+          : undefined,
+      });
       if (!relativeContest) {
         delete ret.contest;
       }

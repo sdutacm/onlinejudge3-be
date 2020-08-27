@@ -64,7 +64,12 @@ export default class SolutionController {
     afterGetList(ctx) {
       const list = ctx.list as IMSolutionServiceGetListRes;
       list.rows.forEach((d) => {
-        if (d.contest && !ctx.helper.isContestLoggedIn(d.contest.contestId) && !ctx.isPerm) {
+        if (
+          d.contest &&
+          !ctx.helper.isContestEnded(d.contest) &&
+          !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
+          !ctx.isPerm
+        ) {
           delete d.time;
           delete d.memory;
           delete d.codeLength;
@@ -81,9 +86,16 @@ export default class SolutionController {
   async [routesBe.getSolutionDetail.i](ctx: Context) {
     const detail = ctx.detail as IMSolutionDetail;
     const isSelf = this.service.isSolutionSelf(ctx, detail);
-    if (!(ctx.isPerm || (ctx.loggedIn && detail.shared) || isSelf)) {
-      const contestId = detail.contest?.contestId;
-      if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
+    let canSharedView = ctx.loggedIn && detail.shared;
+    if (detail.contest) {
+      canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
+    }
+    if (!(ctx.isPerm || canSharedView || isSelf)) {
+      if (
+        detail.contest &&
+        !ctx.helper.isContestEnded(detail.contest) &&
+        !ctx.helper.isContestLoggedIn(detail.contest.contestId)
+      ) {
         delete detail.time;
         delete detail.memory;
         delete detail.codeLength;

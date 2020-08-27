@@ -58,7 +58,10 @@ export type IMSolutionRelativeUser = Pick<
   IUserModel,
   'userId' | 'username' | 'nickname' | 'avatar' | 'bannerImage' | 'rating'
 >;
-export type IMSolutionRelativeContest = Pick<IContestModel, 'contestId' | 'title' | 'type'>;
+export type IMSolutionRelativeContest = Pick<
+  IContestModel,
+  'contestId' | 'title' | 'type' | 'startAt' | 'endAt'
+>;
 
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
 export type IMSolutionLite = Omit<
