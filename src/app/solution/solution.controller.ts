@@ -112,11 +112,19 @@ export default class SolutionController {
   }
 
   @route()
-  @login()
   @rateLimitUser(60, 6)
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
     const { problemId, language, code } = ctx.request.body as ISubmitSolutionReq;
     let { contestId } = ctx.request.body as ISubmitSolutionReq;
+    if (!contestId) {
+      if (!ctx.loggedIn) {
+        throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
+      }
+    } else {
+      if (!ctx.helper.isContestLoggedIn(contestId)) {
+        throw new ReqError(Codes.CONTEST_NOT_LOGGED_IN);
+      }
+    }
     const problem = await this.problemService.getDetail(problemId, null);
     const contest = contestId ? await this.contestService.getDetail(contestId, null) : null;
     let sess = ctx.helper.getGlobalSession();

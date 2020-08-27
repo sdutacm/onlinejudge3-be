@@ -269,7 +269,16 @@ export default class ContestController {
             permission: EUserPermission.normal,
             avatar: contestUser.avatar,
           };
-          ctx.session.contests[contestId] = session;
+          if (ctx.session?.contests) {
+            ctx.session.contests[contestId] = session;
+          } else {
+            // @ts-ignore
+            ctx.session = {
+              contests: {
+                [contestId]: session,
+              },
+            };
+          }
           return session;
         }
         throw new ReqError(Codes.CONTEST_INCORRECT_USERNAME_OR_PASSWORD);

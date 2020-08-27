@@ -508,7 +508,6 @@ export default class UserController {
    */
   @route()
   @id()
-  @getDetail()
   async [routesBe.getUserProblemResultStats.i](ctx: Context) {
     const userId = ctx.id!;
     const { contestId } = ctx.request.body;
