@@ -525,14 +525,18 @@ export default class ContestController {
   @authOrRequireContestSession('perm')
   async [routesBe.getContestRatingStatus.i](ctx: Context): Promise<IGetContestRatingStatusResp> {
     const contestId = ctx.id!;
-    return this.service.getRatingStatus(contestId);
+    const status = await this.service.getRatingStatus(contestId);
+    if (!status) {
+      throw new ReqError(Codes.CONTEST_NOT_ENDED);
+    }
+    return status;
   }
 
   @route()
   @auth('admin')
   @id()
   @getDetail(null)
-  async [routesBe.endContest.i](ctx: Context) {
+  async [routesBe.endContest.i](ctx: Context): Promise<void> {
     const contestId = ctx.id!;
     const contest = ctx.detail as IMContestDetail;
     if (!ctx.helper.isContestEnded(contest)) {

@@ -297,7 +297,7 @@ export default class SolutionService {
           nickname: relativeUser?.nickname,
           avatar: relativeUser?.nickname,
           bannerImage: '',
-          rating: 0, // TODO contest user rating
+          rating: relativeUser?.rating || 0,
         };
       } else {
         const relativeUser = relativeUsers[d.userId];
