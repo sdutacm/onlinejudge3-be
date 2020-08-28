@@ -318,6 +318,7 @@ const contestContract = {
           type: 'object',
           properties: {
             contestUserId: { type: 'number' },
+            contestId: { type: 'number' },
             username: { type: 'string' },
             nickname: { type: 'string' },
             subname: { type: 'string' },
@@ -346,6 +347,7 @@ const contestContract = {
           additionalProperties: false,
           required: [
             'contestUserId',
+            'contestId',
             'username',
             'nickname',
             'subname',
@@ -373,6 +375,7 @@ const contestContract = {
   getContestUserDetailResp: {
     properties: {
       contestUserId: { type: 'number' },
+      contestId: { type: 'number' },
       username: { type: 'string' },
       nickname: { type: 'string' },
       subname: { type: 'string' },
@@ -419,6 +422,7 @@ const contestContract = {
     additionalProperties: false,
     required: [
       'contestUserId',
+      'contestId',
       'username',
       'nickname',
       'subname',
@@ -473,7 +477,7 @@ const contestContract = {
       },
     },
     additionalProperties: false,
-    required: ['contestId', 'nickname', 'subname', 'unofficial', 'password', 'members'],
+    required: ['contestId', 'nickname', 'unofficial', 'password', 'members'],
   } as defContract.ContractSchema,
 
   createContestUserResp: {
@@ -526,15 +530,7 @@ const contestContract = {
       },
     },
     additionalProperties: false,
-    required: [
-      'contestId',
-      'contestUserId',
-      'nickname',
-      'subname',
-      'unofficial',
-      'password',
-      'members',
-    ],
+    required: ['contestId', 'contestUserId', 'nickname', 'unofficial', 'password', 'members'],
   } as defContract.ContractSchema,
 
   auditContestUserReq: {

@@ -99,6 +99,7 @@ export type IMContestProblemDetail = Pick<IContestProblemModel, TMContestProblem
 //#region contest user model
 export interface IContestUserModel {
   contestUserId: number;
+  contestId: number;
   username: string;
   nickname: string;
   subname: string;
@@ -142,6 +143,7 @@ export type TContestUserModelFields = keyof IContestUserModel;
 export type TMContestUserLiteFields = Extract<
   TContestUserModelFields,
   | 'contestUserId'
+  | 'contestId'
   | 'username'
   | 'nickname'
   | 'subname'
@@ -169,6 +171,7 @@ export type TMContestUserLiteFields = Extract<
 export type TMContestUserDetailFields = Extract<
   TContestUserModelFields,
   | 'contestUserId'
+  | 'contestId'
   | 'username'
   | 'nickname'
   | 'subname'
@@ -209,6 +212,7 @@ export type TMContestUserDetailFields = Extract<
 
 export interface IMContestUserLite {
   contestUserId: IContestUserModel['contestUserId'];
+  contestId: IContestUserModel['contestId'];
   username: IContestUserModel['username'];
   nickname: IContestUserModel['nickname'];
   subname: IContestUserModel['subname'];
@@ -226,6 +230,7 @@ export interface IMContestUserLite {
 }
 export interface IMContestUserDetailPlain {
   contestUserId: IContestUserModel['contestUserId'];
+  contestId: IContestUserModel['contestId'];
   username: IContestUserModel['username'];
   nickname: IContestUserModel['nickname'];
   subname: IContestUserModel['subname'];
@@ -461,7 +466,7 @@ export type IMContestServiceIsContestUserExistsOpt = Partial<IContestUserModel>;
 export interface IMContestServiceCreateContestUserOpt {
   username: IContestUserModel['username'];
   nickname: IContestUserModel['nickname'];
-  subname: IContestUserModel['subname'];
+  subname?: IContestUserModel['subname'];
   status?: IContestUserModel['status'];
   unofficial: IContestUserModel['unofficial'];
   password: IContestUserModel['password'];

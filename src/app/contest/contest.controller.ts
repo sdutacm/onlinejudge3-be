@@ -16,7 +16,7 @@ import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CContestService } from './contest.service';
 import { ILodash } from '@/utils/libs/lodash';
-import { IMContestDetail } from './contest.interface';
+import { IMContestDetail, IMContestUserLite } from './contest.interface';
 import {
   EContestType,
   EContestUserStatus,
@@ -340,11 +340,20 @@ export default class ContestController {
   @route()
   @pagination()
   @id()
+  @getDetail(null)
   async [routesBe.getContestUserList.i](ctx: Context) {
     const pagination = ctx.pagination!;
     const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
     // @ts-ignore
     const list = await this.service.getContestUserList(contestId, ctx.request.body, pagination);
+    const rows = list.rows;
+    if (detail.team === false) {
+      // 非团队类型，删除多余成员
+      rows.forEach((d: IMContestUserLite) => {
+        d.members = d.members.slice(0, 1);
+      });
+    }
     return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
   }
 
@@ -358,6 +367,11 @@ export default class ContestController {
     }
     if (!ctx.isAdmin && ctx.session.username !== detail.username) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    const contestDetail = await this.service.getDetail(detail.contestId, null);
+    if (contestDetail?.team === false) {
+      // 非团队类型，删除多余成员
+      detail.members = detail.members.slice(0, 1);
     }
     return detail;
   }
@@ -407,7 +421,7 @@ export default class ContestController {
     const data = ctx.request.body as IUpdateContestUserReq;
     const { contestUserId } = data;
     if (!ctx.isAdmin) {
-      delete data.status;
+      data.status = EContestUserStatus.wating;
     }
     if (detail.type !== EContestType.register) {
       throw new ReqError(Codes.CONTEST_REGISTER_NOT_OPEN);

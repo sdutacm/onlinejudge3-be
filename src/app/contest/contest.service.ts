@@ -109,6 +109,7 @@ const contestProblemDetailFields: Array<TMContestProblemDetailFields> = ['proble
 
 const contestUserLiteFields: Array<TMContestUserLiteFields> = [
   'contestUserId',
+  'contestId',
   'username',
   'nickname',
   'subname',
@@ -135,6 +136,7 @@ const contestUserLiteFields: Array<TMContestUserLiteFields> = [
 
 const contestUserDetailFields: Array<TMContestUserDetailFields> = [
   'contestUserId',
+  'contestId',
   'username',
   'nickname',
   'subname',
