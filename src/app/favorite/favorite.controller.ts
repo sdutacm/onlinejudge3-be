@@ -17,6 +17,8 @@ import { Codes } from '@/common/codes';
 import { IAddFavoriteReq, IDeleteFavoriteReq } from '@/common/contracts/favorite';
 import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
+import { CSetService } from '../set/set.service';
+import { CGroupService } from '../group/group.service';
 
 @provide()
 @controller('/')
@@ -35,6 +37,12 @@ export default class FavoriteController {
 
   @inject()
   contestService: CContestService;
+
+  @inject()
+  setService: CSetService;
+
+  @inject()
+  groupService: CGroupService;
 
   @inject()
   utils: IUtils;
@@ -92,7 +100,39 @@ export default class FavoriteController {
         });
         return { favoriteId: newId };
       }
-      // TODO set/group
+      case 'set': {
+        const { setId } = target as { setId: number };
+        if (!(await this.setService.getDetail(setId))) {
+          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        }
+        const newId = await this.service.create({
+          userId,
+          type,
+          target: { setId },
+          note,
+        });
+        return { favoriteId: newId };
+      }
+      case 'group': {
+        const { groupId } = target as { groupId: number };
+        const groupDetail = await this.groupService.getDetail(groupId);
+        if (!groupDetail) {
+          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        }
+        if (groupDetail.private && !(await this.groupService.hasGroupViewPerm(groupId))) {
+          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        }
+        const newId = await this.service.create({
+          userId,
+          type,
+          target: { groupId },
+          note,
+        });
+        return { favoriteId: newId };
+      }
+      default: {
+        throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+      }
     }
   }
 
