@@ -364,10 +364,12 @@ export default class GroupController {
         status,
       });
     }
+    await this.service.clearUserGroupsCache(userId);
     if (hasMembersCountUpdate) {
       await this.service.updateGroupMembersCount(groupId);
       await this.service.clearDetailCache(groupId);
-      await this.service.clearUserGroupsCache(userId);
+    } else {
+      await this.service.clearGroupMemberListCache(groupId);
     }
   }
 
