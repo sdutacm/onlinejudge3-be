@@ -107,6 +107,7 @@ export interface IMTopicServiceUpdateOpt {
   problemId?: ITopicModel['problemId'];
   title?: ITopicModel['title'];
   content?: ITopicModel['content'];
+  replyCount?: ITopicModel['replyCount'];
   lastTime?: ITopicModel['lastTime'];
   lastUserId?: ITopicModel['lastUserId'];
   deleted?: ITopicModel['deleted'];

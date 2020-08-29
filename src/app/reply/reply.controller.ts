@@ -18,6 +18,7 @@ import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { ICreateReplyResp, ICreateReplyReq } from '@/common/contracts/reply';
 import { CTopicService } from '../topic/topic.service';
+import { IMReplyDetail } from './reply.interface';
 
 @provide()
 @controller('/')
@@ -42,17 +43,25 @@ export default class ReplyController {
 
   @route()
   @login()
-  @rateLimitUser(60, 3)
+  @rateLimitUser(60, 10)
   async [routesBe.createReply.i](ctx: Context): Promise<ICreateReplyResp> {
     const { topicId, content } = ctx.request.body as ICreateReplyReq;
     if (!(await this.topicService.getDetail(topicId))) {
       throw new ReqError(Codes.TOPIC_NOT_EXIST);
     }
+    const createdAt = new Date();
     const newId = await this.service.create({
       topicId,
       content,
       userId: ctx.session.userId,
+      createdAt,
     });
+    await this.topicService.update(topicId, {
+      replyCount: await this.service.countTopicReplies(topicId),
+      lastTime: createdAt,
+      lastUserId: ctx.session.userId,
+    });
+    await this.topicService.clearDetailCache(topicId);
     return { replyId: newId };
   }
 
@@ -62,8 +71,43 @@ export default class ReplyController {
   @authOrRequireSelf('perm')
   async [routesBe.deleteReply.i](ctx: Context): Promise<void> {
     const replyId = ctx.id!;
+    const detail = ctx.detail as IMReplyDetail;
     await this.service.update(replyId, {
       deleted: true,
     });
+    const topicId = detail.topic?.topicId;
+    if (topicId) {
+      // 删除了话题回复，更新 topic 相关字段
+      const latestReplyRes = await this.service.getList(
+        {
+          topicId,
+        },
+        {
+          page: 1,
+          limit: 1,
+          order: [['replyId', 'DESC']],
+        },
+      );
+      const latestReply = latestReplyRes.rows[0];
+      let topicUpdateOpt = {
+        replyCount: 0,
+        lastTime: new Date(),
+        lastUserId: 0,
+      };
+      if (latestReply) {
+        topicUpdateOpt = {
+          replyCount: await this.service.countTopicReplies(topicId),
+          lastTime: latestReply.createdAt,
+          lastUserId: latestReply.user.userId,
+        };
+      } else {
+        const topic = await this.topicService.getDetail(topicId, null);
+        if (topic) {
+          topicUpdateOpt.lastTime = topic.createdAt;
+        }
+      }
+      await this.topicService.update(topicId, topicUpdateOpt);
+      await this.topicService.clearDetailCache(topicId);
+    }
   }
 }

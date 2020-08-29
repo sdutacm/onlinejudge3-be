@@ -21,8 +21,8 @@ import {
   IMReplyDetailPlain,
   IMReplyRelativeUser,
   IMReplyRelativeTopic,
+  IMReplyServiceCountTopicRepliesRes,
 } from './reply.interface';
-import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
 import { CTopicService } from '../topic/topic.service';
 import { CUserService } from '../user/user.service';
@@ -132,7 +132,7 @@ export default class ReplyService {
   }
 
   /**
-   * 获取话题列表。
+   * 获取回复列表。
    * @param options 查询参数
    * @param pagination 分页参数
    * @param scope 查询 scope，默认 available，如查询全部则传 null
@@ -163,8 +163,8 @@ export default class ReplyService {
   }
 
   /**
-   * 获取话题详情。
-   * @param replyId replyaId
+   * 获取回复详情。
+   * @param replyId replyId
    * @param scope 查询 scope，默认 available，如查询全部则传 null
    */
   async getDetail(
@@ -189,7 +189,7 @@ export default class ReplyService {
   }
 
   /**
-   * 按条件查询话题详情。
+   * 按条件查询回复详情。
    * @param options 查询参数
    * @param scope 查询 scope
    */
@@ -207,7 +207,7 @@ export default class ReplyService {
   }
 
   /**
-   * 按条件查询话题是否存在。
+   * 按条件查询回复是否存在。
    * @param options 查询参数
    * @param scope 查询 scope
    */
@@ -223,7 +223,7 @@ export default class ReplyService {
   }
 
   /**
-   * 创建话题。
+   * 创建回复。
    * @param data 创建数据
    * @returns 创建成功的主键 ID
    */
@@ -233,7 +233,7 @@ export default class ReplyService {
   }
 
   /**
-   * 更新话题（部分更新）。
+   * 更新回复（部分更新）。
    * @param replyId replyId
    * @param data 更新数据
    */
@@ -247,5 +247,21 @@ export default class ReplyService {
       },
     });
     return res[0] > 0;
+  }
+
+  /**
+   * 获取话题回复数量。
+   * @param topicId toopicId
+   * @param scope 查询 scope，默认 available，如查询全部则传 null
+   */
+  async countTopicReplies(
+    topicId: IReplyModel['topicId'],
+    scope: TReplyModelScopes | null = 'available',
+  ): Promise<IMReplyServiceCountTopicRepliesRes> {
+    return this.model.scope(scope || undefined).count({
+      where: {
+        topicId,
+      },
+    });
   }
 }

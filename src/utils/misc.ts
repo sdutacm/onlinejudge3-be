@@ -8,6 +8,7 @@ import cryptoRandomString from 'crypto-random-string';
  * @returns {any}
  */
 export function ignoreUndefined<T = any, R = T>(obj: T): R {
+  // TODO Date 等对象会被序列化为 str，这里需要递归遍历手动去除
   return JSON.parse(JSON.stringify(obj));
 }
 

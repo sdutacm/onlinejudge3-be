@@ -69,6 +69,7 @@ export interface IMReplyServiceCreateOpt {
   topicId: IReplyModel['topicId'];
   userId: IReplyModel['userId'];
   content: IReplyModel['content'];
+  createdAt?: IReplyModel['createdAt'];
 }
 
 export type IMReplyServiceCreateRes = IReplyModel['replyId'];
@@ -83,4 +84,8 @@ export interface IMReplyServiceUpdateOpt {
 }
 
 export type IMReplyServiceUpdateRes = boolean;
+//#endregion
+
+//#region service.countTopicReplies
+export type IMReplyServiceCountTopicRepliesRes = number;
 //#endregion
