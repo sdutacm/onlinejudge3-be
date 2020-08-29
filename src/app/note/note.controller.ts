@@ -78,7 +78,7 @@ export default class NoteController {
         const newId = await this.service.create({
           userId,
           type,
-          target: { problemId },
+          target: { problemId, contestId },
           content,
         });
         return { noteId: newId };
