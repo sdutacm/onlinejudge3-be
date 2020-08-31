@@ -1,6 +1,8 @@
 import { EggAppInfo } from 'midway';
 import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
+import judgerConfig from './judger.config';
+import path from 'path';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
@@ -25,7 +27,31 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
-  //#region custom prod config
+  //#region custom config
+
+  //#endregion
+
+  //#region sequelize
+
+  //#endregion
+
+  //#region redis
+
+  //#endregion
+
+  //#region staticPath
+
+  //#endregion
+
+  //#region mail
+
+  //#endregion
+
+  //#region scripts
+
+  //#endregion
+
+  //#region alinode
 
   //#endregion
 
