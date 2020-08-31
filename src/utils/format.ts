@@ -51,3 +51,16 @@ export function formatApproximateTime(secs: number): string {
   }
   return `${hours} hours`;
 }
+
+/**
+ * 获取值的字符串表示，如果长度超出最大长度，则会添加省略号。
+ * @param value
+ * @param maxLength 最大长度
+ */
+export function getString(value: any, maxLength = 20): string {
+  const str = `${value}`;
+  if (str.length > maxLength) {
+    return `${str.substr(0, maxLength)}...`;
+  }
+  return str;
+}

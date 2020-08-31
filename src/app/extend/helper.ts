@@ -2,10 +2,11 @@ import { codeMsgs, Codes } from '@/common/codes';
 import util from 'util';
 import { Context } from 'midway';
 import { Application } from 'egg';
-import { consoleColors } from '@/utils/format';
+import { consoleColors, getString } from '@/utils/format';
 import { EUserPermission } from '@/common/enums';
 
 const isDev = process.env.NODE_ENV === 'development';
+const isProd = process.env.NODE_ENV === 'production';
 
 interface IBaseContext {
   app: Application;
@@ -121,6 +122,7 @@ export default {
     const _start = Date.now();
     const {
       app: { redis },
+      ctx,
     } = getThis.call(this);
     const k = util.format(key, ...args);
     const redisRet = await redis.get(k);
@@ -134,12 +136,13 @@ export default {
     } catch (e) {
       ret = redisRet ?? null;
     }
+    const cost = Date.now() - _start;
     isDev &&
-      console.log(
-        consoleColors.DEBUG(`[redis.get](${Date.now() - _start}ms)`),
-        consoleColors.INFO(`[${k}]`),
-        ret,
-      );
+      console.log(consoleColors.DEBUG(`[redis.get](${cost}ms)`), consoleColors.INFO(`[${k}]`), ret);
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.get](${cost}ms) [${k}] [${getString(redisRet, 20)}]`);
     return ret;
   },
 
@@ -154,6 +157,7 @@ export default {
     const _start = Date.now();
     const {
       app: { redis },
+      ctx,
     } = getThis.call(this);
     const k = util.format(key, ...args);
     let v: any = value;
@@ -167,13 +171,20 @@ export default {
     } else {
       await redis.set(k, v);
     }
+    const cost = Date.now() - _start;
     isDev &&
       console.log(
-        consoleColors.DEBUG(`[redis.set](${Date.now() - _start}ms)`),
+        consoleColors.DEBUG(`[redis.set](${cost}ms)`),
         consoleColors.INFO(`[${k}]`),
         value,
         expires,
       );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(
+          `[redis.set](${cost}ms) [${k}] [${getString(JSON.stringify(value), 20)}] [${expires}]`,
+        );
   },
 
   /**
@@ -185,14 +196,14 @@ export default {
     const _start = Date.now();
     const {
       app: { redis },
+      ctx,
     } = getThis.call(this);
     const k = util.format(key, ...args);
     await redis.del(k);
+    const cost = Date.now() - _start;
     isDev &&
-      console.log(
-        consoleColors.DEBUG(`[redis.del](${Date.now() - _start}ms)`),
-        consoleColors.INFO(`[${k}]`),
-      );
+      console.log(consoleColors.DEBUG(`[redis.del](${cost}ms)`), consoleColors.INFO(`[${k}]`));
+    isProd && ctx.getLogger('redisLogger').info(`[redis.del](${cost}ms) [${k}]`);
   },
 
   /**
@@ -204,15 +215,18 @@ export default {
     const _start = Date.now();
     const {
       app: { redis },
+      ctx,
     } = getThis.call(this);
     const k = util.format(key, ...args);
     const incrValue = await redis.incr(k);
+    const cost = Date.now() - _start;
     isDev &&
       console.log(
-        consoleColors.DEBUG(`[redis.incr](${Date.now() - _start}ms)`),
+        consoleColors.DEBUG(`[redis.incr](${cost}ms)`),
         consoleColors.INFO(`[${k}]`),
         incrValue,
       );
+    isProd && ctx.getLogger('redisLogger').info(`[redis.incr](${cost}ms) [${k}] [${incrValue}]`);
   },
 
   /**
@@ -225,17 +239,28 @@ export default {
     const _start = Date.now();
     const {
       app: { redis },
+      ctx,
     } = getThis.call(this);
     const k = util.format(key, ...args);
     const v = values.map((value) => (typeof value === 'object' ? JSON.stringify(value) : value));
     const number = await redis.rpush(k, ...v);
+    const cost = Date.now() - _start;
     isDev &&
       console.log(
-        consoleColors.DEBUG(`[redis.rpush](${Date.now() - _start}ms)`),
+        consoleColors.DEBUG(`[redis.rpush](${cost}ms)`),
         consoleColors.INFO(`[${k}]`),
         ...values,
         number,
       );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(
+          `[redis.rpush](${cost}ms) [${k}] [${getString(
+            JSON.stringify([...values]),
+            20,
+          )}] [${number}]`,
+        );
   },
 
   /**

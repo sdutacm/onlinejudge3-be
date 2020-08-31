@@ -15,5 +15,10 @@ export const redis = {
   package: 'egg-redis',
 };
 
+export const alinode = {
+  enable: true,
+  package: 'egg-alinode',
+};
+
 // false 禁用全部安全检查用于临时调试
 // export const security = false

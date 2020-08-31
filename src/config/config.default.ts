@@ -14,7 +14,7 @@ export default (appInfo: EggAppInfo) => {
   config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
 
   // add your config here
-  config.middleware = [];
+  config.middleware = ['reqMid'];
 
   config.siteName = 'SDUT OJ';
   config.siteTeam = 'SDUTACM Team';
@@ -22,7 +22,9 @@ export default (appInfo: EggAppInfo) => {
   config.welcomeMsg = 'Hello midwayjs!';
 
   config.security = {
-    csrf: false,
+    csrf: {
+      enable: false,
+    },
   };
 
   config.multipart = {
@@ -68,13 +70,16 @@ export default (appInfo: EggAppInfo) => {
       // ctx.helper.report(ctx, 'error', 1);
     },
     json(err: Error, ctx: Context) {
+      const logger = ctx.getLogger('reqLogger');
       switch (err.message) {
         case 'invalid csrf token':
           ctx.body = ctx.helper.rFail(Codes.GENERAL_ILLEGAL_REQUEST, { reason: err.message });
           ctx.status = 403;
+          logger.warn('Invalid csrf token');
           return;
         case 'Reach fileSize limit':
           ctx.body = ctx.helper.rFail(Codes.GENERAL_INVALID_MEDIA_SIZE);
+          logger.warn('Reach file size limit');
           return;
       }
       ctx.body = ctx.helper.rFail(Codes.GENERAL_INTERNAL_SERVER_ERROR);
@@ -92,6 +97,15 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta, `${meta.paddingMessage}`);
     },
     consoleLevel: 'DEBUG',
+  };
+
+  config.customLogger = {
+    reqLogger: {
+      file: path.join(appInfo.root, 'logs', appInfo.name, 'req.log'),
+    },
+    redisLogger: {
+      file: path.join(appInfo.root, 'logs', appInfo.name, 'redis.log'),
+    },
   };
 
   const staticBasePath = path.join(__dirname, '../app/public/sf/');

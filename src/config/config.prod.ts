@@ -10,6 +10,7 @@ export default (appInfo: EggAppInfo) => {
 
   config.security = {
     csrf: {
+      enable: true,
       headerName: 'x-csrf-token',
     },
   };

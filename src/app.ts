@@ -37,5 +37,10 @@ module.exports = (app: Application) => {
     console.log('✅ App launched');
   });
 
-  app.logger.info('App start...');
+  // @ts-ignore
+  app.logger.info(
+    'App start...',
+    // @ts-ignore
+    `(NODE_ENV: ${process.env.NODE_ENV}, node: ${process.versions.node}, alinode: ${process.versions.alinode})`,
+  );
 };
