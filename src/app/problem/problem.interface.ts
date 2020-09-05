@@ -77,6 +77,7 @@ export interface IMProblemServiceGetListOpt {
   title?: IProblemModel['title'];
   source?: IProblemModel['source'];
   author?: IProblemModel['author'];
+  display?: IProblemModel['display'];
   tagIds?: Array<ITagModel['tagId']>;
 }
 

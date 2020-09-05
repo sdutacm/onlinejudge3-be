@@ -46,7 +46,11 @@ export default class ProblemController {
 
   @route()
   @pagination()
-  @getList()
+  @getList(undefined, {
+    beforeGetList(ctx) {
+      !ctx.isAdmin && delete ctx.request.body.display;
+    },
+  })
   @respList()
   async [routesBe.getProblemList.i](_ctx: Context) {}
 

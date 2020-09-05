@@ -31,6 +31,7 @@ const problemContract = {
       title: { type: 'string' },
       source: { type: 'string' },
       author: { type: 'number' },
+      display: { type: 'boolean' },
       tagIds: { type: 'array', items: { type: 'number', minimum: 1 } },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },

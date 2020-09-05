@@ -133,6 +133,7 @@ export default class ProblemService {
   private _formatListQuery(opts: IMProblemServiceGetListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       problemId: opts.problemId,
+      display: opts.display,
     });
     if (opts.title) {
       where.title = {
