@@ -13,3 +13,5 @@ export const development = {
   ],
   overrideDefault: true,
 };
+
+export const alinode = false;

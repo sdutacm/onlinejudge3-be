@@ -146,7 +146,10 @@ export default (appInfo: EggAppInfo) => {
   //   logPath: path.join(__dirname, '../../dev-scripts/logs'),
   // };
 
-  config.alinode = false;
+  config.alinode = {
+    appid: '',
+    secret: '',
+  };
 
   return config;
 };
