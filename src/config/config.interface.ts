@@ -13,14 +13,17 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   durations: IDurationsConfig;
   judger: IJudgerConfig;
   staticPath: {
-    avatar: string;
-    bannerImage: string;
-    media: string;
+    base: string;
+    avatar: string; // 必须在 base 下
+    bannerImage: string; // 必须在 base 下
+    media: string; // 必须在 base 下
+    asset: string; // 必须在 base 下
   };
   uploadLimit: {
     avatar: number; // B
     bannerImage: number; // B
     media: number; // B
+    asset: number; // B
   };
   mail: {
     accessKeyId: string;

@@ -62,7 +62,7 @@ export default class MiscController {
     // 存储图片
     await this.fs.copyFile(image.filepath, path.join(this.staticPath.media, saveName));
     return {
-      url: saveName,
+      url: path.join(path.relative(this.staticPath.base, this.staticPath.media), saveName),
     };
   }
 
@@ -103,7 +103,7 @@ export default class MiscController {
     // 存储图片
     await this.fs.copyFile(image.filepath, path.join(this.staticPath.asset, saveName));
     return {
-      url: saveName,
+      url: path.join(path.relative(this.staticPath.base, this.staticPath.asset), saveName),
     };
   }
 }

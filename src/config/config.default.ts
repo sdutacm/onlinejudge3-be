@@ -110,6 +110,7 @@ export default (appInfo: EggAppInfo) => {
 
   const staticBasePath = path.join(__dirname, '../app/public/sf/');
   config.staticPath = {
+    base: staticBasePath,
     avatar: path.join(staticBasePath, 'avatars/'),
     bannerImage: path.join(staticBasePath, 'banner_images/'),
     media: path.join(staticBasePath, 'media/'),
@@ -139,6 +140,11 @@ export default (appInfo: EggAppInfo) => {
     tagName: 'SDUTACM',
     regionId: 'cn-hangzhou',
   };
+
+  // config.scripts = {
+  //   dirPath: path.join(__dirname, '../../dev-scripts'),
+  //   logPath: path.join(__dirname, '../../dev-scripts/logs'),
+  // };
 
   config.alinode = false;
 
