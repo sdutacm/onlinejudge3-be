@@ -80,6 +80,8 @@ export default class SolutionController {
   @respList()
   async [routesBe.getSolutionList.i](_ctx: Context) {}
 
+  // TODO 根绝 solutionId 批量获取多个详情的接口（用于轮询更新 solution detail）
+
   @route()
   @id()
   @getDetail()
