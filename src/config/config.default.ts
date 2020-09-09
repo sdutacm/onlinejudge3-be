@@ -113,12 +113,14 @@ export default (appInfo: EggAppInfo) => {
     avatar: path.join(staticBasePath, 'avatars/'),
     bannerImage: path.join(staticBasePath, 'banner_images/'),
     media: path.join(staticBasePath, 'media/'),
+    asset: path.join(staticBasePath, 'assets/'),
   };
 
   config.uploadLimit = {
     avatar: 4 * 1024 * 1024,
     bannerImage: 12 * 1024 * 1024,
     media: 8 * 1024 * 1024,
+    asset: 32 * 1024 * 1024,
   };
 
   // #region custom config
@@ -137,6 +139,8 @@ export default (appInfo: EggAppInfo) => {
     tagName: 'SDUTACM',
     regionId: 'cn-hangzhou',
   };
+
+  config.alinode = false;
 
   return config;
 };
