@@ -137,7 +137,11 @@ export default class SolutionService {
       this.meta.detailCacheKey,
       [solutionId],
       data,
-      data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
+      data
+        ? data.result === ESolutionResult.WT || data.result === ESolutionResult.JG
+          ? 1
+          : this.durations.cacheDetailMedium
+        : this.durations.cacheDetailNull,
     );
   }
 
@@ -295,7 +299,7 @@ export default class SolutionService {
           userId: relativeUser?.contestUserId,
           username: relativeUser?.username,
           nickname: relativeUser?.nickname,
-          avatar: relativeUser?.nickname,
+          avatar: relativeUser?.avatar || '',
           bannerImage: '',
           rating: relativeUser?.rating || 0,
         };
@@ -305,7 +309,7 @@ export default class SolutionService {
           userId: relativeUser?.userId,
           username: relativeUser?.username,
           nickname: relativeUser?.nickname,
-          avatar: relativeUser?.nickname,
+          avatar: relativeUser?.avatar,
           bannerImage: relativeUser?.bannerImage,
           rating: relativeUser?.rating,
         };
