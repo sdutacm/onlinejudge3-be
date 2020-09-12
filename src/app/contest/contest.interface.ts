@@ -384,6 +384,7 @@ export interface IMContestServiceCreateOpt {
   registerStartAt?: IContestModel['registerStartAt'] | string;
   registerEndAt?: IContestModel['registerEndAt'] | string;
   team?: IContestModel['team'];
+  ended?: IContestModel['ended'];
   hidden?: IContestModel['hidden'];
 }
 
@@ -406,6 +407,7 @@ export interface IMContestServiceUpdateOpt {
   registerStartAt?: IContestModel['registerStartAt'] | string;
   registerEndAt?: IContestModel['registerEndAt'] | string;
   team?: IContestModel['team'];
+  ended?: IContestModel['ended'];
   hidden?: IContestModel['hidden'];
 }
 

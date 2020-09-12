@@ -305,7 +305,7 @@ export default class ContestController {
   @id()
   @getDetail(null, {
     afterGetDetail: (ctx) => {
-      if (ctx.isAdmin) {
+      if (!ctx.isAdmin) {
         delete ctx.detail.password;
         if (ctx.helper.isContestPending(ctx.detail as IMContestDetail)) {
           delete ctx.detail.description;

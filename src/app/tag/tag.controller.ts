@@ -47,6 +47,7 @@ export default class TagController {
   async [routesBe.createTag.i](ctx: Context): Promise<ICreateTagResp> {
     const data = ctx.request.body as ICreateTagReq;
     const newId = await this.service.create(data);
+    await this.service.clearFullListCache();
     return { tagId: newId };
   }
 
