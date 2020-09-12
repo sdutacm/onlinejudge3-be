@@ -40,6 +40,7 @@ export interface IMPostServiceGetListOpt {
   postId?: IPostModel['postId'];
   userId?: IPostModel['userId'];
   title?: IPostModel['title'];
+  display?: IPostModel['display'];
 }
 
 export type IMPostServiceGetListRes = defModel.ListModelRes<IMPostLite>;

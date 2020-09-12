@@ -29,6 +29,7 @@ const postContract = {
       postId: { type: 'number', minimum: 1 },
       userId: { type: 'number', minimum: 1 },
       title: { type: 'string' },
+      display: { type: 'boolean' },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,

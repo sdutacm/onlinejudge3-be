@@ -30,7 +30,13 @@ export default class PostController {
 
   @route()
   @pagination()
-  @getList()
+  @getList(undefined, {
+    beforeGetList: (ctx) => {
+      if (!ctx.isAdmin) {
+        delete ctx.request.body.display;
+      }
+    },
+  })
   @respList()
   async [routesBe.getPostList.i](_ctx: Context) {}
 

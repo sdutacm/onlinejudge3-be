@@ -108,6 +108,7 @@ export default class PostService {
     const where: any = this.utils.misc.ignoreUndefined({
       postId: opts.postId,
       userId: opts.userId,
+      display: opts.display,
     });
     if (opts.title) {
       where.title = {
