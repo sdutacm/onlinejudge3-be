@@ -222,7 +222,6 @@ const contestContract = {
       'type',
       'category',
       'mode',
-      'intro',
       'description',
       'startAt',
       'endAt',
