@@ -21,11 +21,13 @@ import {
   IUpdateSolutionShareReq,
   ISubmitSolutionReq,
   ISubmitSolutionResp,
+  IBatchGetSolutionDetailReq,
 } from '@/common/contracts/solution';
 import {
   IMSolutionServiceGetListRes,
   IMSolutionDetail,
   IMSolutionServiceCreateOpt,
+  ISolutionModel,
 } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
@@ -80,8 +82,6 @@ export default class SolutionController {
   @respList()
   async [routesBe.getSolutionList.i](_ctx: Context) {}
 
-  // TODO 根绝 solutionId 批量获取多个详情的接口（用于轮询更新 solution detail）
-
   @route()
   @id()
   @getDetail()
@@ -106,6 +106,38 @@ export default class SolutionController {
       delete detail.compileInfo;
     }
     return detail;
+  }
+
+  @route()
+  async [routesBe.batchGetSolutionDetail.i](ctx: Context) {
+    let { solutionIds } = ctx.request.body as IBatchGetSolutionDetailReq;
+    solutionIds = this.lodash.uniq(solutionIds.slice(0, 100));
+    const solutionDetailMap: Record<ISolutionModel['solutionId'], IMSolutionDetail> = {};
+    for (const solutionId of solutionIds) {
+      const detail = await this.service.getDetail(solutionId);
+      if (detail) {
+        const isSelf = this.service.isSolutionSelf(ctx, detail);
+        let canSharedView = ctx.loggedIn && detail.shared;
+        if (detail.contest) {
+          canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
+        }
+        if (!(ctx.isPerm || canSharedView || isSelf)) {
+          if (
+            detail.contest &&
+            !ctx.helper.isContestEnded(detail.contest) &&
+            !ctx.helper.isContestLoggedIn(detail.contest.contestId)
+          ) {
+            delete detail.time;
+            delete detail.memory;
+            delete detail.codeLength;
+          }
+          delete detail.code;
+          delete detail.compileInfo;
+        }
+        solutionDetailMap[solutionId] = detail;
+      }
+    }
+    return solutionDetailMap;
   }
 
   @route()
