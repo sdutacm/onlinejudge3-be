@@ -195,6 +195,78 @@ const contestContract = {
     ],
   } as defContract.ContractSchema,
 
+  createContestReq: {
+    properties: {
+      title: { type: 'string' },
+      type: { type: 'number' },
+      category: { type: 'number' },
+      mode: { type: 'number' },
+      intro: { type: 'string' },
+      description: { type: 'string' },
+      password: { type: 'string' },
+      startAt: { type: 'string', format: 'date-time' },
+      endAt: { type: 'string', format: 'date-time' },
+      frozenLength: { type: 'number' },
+      registerStartAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      registerEndAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      team: { type: 'boolean' },
+      hidden: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: [
+      'title',
+      'type',
+      'category',
+      'mode',
+      'intro',
+      'description',
+      'startAt',
+      'endAt',
+      'frozenLength',
+      'registerStartAt',
+      'registerEndAt',
+      'team',
+    ],
+  } as defContract.ContractSchema,
+
+  createContestResp: {
+    properties: {
+      contestId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  updateContestDetailReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      title: { type: 'string' },
+      type: { type: 'number' },
+      category: { type: 'number' },
+      mode: { type: 'number' },
+      intro: { type: 'string' },
+      description: { type: 'string' },
+      password: { type: 'string' },
+      startAt: { type: 'string', format: 'date-time' },
+      endAt: { type: 'string', format: 'date-time' },
+      frozenLength: { type: 'number' },
+      registerStartAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      registerEndAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      team: { type: 'boolean' },
+      hidden: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
   getContestProblemsReq: {
     properties: {
       contestId: { type: 'number', minimum: 1 },

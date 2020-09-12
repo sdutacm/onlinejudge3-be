@@ -378,11 +378,11 @@ export interface IMContestServiceCreateOpt {
   mode: IContestModel['mode'];
   password?: IContestModel['password'];
   author: IContestModel['author'];
-  startAt: IContestModel['startAt'];
-  endAt: IContestModel['endAt'];
+  startAt: IContestModel['startAt'] | string;
+  endAt: IContestModel['endAt'] | string;
   frozenLength?: IContestModel['frozenLength'];
-  registerStartAt?: IContestModel['registerStartAt'];
-  registerEndAt?: IContestModel['registerEndAt'];
+  registerStartAt?: IContestModel['registerStartAt'] | string;
+  registerEndAt?: IContestModel['registerEndAt'] | string;
   team?: IContestModel['team'];
   hidden?: IContestModel['hidden'];
 }
@@ -400,13 +400,12 @@ export interface IMContestServiceUpdateOpt {
   mode?: IContestModel['mode'];
   password?: IContestModel['password'];
   author?: IContestModel['author'];
-  startAt?: IContestModel['startAt'];
-  endAt?: IContestModel['endAt'];
+  startAt?: IContestModel['startAt'] | string;
+  endAt?: IContestModel['endAt'] | string;
   frozenLength?: IContestModel['frozenLength'];
-  registerStartAt?: IContestModel['registerStartAt'];
-  registerEndAt?: IContestModel['registerEndAt'];
+  registerStartAt?: IContestModel['registerStartAt'] | string;
+  registerEndAt?: IContestModel['registerEndAt'] | string;
   team?: IContestModel['team'];
-  ended?: IContestModel['ended'];
   hidden?: IContestModel['hidden'];
 }
 

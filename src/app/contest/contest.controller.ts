@@ -39,6 +39,9 @@ import {
   IGetContestRanklistResp,
   IGetContestRatingStatusResp,
   IGetContestProblemSolutionStatsResp,
+  ICreateContestReq,
+  ICreateContestResp,
+  IUpdateContestDetailReq,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -312,6 +315,28 @@ export default class ContestController {
   })
   @respDetail()
   async [routesBe.getContestDetail.i](_ctx: Context) {}
+
+  @route()
+  @auth('admin')
+  async [routesBe.createContest.i](ctx: Context): Promise<ICreateContestResp> {
+    const data = ctx.request.body as ICreateContestReq;
+    const newId = await this.service.create({
+      ...data,
+      author: ctx.session.userId,
+    });
+    return { contestId: newId };
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.updateContestDetail.i](ctx: Context): Promise<void> {
+    const contestId = ctx.id!;
+    const data = this.lodash.omit(ctx.request.body as IUpdateContestDetailReq, ['contestId']);
+    await this.service.update(contestId, data);
+    await this.service.clearDetailCache(contestId);
+  }
 
   @route()
   @authOrRequireContestSession('admin')
