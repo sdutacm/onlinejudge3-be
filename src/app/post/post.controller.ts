@@ -61,7 +61,7 @@ export default class PostController {
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(null)
   @authOrRequireSelf('admin')
   async [routesBe.updatePostDetail.i](ctx: Context): Promise<void> {
     const postId = ctx.id!;
