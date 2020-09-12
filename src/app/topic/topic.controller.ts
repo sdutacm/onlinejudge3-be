@@ -16,7 +16,7 @@ import {
 import { CTopicMeta } from './topic.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
-import { ICreateTopicReq, ICreateTopicResp, IUpdateTopicReq } from '@/common/contracts/topic';
+import { ICreateTopicReq, ICreateTopicResp, IUpdateTopicDetailReq } from '@/common/contracts/topic';
 import { CProblemService } from '../problem/problem.service';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
@@ -69,9 +69,9 @@ export default class TopicController {
   @id()
   @getDetail()
   @requireSelf()
-  async [routesBe.updateTopic.i](ctx: Context): Promise<void> {
+  async [routesBe.updateTopicDetail.i](ctx: Context): Promise<void> {
     const topicId = ctx.id!;
-    const { title, content } = ctx.request.body as IUpdateTopicReq;
+    const { title, content } = ctx.request.body as IUpdateTopicDetailReq;
     await this.service.update(topicId, {
       title,
       content,

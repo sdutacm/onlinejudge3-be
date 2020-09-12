@@ -15,7 +15,7 @@ import { CSetMeta } from './set.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CProblemService } from '../problem/problem.service';
-import { ICreateSetResp, ICreateSetReq, IUpdateSetReq } from '@/common/contracts/set';
+import { ICreateSetResp, ICreateSetReq, IUpdateSetDetailReq } from '@/common/contracts/set';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 
@@ -80,9 +80,9 @@ export default class SetController {
   @id()
   @getDetail(null)
   @authOrRequireSelf('perm')
-  async [routesBe.updateSet.i](ctx: Context): Promise<void> {
+  async [routesBe.updateSetDetail.i](ctx: Context): Promise<void> {
     const setId = ctx.id!;
-    const { title, description, type, props, hidden } = ctx.request.body as IUpdateSetReq;
+    const { title, description, type, props, hidden } = ctx.request.body as IUpdateSetDetailReq;
     switch (type) {
       case 'standard': {
         const problems = this.service.getFlatProblems(props);

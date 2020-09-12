@@ -142,7 +142,7 @@ const topicContract = {
     required: ['topicId'],
   } as defContract.ContractSchema,
 
-  updateTopicReq: {
+  updateTopicDetailReq: {
     properties: {
       topicId: { type: 'number', minimum: 1 },
       title: { type: 'string', maxLength: 128 },

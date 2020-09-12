@@ -121,7 +121,7 @@ const postContract = {
     required: ['postId'],
   } as defContract.ContractSchema,
 
-  updatePostReq: {
+  updatePostDetailReq: {
     properties: {
       postId: { type: 'number', minimum: 1 },
       title: { type: 'string', maxLength: 128 },

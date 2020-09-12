@@ -199,7 +199,7 @@ const setContract = {
     required: ['setId'],
   } as defContract.ContractSchema,
 
-  updateSetReq: {
+  updateSetDetailReq: {
     properties: {
       setId: { type: 'number', minimum: 1 },
       title: { type: 'string', maxLength: 128 },

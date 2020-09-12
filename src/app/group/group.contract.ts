@@ -209,7 +209,7 @@ const groupContract = {
     required: ['groupId'],
   } as defContract.ContractSchema,
 
-  updateGroupReq: {
+  updateGroupDetailReq: {
     properties: {
       groupId: { type: 'number', minimum: 1 },
       name: { type: 'string', minLength: 3, maxLength: 32 },

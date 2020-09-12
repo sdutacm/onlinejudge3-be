@@ -22,7 +22,7 @@ import {
   ICreateGroupReq,
   ICreateEmptyGroupResp,
   ICreateEmptyGroupReq,
-  IUpdateGroupReq,
+  IUpdateGroupDetailReq,
   IBatchAddGroupMembersReq,
   IUpdateGroupMemberReq,
   IDeleteGroupMemberReq,
@@ -160,9 +160,9 @@ export default class GroupController {
   @login()
   @id()
   @getDetail()
-  async [routesBe.updateGroup.i](ctx: Context): Promise<void> {
+  async [routesBe.updateGroupDetail.i](ctx: Context): Promise<void> {
     const groupId = ctx.id!;
-    const data = ctx.request.body as IUpdateGroupReq;
+    const data = ctx.request.body as IUpdateGroupDetailReq;
     if (!(await this.service.hasGroupAdminPerm(groupId))) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
