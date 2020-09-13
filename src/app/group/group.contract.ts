@@ -31,6 +31,7 @@ const groupContract = {
       name: { type: 'string' },
       verified: { type: 'boolean' },
       private: { type: 'boolean' },
+      joinChannel: { type: 'number' },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,

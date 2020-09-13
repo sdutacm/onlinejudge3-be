@@ -212,6 +212,7 @@ export default class GroupService {
       groupId: opts.groupId,
       verified: opts.verified,
       private: opts.private,
+      joinChannel: opts.joinChannel,
     });
     if (opts.name) {
       where.name = {

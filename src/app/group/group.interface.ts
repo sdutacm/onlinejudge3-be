@@ -91,6 +91,7 @@ export interface IMGroupServiceGetListOpt {
   name?: IGroupModel['name'];
   verified?: IGroupModel['verified'];
   private?: IGroupModel['private'];
+  joinChannel?: IGroupModel['joinChannel'];
 }
 
 export type IMGroupServiceGetListRes = defModel.ListModelRes<IMGroupLite>;
