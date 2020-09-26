@@ -141,6 +141,11 @@ export interface IMUserServiceCreateOpt {
   password: IUserModel['password'];
   email: IUserModel['email'];
   verified: IUserModel['verified'];
+  school?: IUserModel['school'];
+  college?: IUserModel['college'];
+  major?: IUserModel['major'];
+  class?: IUserModel['class'];
+  grade?: IUserModel['grade'];
 }
 
 export type IMUserServiceCreateRes = IUserModel['userId'];

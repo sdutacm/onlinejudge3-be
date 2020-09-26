@@ -71,6 +71,30 @@ const userContract = {
     required: ['userId'],
   } as defContract.ContractSchema,
 
+  createUserReq: {
+    properties: {
+      username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
+      nickname: { type: 'string', minLength: 3, maxLength: 20 },
+      email: { type: 'string', minLength: 5, maxLength: 60, format: 'email' },
+      password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
+      school: { type: 'string', maxLength: 100 },
+      college: { type: 'string', maxLength: 100 },
+      major: { type: 'string', maxLength: 100 },
+      class: { type: 'string', maxLength: 100 },
+      grade: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['username', 'nickname', 'password'],
+  } as defContract.ContractSchema,
+
+  createUserResp: {
+    properties: {
+      userId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
   getUserListReq: {
     properties: {
       page: { type: 'number', minimum: 1 },

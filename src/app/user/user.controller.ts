@@ -31,6 +31,8 @@ import {
   IGetUserSolutionCalendarReq,
   IGetUserSolutionCalendarResp,
   ILoginResp,
+  ICreateUserReq,
+  ICreateUserResp,
 } from '@/common/contracts/user';
 import { IMUserDetail } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -192,6 +194,51 @@ export default class UserController {
     };
     this.service.updateUserLastStatus(newId, { lastIp: ctx.ip }).then(() => {
       this.service.clearDetailCache(newId);
+    });
+    return { userId: newId };
+  }
+
+  /**
+   * 创建用户。
+   *
+   * 权限：管理员
+   *
+   * 校验逻辑：
+   * 1. 检查用户名、昵称、邮箱均不被占用
+   * @returns 用户 ID
+   */
+  @route()
+  @auth('admin')
+  async [routesBe.createUser.i](ctx: Context): Promise<ICreateUserResp> {
+    const {
+      username,
+      nickname,
+      email,
+      password,
+      school,
+      college,
+      major,
+      class: _class,
+      grade,
+    } = ctx.request.body as ICreateUserReq;
+    if (await this.service.isUsernameExists(username)) {
+      throw new ReqError(Codes.USER_USERNAME_EXISTS);
+    } else if (await this.service.isNicknameExists(nickname)) {
+      throw new ReqError(Codes.USER_NICKNAME_EXISTS);
+    } else if (email && (await this.service.isEmailExists(email))) {
+      throw new ReqError(Codes.USER_EMAIL_EXISTS);
+    }
+    const newId = await this.service.create({
+      username,
+      nickname,
+      email: email || '',
+      verified: !!email,
+      password: this.utils.misc.hashPassword(password),
+      school,
+      college,
+      major,
+      class: _class,
+      grade,
     });
     return { userId: newId };
   }
