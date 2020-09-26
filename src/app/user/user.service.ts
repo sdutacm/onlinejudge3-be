@@ -19,6 +19,7 @@ import {
   IMUserServiceFindOneRes,
   IMUserServiceIsExistsOpt,
   IMUserServiceGetUserIdsByUsernamesRes,
+  IMUserServiceUpdateUserLastStatusOpt,
 } from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -396,5 +397,20 @@ export default class UserService {
       res[d.username] = d.userId;
     });
     return res;
+  }
+
+  /**
+   * 更新用户最近状态。
+   * @param userId userId
+   * @param lastStatus 用户最近状态
+   */
+  async updateUserLastStatus(
+    userId: IUserModel['userId'],
+    { lastIp }: IMUserServiceUpdateUserLastStatusOpt,
+  ): Promise<void> {
+    await this.update(userId, {
+      lastIp,
+      lastTime: new Date(),
+    });
   }
 }

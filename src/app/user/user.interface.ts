@@ -177,3 +177,9 @@ export type IMUserServiceGetUserIdsByUsernamesRes = Record<
   IUserModel['userId']
 >;
 //#endregion
+
+//#region service.updateUserLastStatus
+export interface IMUserServiceUpdateUserLastStatusOpt {
+  lastIp: IUserModel['lastIp'];
+}
+//#endregion

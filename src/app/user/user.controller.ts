@@ -127,6 +127,9 @@ export default class UserController {
       avatar: user.avatar,
       contests: {},
     };
+    this.service.updateUserLastStatus(user.userId, { lastIp: ctx.ip }).then(() => {
+      this.service.clearDetailCache(user.userId);
+    });
     return {
       userId: user.userId,
       username: user.username,
@@ -187,6 +190,9 @@ export default class UserController {
       avatar: '',
       contests: {},
     };
+    this.service.updateUserLastStatus(newId, { lastIp: ctx.ip }).then(() => {
+      this.service.clearDetailCache(newId);
+    });
     return { userId: newId };
   }
 
