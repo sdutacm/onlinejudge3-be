@@ -323,6 +323,15 @@ export default {
   },
 
   /**
+   * 判断当前用户是否是自己或管理员。
+   * @param userId 要判断的 userId
+   */
+  isSelfOrAdmin(userId: number | string) {
+    const { ctx } = getThis.call(this);
+    return ctx.session.userId === +userId || ctx.session.permission! >= EUserPermission.admin;
+  },
+
+  /**
    * 获取比赛 session。
    * @param contestId contestId
    */

@@ -84,6 +84,7 @@ export type TMUserDetailFields = Extract<
   | 'settings'
   | 'coin'
   | 'verified'
+  | 'lastIp'
   | 'lastTime'
   | 'createdAt'
 >;

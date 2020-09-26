@@ -10,6 +10,7 @@ import {
   auth,
   requireSelf,
   login,
+  authOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
@@ -208,12 +209,13 @@ export default class UserController {
   /**
    * 获取用户详情。
    *
-   * 如果查询的用户不是当前登录用户，则需移除以下字段：
+   * 如果查询的用户不是当前登录用户或管理员，则需移除以下字段：
    * - email
    * - defaultLanguage
    * - settings
    * - coin
    * - verified
+   * - lastIp
    * - lastTime
    * - createdAt
    * @returns 用户详情
@@ -225,13 +227,14 @@ export default class UserController {
     const detail = ctx.detail as IMUserDetail;
     // @ts-ignore
     const detailResp = detail as TreatDateFieldsAsString<typeof detail>;
-    if (!ctx.helper.isSelf(ctx.id!)) {
+    if (!ctx.helper.isSelfOrAdmin(ctx.id!)) {
       return this.lodash.omit(detailResp, [
         'email',
         'defaultLanguage',
         'settings',
         'coin',
         'verified',
+        'lastIp',
         'lastTime',
         'createdAt',
       ]);
@@ -242,15 +245,21 @@ export default class UserController {
   /**
    * 更新用户信息。
    *
+   * 如果用户不是管理员，则无法更新以下字段：
+   * - forbidden
+   *
    * 权限：当前登录用户
    */
   @route()
-  @requireSelf()
+  @authOrRequireSelf('admin')
   @id()
-  @getDetail()
+  @getDetail(null)
   async [routesBe.updateUserDetail.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const req = ctx.request.body as IUpdateUserDetailReq;
+    if (!ctx.isAdmin) {
+      delete req.forbidden;
+    }
     await this.service.update(userId, this.lodash.omit(req, ['userId']));
     await this.service.clearDetailCache(userId);
   }

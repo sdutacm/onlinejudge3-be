@@ -211,6 +211,7 @@ const userContract = {
       },
       coin: { type: 'number' },
       verified: { type: 'boolean' },
+      lastIp: { type: 'string' },
       lastTime: {
         anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
       },
@@ -255,6 +256,7 @@ const userContract = {
         type: 'string',
         enum: ['', 'gcc', 'g++', 'java', 'python2', 'python3', 'c#'],
       },
+      forbidden: { type: 'number', enum: [0, 1, 2] },
     },
     additionalProperties: false,
     required: ['userId'],
