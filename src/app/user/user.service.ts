@@ -47,6 +47,10 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'submitted',
   'grade',
   'forbidden',
+  'verified',
+  'lastIp',
+  'lastTime',
+  'createdAt',
 ];
 const userDetailFields: Array<TMUserDetailFields> = [
   'userId',

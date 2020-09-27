@@ -34,7 +34,7 @@ import {
   ICreateUserReq,
   ICreateUserResp,
 } from '@/common/contracts/user';
-import { IMUserDetail } from './user.interface';
+import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
 import { IAppConfig } from '@/config/config.interface';
 import path from 'path';
@@ -254,6 +254,17 @@ export default class UserController {
   @getList(undefined, {
     beforeGetList: (ctx) => {
       !ctx.isAdmin && delete ctx.request.body.forbidden;
+    },
+    afterGetList: (ctx) => {
+      const list = ctx.list as IMUserServiceGetListRes;
+      if (!ctx.isAdmin) {
+        list.rows.forEach((d) => {
+          delete d.verified;
+          delete d.lastIp;
+          delete d.lastTime;
+          delete d.createdAt;
+        });
+      }
     },
   })
   @respList()

@@ -58,6 +58,10 @@ export type TMUserLiteFields = Extract<
   | 'submitted'
   | 'grade'
   | 'forbidden'
+  | 'verified'
+  | 'lastIp'
+  | 'lastTime'
+  | 'createdAt'
 >;
 
 export type TMUserDetailFields = Extract<

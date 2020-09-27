@@ -145,6 +145,12 @@ const userContract = {
             rating: { type: 'number' },
             grade: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             forbidden: { type: 'number' },
+            verified: { type: 'boolean' },
+            lastIp: { type: 'string' },
+            lastTime: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+            createdAt: { type: 'string', format: 'date-time' },
           },
           additionalProperties: false,
           required: [
