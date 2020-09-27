@@ -140,6 +140,7 @@ export default class UserService {
       username: opts.username,
       grade: opts.grade,
       forbidden: opts.forbidden,
+      verified: opts.verified,
     });
     if (opts.nickname) {
       q.nickname = {

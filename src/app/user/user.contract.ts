@@ -120,6 +120,7 @@ const userContract = {
       class: { type: 'string' },
       grade: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       forbidden: { type: 'number' },
+      verified: { type: 'boolean' },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,

@@ -116,6 +116,7 @@ export interface IMUserServiceGetListOpt {
   class?: IUserModel['class'];
   grade?: IUserModel['grade'];
   forbidden?: IUserModel['forbidden'];
+  verified?: IUserModel['verified'];
 }
 
 export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;

@@ -246,14 +246,17 @@ export default class UserController {
   /**
    * 获取用户列表。
    *
-   * 如果非管理，则 forbidden 字段不可用。
+   * 如果非管理，则 forbidden、verified 字段不可用。
    * @returns 用户列表
    */
   @route()
   @pagination()
   @getList(undefined, {
     beforeGetList: (ctx) => {
-      !ctx.isAdmin && delete ctx.request.body.forbidden;
+      if (!ctx.isAdmin) {
+        delete ctx.request.body.forbidden;
+        delete ctx.request.body.verified;
+      }
     },
     afterGetList: (ctx) => {
       const list = ctx.list as IMUserServiceGetListRes;
