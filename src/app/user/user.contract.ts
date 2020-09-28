@@ -187,7 +187,7 @@ const userContract = {
       userId: { type: 'number' },
       username: { type: 'string' },
       nickname: { type: 'string' },
-      email: { type: 'string', format: 'email' },
+      email: { type: 'string' },
       submitted: { type: 'number' },
       accepted: { type: 'number' },
       permission: { type: 'number' },
