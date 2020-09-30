@@ -14,6 +14,8 @@ $ npm run dev
 $ open http://localhost:7001/
 ```
 
+如果安装依赖时遇到 Sharp 下载时间过长，可以尝试 `SHARP_DIST_BASE_URL="http://acm.sdut.edu.cn/temp_vendors/sharp/" npm i` 来安装（目前仅测试 Ubuntu 16.04/18.04）。
+
 如果需要断点调试，建议直接通过 VS Code，运行 Debug 命令 `Debug`，不需要手动运行 `npm run dev`。
 
 ### 部署
