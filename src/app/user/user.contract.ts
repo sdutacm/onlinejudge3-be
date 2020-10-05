@@ -120,6 +120,7 @@ const userContract = {
       class: { type: 'string' },
       grade: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       forbidden: { type: 'number' },
+      permission: { type: 'number' },
       verified: { type: 'boolean' },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
@@ -146,6 +147,7 @@ const userContract = {
             rating: { type: 'number' },
             grade: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             forbidden: { type: 'number' },
+            permission: { type: 'number' },
             verified: { type: 'boolean' },
             lastIp: { type: 'string' },
             lastTime: {

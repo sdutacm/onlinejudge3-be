@@ -58,6 +58,7 @@ export type TMUserLiteFields = Extract<
   | 'submitted'
   | 'grade'
   | 'forbidden'
+  | 'permission'
   | 'verified'
   | 'lastIp'
   | 'lastTime'
@@ -116,6 +117,7 @@ export interface IMUserServiceGetListOpt {
   class?: IUserModel['class'];
   grade?: IUserModel['grade'];
   forbidden?: IUserModel['forbidden'];
+  permission?: IUserModel['permission'];
   verified?: IUserModel['verified'];
 }
 

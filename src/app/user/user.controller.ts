@@ -246,7 +246,17 @@ export default class UserController {
   /**
    * 获取用户列表。
    *
-   * 如果非管理，则 forbidden、verified 字段不可用。
+   * 如果非管理，则以下字段不可用于搜索：
+   * - forbidden
+   * - permission
+   * - verified
+   *
+   * 如果非管理，则以下字段不会返回：
+   * - permission
+   * - verified
+   * - lastIp
+   * - lastTime
+   * - createdAt
    * @returns 用户列表
    */
   @route()
@@ -255,6 +265,7 @@ export default class UserController {
     beforeGetList: (ctx) => {
       if (!ctx.isAdmin) {
         delete ctx.request.body.forbidden;
+        delete ctx.request.body.permission;
         delete ctx.request.body.verified;
       }
     },
@@ -262,6 +273,7 @@ export default class UserController {
       const list = ctx.list as IMUserServiceGetListRes;
       if (!ctx.isAdmin) {
         list.rows.forEach((d) => {
+          delete d.permission;
           delete d.verified;
           delete d.lastIp;
           delete d.lastTime;

@@ -47,6 +47,7 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'submitted',
   'grade',
   'forbidden',
+  'permission',
   'verified',
   'lastIp',
   'lastTime',
@@ -140,6 +141,7 @@ export default class UserService {
       username: opts.username,
       grade: opts.grade,
       forbidden: opts.forbidden,
+      permission: opts.permission,
       verified: opts.verified,
     });
     if (opts.nickname) {
