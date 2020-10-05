@@ -312,10 +312,11 @@ export default class UserController {
   /**
    * 更新用户信息。
    *
+   * 权限：当前登录用户或管理员
+   *
    * 如果用户不是管理员，则无法更新以下字段：
    * - forbidden
-   *
-   * 权限：当前登录用户
+   * - permission
    */
   @route()
   @authOrRequireSelf('admin')
@@ -326,6 +327,7 @@ export default class UserController {
     const req = ctx.request.body as IUpdateUserDetailReq;
     if (!ctx.isAdmin) {
       delete req.forbidden;
+      delete req.permission;
     }
     await this.service.update(userId, this.lodash.omit(req, ['userId']));
     await this.service.clearDetailCache(userId);
