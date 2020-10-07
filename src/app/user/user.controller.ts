@@ -33,6 +33,7 @@ import {
   ILoginResp,
   ICreateUserReq,
   ICreateUserResp,
+  IBatchCreateUsersReq,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -241,6 +242,62 @@ export default class UserController {
       grade,
     });
     return { userId: newId };
+  }
+
+  /**
+   * 批量创建用户。
+   *
+   * 权限：管理员
+   *
+   * 校验逻辑：
+   * 1. 检查用户名、昵称、邮箱均不被占用
+   * 2. 如果有用户名被占用，且 conflict 为 upsert，则除 password 外字段覆盖更新
+   */
+  @route()
+  @auth('admin')
+  async [routesBe.batchCreateUsers.i](ctx: Context): Promise<void> {
+    const { users, conflict } = ctx.request.body as IBatchCreateUsersReq;
+    for (const user of users) {
+      const { username, nickname, password, school, college, major, class: _class, grade } = user;
+      if (await this.service.isNicknameExists(nickname)) {
+        continue;
+      } else if (await this.service.isUsernameExists(username)) {
+        if (conflict === 'upsert') {
+          // 覆盖更新
+          const userInfo = await this.service.findOne(
+            {
+              username,
+            },
+            null,
+          );
+          if (userInfo) {
+            await this.service.update(userInfo.userId, {
+              nickname,
+              school,
+              college,
+              major,
+              class: _class,
+              grade,
+            });
+            await this.service.clearDetailCache(userInfo.userId);
+          }
+        }
+        continue;
+      }
+      // 创建用户
+      await this.service.create({
+        username,
+        nickname,
+        email: '',
+        verified: false,
+        password: this.utils.misc.hashPassword(password),
+        school,
+        college,
+        major,
+        class: _class,
+        grade,
+      });
+    }
   }
 
   /**

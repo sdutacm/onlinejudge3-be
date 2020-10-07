@@ -160,6 +160,7 @@ export type IMUserServiceCreateRes = IUserModel['userId'];
 
 //#region service.update
 export interface IMUserServiceUpdateOpt {
+  nickname?: IUserModel['nickname'];
   verified?: IUserModel['verified'];
   password?: IUserModel['password'];
   email?: IUserModel['email'];
@@ -170,6 +171,7 @@ export interface IMUserServiceUpdateOpt {
   college?: IUserModel['college'];
   major?: IUserModel['major'];
   class?: IUserModel['class'];
+  grade?: IUserModel['grade'];
   site?: IUserModel['site'];
   accepted?: IUserModel['accepted'];
   submitted?: IUserModel['submitted'];
