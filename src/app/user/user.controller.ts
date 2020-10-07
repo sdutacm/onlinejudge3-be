@@ -259,9 +259,7 @@ export default class UserController {
     const { users, conflict } = ctx.request.body as IBatchCreateUsersReq;
     for (const user of users) {
       const { username, nickname, password, school, college, major, class: _class, grade } = user;
-      if (await this.service.isNicknameExists(nickname)) {
-        continue;
-      } else if (await this.service.isUsernameExists(username)) {
+      if (await this.service.isUsernameExists(username)) {
         if (conflict === 'upsert') {
           // 覆盖更新
           const userInfo = await this.service.findOne(
@@ -271,6 +269,9 @@ export default class UserController {
             null,
           );
           if (userInfo) {
+            if (userInfo.nickname !== nickname && (await this.service.isNicknameExists(nickname))) {
+              continue;
+            }
             await this.service.update(userInfo.userId, {
               nickname,
               school,
@@ -282,6 +283,8 @@ export default class UserController {
             await this.service.clearDetailCache(userInfo.userId);
           }
         }
+        continue;
+      } else if (await this.service.isNicknameExists(nickname)) {
         continue;
       }
       // 创建用户
