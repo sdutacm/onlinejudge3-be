@@ -552,6 +552,62 @@ const contestContract = {
     required: ['contestId', 'nickname', 'unofficial', 'password', 'members'],
   } as defContract.ContractSchema,
 
+  batchCreateContestUsersReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+      users: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', maxLength: 64 },
+            nickname: { type: 'string', maxLength: 64 },
+            subname: { type: 'string', maxLength: 64 },
+            status: { type: 'number' },
+            unofficial: { type: 'boolean' },
+            password: { type: 'string', maxLength: 32 },
+            members: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  schoolNo: { type: 'string', maxLength: 32 },
+                  name: { type: 'string', maxLength: 32 },
+                  school: { type: 'string', maxLength: 64 },
+                  college: { type: 'string', maxLength: 64 },
+                  major: { type: 'string', maxLength: 64 },
+                  class: { type: 'string', maxLength: 64 },
+                  tel: { type: 'string', maxLength: 30 },
+                  email: { type: 'string', maxLength: 64 },
+                  clothing: { type: 'string', maxLength: 32 },
+                },
+                additionalProperties: false,
+                required: [
+                  'schoolNo',
+                  'name',
+                  'school',
+                  'college',
+                  'major',
+                  'class',
+                  'tel',
+                  'email',
+                  'clothing',
+                ],
+              },
+              minItems: 1,
+              maxItems: 3,
+            },
+          },
+          additionalProperties: false,
+          required: ['username', 'nickname', 'unofficial', 'password', 'members'],
+        },
+      },
+      conflict: { type: 'string', enum: ['insert', 'upsert'] },
+    },
+    additionalProperties: false,
+    required: ['contestId', 'users', 'conflict'],
+  } as defContract.ContractSchema,
+
   createContestUserResp: {
     properties: {
       contestUserId: { type: 'number' },

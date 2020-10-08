@@ -42,6 +42,7 @@ import {
   ICreateContestReq,
   ICreateContestResp,
   IUpdateContestDetailReq,
+  IBatchCreateContestUsersReq,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -436,6 +437,35 @@ export default class ContestController {
       username,
     });
     return { contestUserId: newId };
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.batchCreateContestUsers.i](ctx: Context): Promise<void> {
+    const contestId = ctx.id!;
+    const { users, conflict } = ctx.request.body as IBatchCreateContestUsersReq;
+    for (const user of users) {
+      const { username } = user;
+      const userInfo = await this.service.findOneContestUser(contestId, { username });
+      if (userInfo) {
+        if (conflict === 'upsert') {
+          // 覆盖更新
+          await this.service.updateContestUser(userInfo.contestUserId, {
+            ...this.lodash.omit(user, ['username']),
+            status: user.status ?? EContestUserStatus.accepted,
+          });
+          await this.service.clearContestUserDetailCache(userInfo.contestUserId);
+        }
+        continue;
+      }
+      // 创建用户
+      await this.service.createContestUser(contestId, {
+        ...user,
+        status: user.status ?? EContestUserStatus.accepted,
+      });
+    }
   }
 
   @route()
