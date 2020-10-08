@@ -510,6 +510,7 @@ const contestContract = {
   createContestUserReq: {
     properties: {
       contestId: { type: 'number', minimum: 1 },
+      username: { type: 'string', maxLength: 64 },
       nickname: { type: 'string', maxLength: 64 },
       subname: { type: 'string', maxLength: 64 },
       status: { type: 'number' },

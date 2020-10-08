@@ -409,6 +409,7 @@ export default class ContestController {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
     const data = ctx.request.body as ICreateContestUserReq;
+    const username = (ctx.isAdmin && data.username) || ctx.session.username;
     if (!ctx.isAdmin) {
       delete data.status;
     }
@@ -424,7 +425,6 @@ export default class ContestController {
     ) {
       throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
     }
-    const username = ctx.session.username;
     const exists = await this.service.isContestUserExists(contestId, {
       username,
     });
@@ -432,7 +432,7 @@ export default class ContestController {
       throw new ReqError(Codes.CONTEST_REGISTERED);
     }
     const newId = await this.service.createContestUser(contestId, {
-      ...this.lodash.omit(data, ['contestId']),
+      ...this.lodash.omit(data, ['contestId', 'username']),
       username,
     });
     return { contestUserId: newId };
