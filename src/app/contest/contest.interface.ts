@@ -469,6 +469,7 @@ export interface IMContestServiceCreateContestUserOpt {
   nickname: IContestUserModel['nickname'];
   subname?: IContestUserModel['subname'];
   status?: IContestUserModel['status'];
+  sitNo?: IContestUserModel['sitNo'];
   unofficial: IContestUserModel['unofficial'];
   password: IContestUserModel['password'];
   members: Array<{
@@ -492,6 +493,7 @@ export interface IMContestServiceUpdateContestUserOpt {
   nickname?: IContestUserModel['nickname'];
   subname?: IContestUserModel['subname'];
   status?: IContestUserModel['status'];
+  sitNo?: IContestUserModel['sitNo'];
   unofficial?: IContestUserModel['unofficial'];
   password?: IContestUserModel['password'];
   members?: Array<{

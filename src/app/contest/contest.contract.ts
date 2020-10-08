@@ -564,6 +564,7 @@ const contestContract = {
             nickname: { type: 'string', maxLength: 64 },
             subname: { type: 'string', maxLength: 64 },
             status: { type: 'number' },
+            sitNo: { type: 'string' },
             unofficial: { type: 'boolean' },
             password: { type: 'string', maxLength: 32 },
             members: {
