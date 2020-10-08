@@ -271,7 +271,7 @@ export default class ContestUserModel extends Model<ContestUserModel> implements
   }
 
   @AllowNull(false)
-  @Default(EContestUserStatus.wating)
+  @Default(EContestUserStatus.waiting)
   @Column({
     type: DataType.TINYINT,
   })

@@ -447,7 +447,7 @@ export default class ContestController {
     const data = ctx.request.body as IUpdateContestUserReq;
     const { contestUserId } = data;
     if (!ctx.isAdmin) {
-      data.status = EContestUserStatus.wating;
+      data.status = EContestUserStatus.waiting;
     }
     if (detail.type !== EContestType.register) {
       throw new ReqError(Codes.CONTEST_REGISTER_NOT_OPEN);
