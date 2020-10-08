@@ -521,7 +521,7 @@ export default class ContestController {
     }
     const subject = 'Your Contest Registration Result';
     const content = `<p>Dear User:</p>
-<p>Thanks for registering contesst "${detail.title}". Your registration is ${auditMessage}.</p>
+<p>Thanks for registering contest "${detail.title}". Your registration is ${auditMessage}.</p>
 <p>You can review or update your information in contest registration list.</p>
 <p><br/></p>
 <p>${this.siteTeam}</p>`;
