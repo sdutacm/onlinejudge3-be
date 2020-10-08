@@ -453,7 +453,7 @@ export default class ContestController {
         if (conflict === 'upsert') {
           // 覆盖更新
           await this.service.updateContestUser(userInfo.contestUserId, {
-            ...this.lodash.omit(user, ['username']),
+            ...this.lodash.omit(user, ['username', 'password']),
             status: user.status ?? EContestUserStatus.accepted,
           });
           await this.service.clearContestUserDetailCache(userInfo.contestUserId);
@@ -463,6 +463,8 @@ export default class ContestController {
       // 创建用户
       await this.service.createContestUser(contestId, {
         ...user,
+        password:
+          user.password || this.utils.misc.randomString({ length: 8, type: 'distinguishable' }),
         status: user.status ?? EContestUserStatus.accepted,
       });
     }

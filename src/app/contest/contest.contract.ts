@@ -600,7 +600,7 @@ const contestContract = {
             },
           },
           additionalProperties: false,
-          required: ['username', 'nickname', 'unofficial', 'password', 'members'],
+          required: ['username', 'nickname', 'unofficial', 'members'],
         },
       },
       conflict: { type: 'string', enum: ['insert', 'upsert'] },
