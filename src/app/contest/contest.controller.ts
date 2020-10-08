@@ -417,9 +417,10 @@ export default class ContestController {
     }
     const now = new Date();
     if (
-      !detail?.registerStartAt ||
-      !detail?.registerEndAt ||
-      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+      !ctx.isAdmin &&
+      (!detail?.registerStartAt ||
+        !detail?.registerEndAt ||
+        !(now >= detail.registerStartAt && now < detail.registerEndAt))
     ) {
       throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
     }
@@ -453,9 +454,10 @@ export default class ContestController {
     }
     const now = new Date();
     if (
-      !detail?.registerStartAt ||
-      !detail?.registerEndAt ||
-      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+      !ctx.isAdmin &&
+      (!detail?.registerStartAt ||
+        !detail?.registerEndAt ||
+        !(now >= detail.registerStartAt && now < detail.registerEndAt))
     ) {
       throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
     }
