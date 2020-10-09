@@ -463,8 +463,7 @@ export default class ContestController {
       // 创建用户
       await this.service.createContestUser(contestId, {
         ...user,
-        password:
-          user.password || this.utils.misc.randomString({ length: 8, type: 'distinguishable' }),
+        password: user.password || this.utils.misc.randomString({ length: 8, type: 'numeric' }),
         status: user.status ?? EContestUserStatus.accepted,
       });
     }
