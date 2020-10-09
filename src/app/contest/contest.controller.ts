@@ -43,6 +43,7 @@ import {
   ICreateContestResp,
   IUpdateContestDetailReq,
   IBatchCreateContestUsersReq,
+  IGetContestUsersReq,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -390,7 +391,8 @@ export default class ContestController {
   async [routesBe.getContestUsers.i](ctx: Context) {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
-    const list = await this.service.getContestUsers(contestId);
+    const { status } = ctx.request.body as IGetContestUsersReq;
+    const list = await this.service.getContestUsers(contestId, { status });
     const rows = list.rows;
     if (detail.team === false) {
       // 非团队类型，删除多余成员

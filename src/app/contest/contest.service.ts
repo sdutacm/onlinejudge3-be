@@ -55,6 +55,7 @@ import {
   IMContestRatingContestDetail,
   IMContestServiceGetRatingContestDetailRes,
   TMContestRatingContestDetailFields,
+  IMContestServiceGetContestUsersOpt,
   IMContestServiceGetContestUsersRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
@@ -67,7 +68,7 @@ import { CProblemService } from '../problem/problem.service';
 import { IProblemModel } from '../problem/problem.interface';
 import { TContestUserModel } from '@/lib/models/contestUser.model';
 import { CSolutionService } from '../solution/solution.service';
-import { EContestType, ESolutionResult, EContestMode } from '@/common/enums';
+import { EContestType, ESolutionResult, EContestMode, EContestUserStatus } from '@/common/enums';
 import { CUserService } from '../user/user.service';
 import { TRatingContestModel } from '@/lib/models/ratingContest.model';
 
@@ -911,13 +912,15 @@ export default class ContestService {
    */
   async getContestUsers(
     contestId: IContestModel['contestId'],
+    options: IMContestServiceGetContestUsersOpt,
   ): Promise<IMContestServiceGetContestUsersRes> {
     const res = await this.contestUserModel
       .findAll({
         attributes: contestUserDetailFields,
-        where: {
+        where: this.utils.misc.ignoreUndefined({
           contestId,
-        },
+          status: options.status,
+        }),
       })
       .then((r) =>
         r.map((d) => {

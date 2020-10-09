@@ -438,6 +438,7 @@ const contestContract = {
   getContestUsersReq: {
     properties: {
       contestId: { type: 'number', minimum: 1 },
+      status: { type: 'number', enum: [0, 1, 2, 3] },
     },
     additionalProperties: false,
     required: ['contestId'],

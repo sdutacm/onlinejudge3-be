@@ -444,6 +444,10 @@ export type IMContestServiceGetContestUserListRes = defModel.ListModelRes<IMCont
 //#endregion
 
 //#region service.getContestUsers
+export interface IMContestServiceGetContestUsersOpt {
+  status?: IContestUserModel['status'];
+}
+
 export type IMContestServiceGetContestUsersRes = defModel.ListModelRes<IMContestUserDetail>;
 //#endregion
 
