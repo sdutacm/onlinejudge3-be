@@ -295,6 +295,18 @@ const solutionContract = {
     additionalProperties: false,
     required: ['solutionId'],
   } as defContract.ContractSchema,
+
+  rejudgeSolutionReq: {
+    properties: {
+      solutionId: { type: 'number', minimum: 1 },
+      problemId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+      contestId: { type: 'number', minimum: 1 },
+      result: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: [],
+  } as defContract.ContractSchema,
 };
 
 export type ISolutionContract = typeof solutionContract;

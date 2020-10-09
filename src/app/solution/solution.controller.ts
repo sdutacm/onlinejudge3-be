@@ -8,6 +8,7 @@ import {
   id,
   login,
   rateLimitUser,
+  auth,
 } from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
@@ -22,6 +23,7 @@ import {
   ISubmitSolutionReq,
   ISubmitSolutionResp,
   IBatchGetSolutionDetailReq,
+  IRejudgeSolutionReq,
 } from '@/common/contracts/solution';
 import {
   IMSolutionServiceGetListRes,
@@ -32,6 +34,7 @@ import {
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EContestType, EContestUserStatus, ESolutionResult } from '@/common/enums';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
 @controller('/')
@@ -53,6 +56,9 @@ export default class SolutionController {
 
   @inject()
   lodash: ILodash;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @pagination()
@@ -236,5 +242,23 @@ export default class SolutionController {
     };
     await ctx.helper.redisRpush(REDIS_QUEUE_NAME, [], task);
     return { solutionId: newId };
+  }
+
+  @route()
+  @auth('perm')
+  async [routesBe.rejudgeSolution.i](ctx: Context) {
+    const data = ctx.request.body as IRejudgeSolutionReq;
+    const solutionIds = await this.service.findAllSolutionIds(data);
+    const pq = new this.PromiseQueue(5, Infinity);
+    const queueTasks = solutionIds.map((solutionId) =>
+      pq.add(async () => {
+        // t-judger
+        await this.service.update(solutionId, {
+          result: ESolutionResult.WT,
+        });
+        await this.service.clearDetailCache(solutionId);
+      }),
+    );
+    await Promise.all(queueTasks);
   }
 }

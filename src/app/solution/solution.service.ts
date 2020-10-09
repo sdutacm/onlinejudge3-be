@@ -29,6 +29,8 @@ import {
   IMSolutionServiceGetAllContestSolutionListRes,
   IMSolutionServiceGetRelativeRes,
   IMSolutionDetail,
+  IMSolutionServiceFindAllSolutionIdsOpt,
+  IMSolutionServiceFindAllSolutionIdsRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -710,7 +712,7 @@ export default class SolutionService {
   }
 
   /**
-   * 获取所有比赛提交。
+   * 获取比赛的所有提交。
    * @param contestId contestId
    */
   async getAllContestSolutionList(
@@ -740,5 +742,24 @@ export default class SolutionService {
         detail.user.userId &&
         ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
     );
+  }
+
+  /**
+   * 根据条件获取所有提交的 ID。
+   * @param contestId contestId
+   */
+  async findAllSolutionIds(
+    options: IMSolutionServiceFindAllSolutionIdsOpt,
+  ): Promise<IMSolutionServiceFindAllSolutionIdsRes> {
+    if (Object.keys(options).length === 0) {
+      return [];
+    }
+    const res = await this.model
+      .findAll({
+        attributes: ['solutionId'],
+        where: options as any,
+      })
+      .then((r) => r.map((d) => d.solutionId));
+    return res;
   }
 }
