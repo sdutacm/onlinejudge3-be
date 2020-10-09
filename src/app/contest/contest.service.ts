@@ -57,6 +57,7 @@ import {
   TMContestRatingContestDetailFields,
   IMContestServiceGetContestUsersOpt,
   IMContestServiceGetContestUsersRes,
+  IMContestServiceGetContestProblemConfigRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -805,6 +806,28 @@ export default class ContestService {
       await this._setContestProblemsCache(contestId, res);
     }
     res = res || [];
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 获取比赛题目配置。
+   * @param contestId contestId
+   */
+  async getContestProblemConfig(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestServiceGetContestProblemConfigRes> {
+    const res = await this.contestProblemModel
+      .findAll({
+        attributes: contestProblemDetailFields,
+        where: {
+          contestId,
+        },
+        order: [['index', 'ASC']],
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMContestProblemLite));
     return {
       count: res.length,
       rows: res,

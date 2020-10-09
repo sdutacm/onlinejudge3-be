@@ -333,7 +333,36 @@ const contestContract = {
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
 
-  setContestProblemsReq: {
+  getContestProblemConfigReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestProblemConfigResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number', minimum: 1 },
+            title: { type: 'string' },
+            originalTitle: { type: 'string' },
+          },
+          additionalProperties: false,
+          required: ['problemId', 'title'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  setContestProblemConfigReq: {
     properties: {
       contestId: { type: 'number', minimum: 1 },
       problems: {

@@ -426,6 +426,12 @@ export type IMContestServiceGetContestProblemsRes = defModel.FullListModelRes<
 >;
 //#endregion
 
+//#region service.getContestProblemConfig
+export type IMContestServiceGetContestProblemConfigRes = defModel.FullListModelRes<
+  IMContestProblemLite
+>;
+//#endregion
+
 //#region service.setContestProblems
 export type IMContestServiceSetContestProblemsOpt = Array<{
   problemId: IContestProblemModel['problemId'];

@@ -29,7 +29,7 @@ import { ReqError } from '@/lib/global/error';
 import {
   IRequestContestSessionReq,
   IGetContestSessionResp,
-  ISetContestProblemsReq,
+  ISetContestProblemConfigReq,
   IGetContestUserDetailReq,
   ICreateContestUserReq,
   ICreateContestUserResp,
@@ -44,6 +44,7 @@ import {
   IUpdateContestDetailReq,
   IBatchCreateContestUsersReq,
   IGetContestUsersReq,
+  IGetContestProblemConfigResp,
 } from '@/common/contracts/contest';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
@@ -52,6 +53,7 @@ import { CUserService } from '../user/user.service';
 import { IAppConfig } from '@/config/config.interface';
 import { exec } from 'child_process';
 import path from 'path';
+import { CProblemService } from '../problem/problem.service';
 
 @provide()
 @controller('/')
@@ -70,6 +72,9 @@ export default class ContestController {
 
   @inject()
   userService: CUserService;
+
+  @inject()
+  problemService: CProblemService;
 
   @inject()
   utils: IUtils;
@@ -357,9 +362,27 @@ export default class ContestController {
   @auth('admin')
   @id()
   @getDetail(null)
-  async [routesBe.setContestProblems.i](ctx: Context) {
+  async [routesBe.getContestProblemConfig.i](ctx: Context): Promise<IGetContestProblemConfigResp> {
     const contestId = ctx.id!;
-    const { problems } = ctx.request.body as ISetContestProblemsReq;
+    const list = await this.service.getContestProblemConfig(contestId);
+    const problemIds = list.rows.map((d) => d.problemId);
+    const relativeProblems = await this.problemService.getRelative(problemIds, null);
+    return {
+      count: list.count,
+      rows: list.rows.map((d) => ({
+        ...d,
+        originalTitle: relativeProblems[d.problemId]?.title,
+      })),
+    };
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.setContestProblemConfig.i](ctx: Context) {
+    const contestId = ctx.id!;
+    const { problems } = ctx.request.body as ISetContestProblemConfigReq;
     await this.service.setContestProblems(contestId, problems);
     await this.service.clearContestProblemsCache(contestId);
   }
