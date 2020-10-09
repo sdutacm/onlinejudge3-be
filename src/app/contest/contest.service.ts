@@ -55,6 +55,7 @@ import {
   IMContestRatingContestDetail,
   IMContestServiceGetRatingContestDetailRes,
   TMContestRatingContestDetailFields,
+  IMContestServiceGetContestUsersRes,
 } from './contest.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -902,6 +903,32 @@ export default class ContestService {
           return this._parseContestUser<IMContestUserLite>(plain);
         }),
       }));
+  }
+
+  /**
+   * 获取全部比赛用户。
+   * @param contestId contestId
+   */
+  async getContestUsers(
+    contestId: IContestModel['contestId'],
+  ): Promise<IMContestServiceGetContestUsersRes> {
+    const res = await this.contestUserModel
+      .findAll({
+        attributes: contestUserDetailFields,
+        where: {
+          contestId,
+        },
+      })
+      .then((r) =>
+        r.map((d) => {
+          const plain = d.get({ plain: true });
+          return this._parseContestUser<IMContestUserDetailPlain>(plain);
+        }),
+      );
+    return {
+      count: res.length,
+      rows: await this._handleRelativeContestUserData(res),
+    };
   }
 
   /**

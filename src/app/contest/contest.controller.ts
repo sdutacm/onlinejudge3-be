@@ -16,7 +16,7 @@ import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CContestService } from './contest.service';
 import { ILodash } from '@/utils/libs/lodash';
-import { IMContestDetail, IMContestUserLite } from './contest.interface';
+import { IMContestDetail, IMContestUserLite, IMContestUserDetail } from './contest.interface';
 import {
   EContestType,
   EContestUserStatus,
@@ -381,6 +381,24 @@ export default class ContestController {
       });
     }
     return ctx.helper.formatList(pagination.page, pagination.limit, list.count, list.rows);
+  }
+
+  @route()
+  @auth('admin')
+  @id()
+  @getDetail(null)
+  async [routesBe.getContestUsers.i](ctx: Context) {
+    const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
+    const list = await this.service.getContestUsers(contestId);
+    const rows = list.rows;
+    if (detail.team === false) {
+      // 非团队类型，删除多余成员
+      rows.forEach((d: IMContestUserDetail) => {
+        d.members = d.members.slice(0, 1);
+      });
+    }
+    return list;
   }
 
   @route()

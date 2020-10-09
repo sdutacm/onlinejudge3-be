@@ -435,6 +435,89 @@ const contestContract = {
     required: ['page', 'limit', 'count', 'rows'],
   } as defContract.ContractSchema,
 
+  getContestUsersReq: {
+    properties: {
+      contestId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['contestId'],
+  } as defContract.ContractSchema,
+
+  getContestUsersResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            contestUserId: { type: 'number' },
+            contestId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            subname: { type: 'string' },
+            avatar: { type: 'string' },
+            status: { type: 'number' },
+            unofficial: { type: 'boolean' },
+            password: { type: 'string' },
+            sitNo: { type: 'string' },
+            members: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  schoolNo: { type: 'string' },
+                  name: { type: 'string' },
+                  school: { type: 'string' },
+                  college: { type: 'string' },
+                  major: { type: 'string' },
+                  class: { type: 'string' },
+                  tel: { type: 'string' },
+                  email: { type: 'string' },
+                  clothing: { type: 'string' },
+                },
+                additionalProperties: false,
+                required: [
+                  'schoolNo',
+                  'name',
+                  'school',
+                  'college',
+                  'major',
+                  'class',
+                  'tel',
+                  'email',
+                  'clothing',
+                ],
+              },
+            },
+            createdAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+            globalUserId: { type: 'number' },
+            rating: { type: 'number' },
+          },
+          additionalProperties: false,
+          required: [
+            'contestUserId',
+            'contestId',
+            'username',
+            'nickname',
+            'subname',
+            'avatar',
+            'status',
+            'unofficial',
+            'password',
+            'sitNo',
+            'members',
+            'createdAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
   getContestUserDetailReq: {
     properties: {
       contestUserId: { type: 'number', minimum: 1 },

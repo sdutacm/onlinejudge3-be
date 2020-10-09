@@ -443,6 +443,10 @@ export interface IMContestServiceGetContestUserListOpt {
 export type IMContestServiceGetContestUserListRes = defModel.ListModelRes<IMContestUserLite>;
 //#endregion
 
+//#region service.getContestUsers
+export type IMContestServiceGetContestUsersRes = defModel.ListModelRes<IMContestUserDetail>;
+//#endregion
+
 //#region service.getContestUserDetail
 export type IMContestServiceGetContestUserDetailRes = defModel.DetailModelRes<IMContestUserDetail>;
 //#endregion
