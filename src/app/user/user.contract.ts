@@ -301,6 +301,7 @@ const userContract = {
   updateUserDetailReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },
+      nickname: { type: 'string', minLength: 3, maxLength: 20 },
       school: { type: 'string', maxLength: 100 },
       college: { type: 'string', maxLength: 100 },
       major: { type: 'string', maxLength: 100 },

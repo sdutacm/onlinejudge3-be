@@ -387,6 +387,7 @@ export default class UserController {
    * 权限：当前登录用户或管理员
    *
    * 如果用户不是管理员，则无法更新以下字段：
+   * - nickname
    * - forbidden
    * - permission
    */
@@ -398,6 +399,7 @@ export default class UserController {
     const userId = ctx.id!;
     const req = ctx.request.body as IUpdateUserDetailReq;
     if (!ctx.isAdmin) {
+      delete req.nickname;
       delete req.forbidden;
       delete req.permission;
     }
