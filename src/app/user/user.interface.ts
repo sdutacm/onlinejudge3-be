@@ -197,3 +197,10 @@ export interface IMUserServiceUpdateUserLastStatusOpt {
   lastIp: IUserModel['lastIp'];
 }
 //#endregion
+
+//#region service.getUserAcceptedAndSubmittedCount
+export type IMUserServiceGetUserAcceptedAndSubmittedCountRes = {
+  accepted: IUserModel['accepted'];
+  submitted: IUserModel['submitted'];
+} | null;
+//#endregion

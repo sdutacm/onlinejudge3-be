@@ -363,10 +363,15 @@ export default class UserController {
   @id()
   @getDetail()
   async [routesBe.getUserDetail.i](ctx: Context): Promise<IGetUserDetailResp> {
+    const userId = ctx.id!;
     const detail = ctx.detail as IMUserDetail;
+    const acceptedAndSubmittedCount = await this.service.getUserAcceptedAndSubmittedCount(userId);
     // @ts-ignore
-    const detailResp = detail as TreatDateFieldsAsString<typeof detail>;
-    if (!ctx.helper.isSelfOrAdmin(ctx.id!)) {
+    const detailResp = {
+      ...detail,
+      ...acceptedAndSubmittedCount,
+    } as TreatDateFieldsAsString<typeof detail>;
+    if (!ctx.helper.isSelfOrAdmin(userId)) {
       return this.lodash.omit(detailResp, [
         'email',
         'defaultLanguage',

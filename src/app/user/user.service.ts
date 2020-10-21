@@ -20,6 +20,7 @@ import {
   IMUserServiceIsExistsOpt,
   IMUserServiceGetUserIdsByUsernamesRes,
   IMUserServiceUpdateUserLastStatusOpt,
+  IMUserServiceGetUserAcceptedAndSubmittedCountRes,
 } from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -419,5 +420,29 @@ export default class UserService {
       lastIp,
       lastTime: new Date(),
     });
+  }
+
+  /**
+   * 获取用户 accempted 和 submitted。
+   * @param userId userId
+   */
+  async getUserAcceptedAndSubmittedCount(
+    userId: IUserModel['userId'],
+  ): Promise<IMUserServiceGetUserAcceptedAndSubmittedCountRes> {
+    return this.model
+      .findOne({
+        attributes: ['accepted', 'submitted'],
+        where: {
+          userId,
+        },
+      })
+      .then(
+        (d) =>
+          d &&
+          (d.get({ plain: true }) as {
+            accepted: IUserModel['accepted'];
+            submitted: IUserModel['submitted'];
+          }),
+      );
   }
 }
