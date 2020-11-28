@@ -91,7 +91,7 @@ export default class JudgerService {
           createTime: stat.birthtime,
           modifyTime: stat.mtime,
           isBinary,
-          content: isBinary ? content : content.toString(),
+          content: isBinary ? content.toString('base64') : content.toString(),
         };
       } catch (e) {
         this.ctx.logger.error(e);

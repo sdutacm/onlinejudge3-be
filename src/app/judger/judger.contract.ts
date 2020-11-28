@@ -30,20 +30,7 @@ const judgerContract = {
           createTime: { type: 'string', format: 'date-time' },
           modifyTime: { type: 'string', format: 'date-time' },
           isBinary: { type: 'boolean' },
-          content: {
-            anyOf: [
-              { type: 'string' },
-              {
-                type: 'object',
-                properties: {
-                  type: { type: 'string', enum: ['Buffer'] },
-                  data: { type: 'array', items: { type: 'number' } },
-                },
-                additionalProperties: false,
-                required: ['type', 'data'],
-              },
-            ],
-          },
+          content: { type: 'string' },
           files: {
             type: 'array',
             items: {
