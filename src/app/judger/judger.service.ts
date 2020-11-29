@@ -156,6 +156,9 @@ export default class JudgerService {
    * @returns 是否更新成功，如何数据包内文件为空则认为更新失败
    */
   async updateData(problemId: IProblemModel['problemId'], filePath: string) {
+    if (!this.judgerConfig.dataPath || !problemId) {
+      throw new Error(`InvalidJudgerDataPathError: ${this.judgerConfig.dataPath}, ${problemId}`);
+    }
     const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
     const zip = new this.AdmZip(filePath);
     const zipEntries = zip.getEntries();

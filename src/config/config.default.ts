@@ -29,7 +29,7 @@ export default (appInfo: EggAppInfo) => {
 
   config.multipart = {
     mode: 'file',
-    fileSize: '16mb',
+    fileSize: '64mb',
   };
 
   config.sequelize = {
