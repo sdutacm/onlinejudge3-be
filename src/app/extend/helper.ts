@@ -210,8 +210,9 @@ export default {
    * redis incr。
    * @param key redis key 配置
    * @param args key 格式化参数
+   * @param expires 重设过期时间，单位为秒。如果传了 expires 且 incr 返回 1（key 已过期或不存在），则重设 ttl
    */
-  async redisIncr(key: string, args: any[] = []): Promise<void> {
+  async redisIncr(key: string, args: any[] = [], expires?: number): Promise<void> {
     const _start = Date.now();
     const {
       app: { redis },
@@ -220,13 +221,25 @@ export default {
     const k = util.format(key, ...args);
     const incrValue = await redis.incr(k);
     const cost = Date.now() - _start;
+    let incrNoneMsg = '';
+    if (incrValue === 1) {
+      incrNoneMsg += ' [incr nil/expired key]';
+      if (expires) {
+        await redis.expire(k, expires);
+        incrNoneMsg += `(expire ${expires})`;
+      }
+    }
     isDev &&
       console.log(
         consoleColors.DEBUG(`[redis.incr](${cost}ms)`),
         consoleColors.INFO(`[${k}]`),
         incrValue,
+        incrNoneMsg,
       );
-    isProd && ctx.getLogger('redisLogger').info(`[redis.incr](${cost}ms) [${k}] [${incrValue}]`);
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.incr](${cost}ms) [${k}] [${incrValue}]${incrNoneMsg}`);
   },
 
   /**

@@ -733,7 +733,7 @@ function rateLimitFactoryFactory(
                 });
                 return;
               }
-              await ctx.helper.redisIncr(keyConfig, keyArgs);
+              await ctx.helper.redisIncr(keyConfig, keyArgs, duration);
             } else {
               await ctx.helper.redisSet(keyConfig, keyArgs, 1, duration);
             }
