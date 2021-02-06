@@ -4,6 +4,7 @@ import 'egg-redis/index';
 import { IRedisKeyConfig } from './redisKey.config';
 import { IDurationsConfig } from './durations.config';
 import { IJudgerConfig } from './judger.config';
+import { IPermConfig } from '@/common/configs/perm.config';
 
 export interface IAppConfig extends PowerPartial<EggAppConfig> {
   welcomeMsg: string;
@@ -12,6 +13,7 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
   judger: IJudgerConfig;
+  perm: IPermConfig;
   staticPath: {
     base: string;
     avatar: string; // 必须在 base 下

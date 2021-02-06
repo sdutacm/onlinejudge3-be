@@ -6,6 +6,7 @@ import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
 import judgerConfig from './judger.config';
+import permConfig from '@/common/configs/perm.config';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
@@ -130,6 +131,8 @@ export default (appInfo: EggAppInfo) => {
   config.durations = durations;
 
   config.judger = judgerConfig;
+
+  config.perm = permConfig;
   // #endregion
 
   config.mail = {

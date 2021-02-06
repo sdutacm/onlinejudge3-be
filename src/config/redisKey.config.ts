@@ -3,6 +3,7 @@ const redisKey = {
   userProblemResultStats: 'cache:user_problem_result_stats:%d',
   userSolutionCalendar: 'cache:user_solution_calendar:%d_%d',
   userGroups: 'cache:user_groups:%d',
+  userPermissions: 'cache:user_permissions:%d',
   problemDetail: 'cache:problem_detail:%d',
   solutionDetail: 'cache:solution_detail:%d',
   contestDetail: 'cache:contest_detail:%d',

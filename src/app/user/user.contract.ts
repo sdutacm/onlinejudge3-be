@@ -19,10 +19,11 @@ const userContract = {
           username: { type: 'string' },
           nickname: { type: 'string' },
           permission: { type: 'number' },
+          permissions: { type: 'array', items: { type: 'string' } },
           avatar: { type: ['string', 'null'] },
         },
         additionalProperties: false,
-        required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+        required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
       },
       {
         type: 'null',
@@ -45,10 +46,11 @@ const userContract = {
       username: { type: 'string' },
       nickname: { type: 'string' },
       permission: { type: 'number' },
+      permissions: { type: 'array', items: { type: 'string' } },
       avatar: { type: ['string', 'null'] },
     },
     additionalProperties: false,
-    required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+    required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
   } as defContract.ContractSchema,
 
   registerReq: {

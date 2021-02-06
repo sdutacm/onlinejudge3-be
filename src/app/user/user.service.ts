@@ -21,6 +21,9 @@ import {
   IMUserServiceGetUserIdsByUsernamesRes,
   IMUserServiceUpdateUserLastStatusOpt,
   IMUserServiceGetUserAcceptedAndSubmittedCountRes,
+  IMUserServiceGetUserPermissionsRes,
+  TMUserPermissionFields,
+  IMUserPermission,
 } from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
@@ -29,6 +32,8 @@ import { IDurationsConfig } from '@/config/durations.config';
 import { ILodash } from '@/utils/libs/lodash';
 import { EUserForbidden } from '@/common/enums';
 import DB from '@/lib/models/db';
+import { TUserPermissionModel } from '@/lib/models/userPermission.model';
+import { IRedisKeyConfig } from '@/config/redisKey.config';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -81,6 +86,7 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'lastTime',
   'createdAt',
 ];
+const userPermissionFields: Array<TMUserPermissionFields> = ['permission'];
 
 @provide()
 export default class UserService {
@@ -89,6 +95,9 @@ export default class UserService {
 
   @inject('userModel')
   model: TUserModel;
+
+  @inject()
+  userPermissionModel: TUserPermissionModel;
 
   @inject()
   utils: IUtils;
@@ -101,6 +110,9 @@ export default class UserService {
 
   @config()
   durations: IDurationsConfig;
+
+  @config()
+  redisKey: IRedisKeyConfig;
 
   scopeChecker = {
     available(data: Partial<IUserModel> | null): boolean {
@@ -133,6 +145,37 @@ export default class UserService {
       [userId],
       data,
       data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取用户权限缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param userId userId
+   */
+  private async _getUserPermissionCache(
+    userId: IUserModel['userId'],
+  ): Promise<IMUserPermission['permission'][] | null> {
+    return this.ctx.helper.redisGet<IMUserPermission['permission'][]>(
+      this.redisKey.userPermissions,
+      [userId],
+    );
+  }
+
+  /**
+   * 设置用户权限缓存。
+   * @param userId userId
+   * @param data 权限数据
+   */
+  private async _setUserPermissionCache(
+    userId: IUserModel['userId'],
+    data: IMUserPermission['permission'][],
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userPermissions,
+      [userId],
+      data,
+      this.durations.cacheFullList,
     );
   }
 
@@ -444,5 +487,30 @@ export default class UserService {
             submitted: IUserModel['submitted'];
           }),
       );
+  }
+
+  /**
+   * 获取用户权限。
+   * @param userId userId
+   */
+  async getUserPermissions(
+    userId: IUserModel['userId'],
+  ): Promise<IMUserServiceGetUserPermissionsRes> {
+    let res: IMUserServiceGetUserPermissionsRes = [];
+    const cached = await this._getUserPermissionCache(userId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.userPermissionModel
+        .findAll({
+          attributes: userPermissionFields,
+          where: {
+            userId,
+          },
+        })
+        .then((r) => r.map((d) => (d.get({ plain: true }) as IMUserPermission).permission));
+      await this._setUserPermissionCache(userId, res);
+    }
+    return res;
   }
 }

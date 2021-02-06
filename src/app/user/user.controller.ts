@@ -95,6 +95,7 @@ export default class UserController {
           username: ctx.session.username,
           nickname: ctx.session.nickname,
           permission: ctx.session.permission,
+          permissions: await this.service.getUserPermissions(ctx.session.userId),
           avatar: ctx.session.avatar,
         }
       : null;
@@ -138,6 +139,7 @@ export default class UserController {
       username: user.username,
       nickname: user.nickname,
       permission: user.permission,
+      permissions: await this.service.getUserPermissions(user.userId),
       avatar: user.avatar,
     };
   }

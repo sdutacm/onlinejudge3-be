@@ -1,4 +1,5 @@
 import { IContestModel } from '../contest/contest.interface';
+import { EPerm } from '@/common/configs/perm.config';
 
 export interface IUserModelRatingHistoryItem {
   contest: {
@@ -98,6 +99,17 @@ export type IMUserLite = Pick<IUserModel, TMUserLiteFields>;
 export type IMUserDetail = Pick<IUserModel, TMUserDetailFields>;
 export type IMUserListPagination = defService.ServiceListOpt<TUserModelFields>;
 export type IMUserFullListPagination = defService.ServiceFullListOpt<TUserModelFields>;
+
+export interface IUserPermissionModel {
+  userId: number;
+  permission: EPerm;
+}
+
+export type TUserPermissionModelFields = keyof IUserPermissionModel;
+
+export type TMUserPermissionFields = Extract<TUserPermissionModelFields, 'permission'>;
+
+export type IMUserPermission = Pick<IUserPermissionModel, TMUserPermissionFields>;
 
 // export interface IUserDetail {
 //   userId: IUserModel['userId'];
@@ -203,4 +215,8 @@ export type IMUserServiceGetUserAcceptedAndSubmittedCountRes = {
   accepted: IUserModel['accepted'];
   submitted: IUserModel['submitted'];
 } | null;
+//#endregion
+
+//#region service.getUserPermissions
+export type IMUserServiceGetUserPermissionsRes = IUserPermissionModel['permission'][];
 //#endregion

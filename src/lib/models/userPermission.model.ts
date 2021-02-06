@@ -1,5 +1,7 @@
-import { Model, Table, Column, DataType, Index, ForeignKey } from 'sequelize-typescript';
+import { Model, Table, Column, DataType, Index } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
+import { IUserPermissionModel } from '@/app/user/user.interface';
+import { EPerm } from '@/common/configs/perm.config';
 
 export const factory = () => UserPermissionModel;
 providerWrapper([
@@ -14,7 +16,8 @@ providerWrapper([
   freezeTableName: true,
   timestamps: false,
 })
-export default class UserPermissionModel extends Model<UserPermissionModel> {
+export default class UserPermissionModel extends Model<UserPermissionModel>
+  implements IUserPermissionModel {
   @Column({
     field: 'user_id',
     primaryKey: true,
@@ -38,5 +41,8 @@ export default class UserPermissionModel extends Model<UserPermissionModel> {
     order: 'ASC',
     unique: true,
   })
-  permission: string;
+  permission: EPerm;
 }
+
+export type TUserPermissionModel = typeof UserPermissionModel;
+export type CUserPermissionModel = UserPermissionModel;
