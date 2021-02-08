@@ -53,7 +53,10 @@ export type TMSolutionDetailFields = Extract<
   | 'createdAt'
 >;
 
-export type IMSolutionRelativeProblem = Pick<IProblemModel, 'problemId' | 'title' | 'timeLimit'>;
+export type IMSolutionRelativeProblem = Pick<
+  IProblemModel,
+  'problemId' | 'title' | 'timeLimit' | 'memoryLimit'
+>;
 export type IMSolutionRelativeUser = Pick<
   IUserModel,
   'userId' | 'username' | 'nickname' | 'avatar' | 'bannerImage' | 'rating'
@@ -110,6 +113,14 @@ export interface IMSolutionCalendarItem {
 }
 
 export type IMSolutionCalendar = Array<IMSolutionCalendarItem>;
+
+export interface IMSolutionJudgeStatus {
+  hostname: string;
+  pid: number;
+  status: 'pending' | 'running';
+  current?: number; // 当前运行的测试点
+  total?: number; // 总测试点数量
+}
 
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {
@@ -190,4 +201,26 @@ export interface IMSolutionServiceFindAllSolutionIdsOpt {
 }
 
 export type IMSolutionServiceFindAllSolutionIdsRes = ISolutionModel['solutionId'][];
+//#endregion
+
+//#region service.getPendingSolutions
+export type IMSolutionServiceGetPendingSolutionsRes = Array<{
+  solutionId: ISolutionModel['solutionId'];
+  problemId: ISolutionModel['problemId'];
+  userId: ISolutionModel['userId'];
+}>;
+//#endregion
+
+//#region service.judge
+export interface IMSolutionServiceJudgeOpt {
+  solutionId: ISolutionModel['solutionId'];
+  problemId: ISolutionModel['problemId'];
+  timeLimit: IProblemModel['timeLimit'];
+  memoryLimit: IProblemModel['memoryLimit'];
+  userId: ISolutionModel['userId'];
+  language: string;
+  code: string;
+}
+
+export type IMSolutionServiceJudgeRes = void;
 //#endregion

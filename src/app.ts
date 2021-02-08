@@ -4,6 +4,7 @@
 import DB from '@/lib/models/db';
 import { Application } from 'midway';
 import fs from 'fs-extra';
+import { Judger } from '@/lib/services/judger';
 
 // const tsConfig = require('./tsconfig.json');
 // const tsConfigPaths = require('tsconfig-paths');
@@ -33,6 +34,11 @@ module.exports = (app: Application) => {
       fs.ensureDirSync(staticPath[key]);
     });
     await DB.initDB(app.config.sequelize);
+
+    app.judger = new Judger({
+      host: app.config.judger.host,
+      port: app.config.judger.port,
+    });
 
     console.log('✅ App launched');
   });

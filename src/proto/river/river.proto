@@ -1,0 +1,93 @@
+syntax = "proto3";
+package river;
+
+service River {
+  rpc Judge(stream JudgeRequest) returns (stream JudgeResponse) {}
+  rpc LanguageConfig(Empty) returns (LanguageConfigResponse) {}
+  rpc Ls(LsRequest) returns (LsResponse) {}
+}
+
+message LsCase {
+  string in = 1;
+  string out = 2;
+}
+
+message LsRequest {
+  int32 pid = 1;
+}
+
+message LsResponse {
+  repeated LsCase cases = 1;
+}
+
+message Empty {
+}
+
+message LanguageItem {
+  string language = 1;
+  string compile = 2;
+  string run = 3;
+  string version = 4;
+}
+
+message LanguageConfigResponse {
+  repeated LanguageItem languages = 1;
+}
+
+message CompileData {
+  string language = 1;
+  string code = 2;
+}
+
+message JudgeData {
+  string in_file = 1;
+  string out_file = 2;
+  int32 time_limit = 3;
+  int32 memory_limit = 4;
+  JudgeType judge_type = 5;
+}
+
+enum JudgeType {
+  Standard = 0;
+  // Special = 1;
+}
+
+message JudgeRequest {
+  oneof data {
+    CompileData compile_data = 1;
+    JudgeData judge_data = 2;
+  }
+}
+
+enum JudgeResultEnum {
+  Accepted = 0;
+  WrongAnswer = 1;
+  TimeLimitExceeded = 2;
+  MemoryLimitExceeded = 3;
+  RuntimeError = 4;
+  OutputLimitExceeded = 5;
+  CompileError = 6;
+  PresentationError = 7;
+  SystemError = 8;
+  CompileSuccess = 9;
+}
+
+enum JudgeStatus {
+  Pending = 0;
+  Running = 1;
+  Ended = 2;
+}
+
+message JudgeResult {
+  int64 time_used = 1;
+  int64 memory_used = 2;
+  JudgeResultEnum result = 3;
+  string errmsg = 4;
+}
+
+message JudgeResponse {
+  oneof state {
+    JudgeResult result = 1;
+    JudgeStatus status = 2;
+  }
+}

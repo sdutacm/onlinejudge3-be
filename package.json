@@ -19,9 +19,12 @@
     "start-build": "npm run build && cross-env NODE_ENV=development midway-bin dev",
     "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest",
-    "gen:contract": "cross-env IS_EXEC_FROM_PKG_SCRIPT=1 ts-node -T scripts/contract2ts.ts"
+    "gen:contract": "cross-env IS_EXEC_FROM_PKG_SCRIPT=1 ts-node -T scripts/contract2ts.ts",
+    "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.2.6",
+    "@grpc/proto-loader": "^0.5.6",
     "adm-zip": "^0.4.14",
     "ajv": "^6.12.0",
     "alimail-sdk": "^1.0.6",
@@ -35,10 +38,12 @@
     "ip": "^1.1.5",
     "isbinaryfile": "^4.0.6",
     "lodash": "^4.17.15",
+    "long": "^4.0.0",
     "md5": "^2.2.1",
     "midway": "^1.0.0",
     "mysql2": "^2.1.0",
     "promise-queue": "^2.2.5",
+    "protobufjs": "^6.10.2",
     "sequelize-typescript": "^1.1.0",
     "sharp": "^0.25.3",
     "simple-git": "^2.9.0",
@@ -52,6 +57,7 @@
     "@types/ip": "^1.1.0",
     "@types/json-schema": "^7.0.4",
     "@types/lodash": "^4.14.151",
+    "@types/long": "^4.0.1",
     "@types/md5": "^2.2.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.18",
@@ -91,7 +97,8 @@
   ],
   "midway-bin-build": {
     "include": [
-      "app/public"
+      "app/public",
+      "proto"
     ]
   },
   "repository": {

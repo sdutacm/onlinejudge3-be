@@ -10,6 +10,8 @@ export const development = {
     'service',
     'common',
     'utils',
+    'schedule',
+    'proto',
   ],
   overrideDefault: true,
 };

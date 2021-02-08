@@ -31,6 +31,10 @@ import {
   IMSolutionDetail,
   IMSolutionServiceFindAllSolutionIdsOpt,
   IMSolutionServiceFindAllSolutionIdsRes,
+  IMSolutionServiceJudgeOpt,
+  IMSolutionServiceJudgeRes,
+  IMSolutionServiceGetPendingSolutionsRes,
+  IMSolutionJudgeStatus,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -42,6 +46,9 @@ import { TCompileInfoModel } from '@/lib/models/compileInfo.model';
 import { TCodeModel } from '@/lib/models/code.model';
 import { ESolutionResult } from '@/common/enums';
 import DB from '@/lib/models/db';
+import { Judger } from '@/lib/services/judger';
+import { river } from '@/proto/river';
+import * as os from 'os';
 
 export type CSolutionService = SolutionService;
 
@@ -322,6 +329,7 @@ export default class SolutionService {
           problemId: relativeProblem?.problemId,
           title: relativeProblem?.title,
           timeLimit: relativeProblem?.timeLimit,
+          memoryLimit: relativeProblem?.memoryLimit,
         },
         user,
         contest: relativeContest
@@ -761,5 +769,229 @@ export default class SolutionService {
       })
       .then((r) => r.map((d) => d.solutionId));
     return res;
+  }
+
+  /**
+   * 获取评测状态。
+   * 如果未找到，则返回 `null`
+   * @param solutionId solutionId
+   */
+  async getSolutionJudgeStatus(
+    solutionId: ISolutionModel['solutionId'],
+  ): Promise<IMSolutionJudgeStatus | null> {
+    return this.ctx.helper.redisGet<IMSolutionJudgeStatus>(this.redisKey.solutionJudgeStatus, [
+      solutionId,
+    ]);
+  }
+
+  /**
+   * 设置评测状态。
+   * @param solutionId solutionId
+   * @param data 数据
+   */
+  async setSolutionJudgeStatus(
+    solutionId: ISolutionModel['solutionId'],
+    data: IMSolutionJudgeStatus,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(this.redisKey.solutionJudgeStatus, [solutionId], data);
+  }
+
+  /**
+   * 删除评测状态。
+   * @param solutionId solutionId
+   */
+  async delSolutionJudgeStatus(solutionId: ISolutionModel['solutionId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.solutionJudgeStatus, [solutionId]);
+  }
+
+  /**
+   * 获取 Pending 的提交列表
+   * @param limit 拉取数量
+   */
+  async getPendingSolutions(limit: number): Promise<IMSolutionServiceGetPendingSolutionsRes> {
+    const res = await this.model.findAll({
+      attributes: ['solutionId', 'problemId', 'userId'],
+      where: {
+        result: ESolutionResult.RPD,
+      },
+      limit,
+    });
+    // @ts-ignore
+    return res.map((d) => d.get({ plain: true }));
+  }
+
+  /**
+   * 提交评测
+   * @param options
+   */
+  async judge(options: IMSolutionServiceJudgeOpt): Promise<IMSolutionServiceJudgeRes> {
+    const language = this.utils.judger.convertOJLanguageToRiver(options.language);
+    if (!language) {
+      throw new Error(`Invalid Language ${options.language}`);
+    }
+    if (!options.code) {
+      throw new Error(`No Code`);
+    }
+    if (!options.problemId) {
+      throw new Error(`No Problem Specified`);
+    }
+    const { solutionId, problemId, userId } = options;
+    await this.setSolutionJudgeStatus(solutionId, {
+      hostname: os.hostname(),
+      pid: process.pid,
+      status: 'pending',
+    });
+    // @ts-ignore
+    const judger = this.ctx.app.judger as Judger;
+    const call = judger.getJudgeCall({
+      problemId,
+      language,
+      code: options.code,
+      timeLimit: options.timeLimit,
+      memoryLimit: options.memoryLimit,
+      judgeType: river.JudgeType.Standard,
+      onStart: () => {
+        console.log(process.pid, 'start judge', solutionId);
+      },
+      onJudgeCaseStart: (current, total) => {
+        console.log(`${current}/${total} Running`);
+        this.setSolutionJudgeStatus(solutionId, {
+          hostname: os.hostname(),
+          pid: process.pid,
+          status: 'running',
+          current,
+          total,
+        });
+      },
+      onJudgeCaseDone: (current, total, res) => {
+        console.log(`${current}/${total} Done:`, res);
+        return res.result === river.JudgeResultEnum.Accepted;
+      },
+    });
+    try {
+      const jResult = await call.run();
+      console.log('call res', jResult);
+      await this.delSolutionJudgeStatus(solutionId);
+      switch (jResult.type) {
+        case 'CompileError': {
+          const result = ESolutionResult.CE;
+          const compileInfo = jResult.res;
+          await this.update(solutionId, {
+            result,
+            compileInfo,
+          });
+          await this.clearDetailCache(solutionId);
+          break;
+        }
+        case 'SystemError': {
+          const result = ESolutionResult.SE;
+          await this.update(solutionId, {
+            result,
+          });
+          await this.clearDetailCache(solutionId);
+          break;
+        }
+        case 'Done': {
+          const result: river.JudgeResultEnum = this.utils.judger.convertRiverResultToOJ(
+            jResult.res[jResult.res.length - 1].result!,
+          );
+          let maxTimeUsed = 0;
+          let maxMemoryUsed = 0;
+          jResult.res.forEach((r) => {
+            // @ts-ignore
+            maxTimeUsed = Math.max(maxTimeUsed, r.timeUsed);
+            // @ts-ignore
+            maxMemoryUsed = Math.max(maxMemoryUsed, r.memoryUsed);
+          });
+          await this.update(solutionId, {
+            result,
+            time: maxTimeUsed,
+            memory: maxMemoryUsed,
+          });
+          await this.clearDetailCache(solutionId);
+          let res: any[];
+          let userAccepted: number;
+          let userSubmitted: number;
+          let problemAccepted: number;
+          let problemSubmitted: number;
+          // 更新用户 AC/Submitted 计数
+          res = await DB.sequelize.query(
+            'SELECT COUNT(DISTINCT(problem_id)) AS accept FROM solution WHERE user_id=? AND result=?',
+            {
+              replacements: [userId, ESolutionResult.AC],
+              type: QueryTypes.SELECT,
+            },
+          );
+          userAccepted = res[0].accept;
+          res = await DB.sequelize.query(
+            'SELECT COUNT(solution_id) AS submit FROM solution WHERE user_id=? AND result NOT IN (?)',
+            {
+              replacements: [
+                userId,
+                [
+                  ESolutionResult.CE,
+                  ESolutionResult.SE,
+                  ESolutionResult.WT,
+                  ESolutionResult.JG,
+                  ESolutionResult.RPD,
+                ],
+              ],
+              type: QueryTypes.SELECT,
+            },
+          );
+          userSubmitted = res[0].submit;
+          await DB.sequelize.query('UPDATE user SET accept=?, submit=? WHERE user_id=?', {
+            replacements: [userAccepted, userSubmitted, userId],
+            type: QueryTypes.UPDATE,
+          });
+          await this.userService.clearDetailCache(userId);
+          // 更新题目 AC/Submitted 计数
+          res = await DB.sequelize.query(
+            'SELECT COUNT(DISTINCT(solution_id)) AS accept FROM solution WHERE problem_id=? AND result=?',
+            {
+              replacements: [problemId, ESolutionResult.AC],
+              type: QueryTypes.SELECT,
+            },
+          );
+          problemAccepted = res[0].accept;
+          res = await DB.sequelize.query(
+            'SELECT COUNT(solution_id) AS submit FROM solution WHERE problem_id=? AND result NOT IN (?)',
+            {
+              replacements: [
+                problemId,
+                [
+                  ESolutionResult.CE,
+                  ESolutionResult.SE,
+                  ESolutionResult.WT,
+                  ESolutionResult.JG,
+                  ESolutionResult.RPD,
+                ],
+              ],
+              type: QueryTypes.SELECT,
+            },
+          );
+          problemSubmitted = res[0].submit;
+          await DB.sequelize.query('UPDATE problem SET accept=?, submit=? WHERE problem_id=?', {
+            replacements: [problemAccepted, problemSubmitted, problemId],
+            type: QueryTypes.UPDATE,
+          });
+          // await this.problemService.clearDetailCache(problemId);
+          console.log('ok');
+          // break;
+        }
+      }
+    } catch (e) {
+      this.delSolutionJudgeStatus(solutionId);
+      console.error('Judger error', e);
+    }
+    // const y = this.ctx.app.messenger.on('resp-worker-pids', (pids: number[]) => {
+    //   console.log('pids', pids);
+    // });
+    // const x = this.ctx.app.messenger.sendToAgent('req-worker-pids', {
+    //   fromPid: process.pid,
+    // });
+    // const pids = await getWorkerPids(this.ctx.app);
+    // console.log('x', pids);
+    // console.log('ojbk');
   }
 }

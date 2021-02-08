@@ -6,6 +6,8 @@ const judgerConfig = {
   dataGitUser: 'sdutacm',
   dataGitEmail: 'sdutacm@163.com',
   languages: ['gcc', 'g++', 'java', 'python2', 'python3', 'c#'],
+  host: '119.23.50.74',
+  port: 4003,
 };
 
 export default judgerConfig;

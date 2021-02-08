@@ -106,6 +106,9 @@ export default (appInfo: EggAppInfo) => {
     redisLogger: {
       file: path.join(appInfo.root, 'logs', appInfo.name, 'redis.log'),
     },
+    scheduleLogger: {
+      file: path.join(appInfo.root, 'logs', appInfo.name, 'schedule.log'),
+    },
   };
 
   const staticBasePath = path.join(__dirname, '../app/public/sf/');

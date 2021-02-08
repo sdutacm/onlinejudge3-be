@@ -223,7 +223,7 @@ export default class SolutionController {
       username: sess.username,
       problemId,
       contestId,
-      result: ESolutionResult.WT,
+      result: ESolutionResult.RPD,
       language,
       codeLength: code.length,
       ip: ctx.ip,
@@ -231,16 +231,25 @@ export default class SolutionController {
       code,
     };
     const newId = await this.service.create(data);
-    const REDIS_QUEUE_NAME = 'judge:queue';
-    const task = {
-      solution_id: `${newId}`,
-      problem_id: `${problemId}`,
-      contest_id: `${contestId}`,
-      user_id: `${ctx.session.userId}`,
-      pro_lang: language,
+    this.service.judge({
+      solutionId: newId,
+      problemId,
+      timeLimit: problem.timeLimit,
+      memoryLimit: problem.memoryLimit,
+      userId: ctx.session.userId,
+      language,
       code,
-    };
-    await ctx.helper.redisRpush(REDIS_QUEUE_NAME, [], task);
+    });
+    // const REDIS_QUEUE_NAME = 'judge:queue';
+    // const task = {
+    //   solution_id: `${newId}`,
+    //   problem_id: `${problemId}`,
+    //   contest_id: `${contestId}`,
+    //   user_id: `${ctx.session.userId}`,
+    //   pro_lang: language,
+    //   code,
+    // };
+    // await ctx.helper.redisRpush(REDIS_QUEUE_NAME, [], task);
     return { solutionId: newId };
   }
 
