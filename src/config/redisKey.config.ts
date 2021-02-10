@@ -19,6 +19,7 @@ const redisKey = {
   groupDetail: 'cache:group_detail:%s',
   groupMemberList: 'cache:group_member_list:%s',
   ratingContestDetail: 'cache:rating_contest_detail:%d',
+  judgerLanguageConfig: 'cache:judger_language_config',
   verificationCode: 'verification:code:%s',
   recordUserUpload: 'record:user_upload:%d',
   recordUserCreateGroup: 'record:user_create_group:%d',

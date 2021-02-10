@@ -1,6 +1,6 @@
 import { provide, inject, Context, config } from 'midway';
 import { CJudgerMeta } from './judger.meta';
-import { IMJudgerServiceGetDataFileRes } from './judger.interface';
+import { IMJudgerServiceGetDataFileRes, IMJudgerLanguageConfig } from './judger.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
@@ -12,6 +12,7 @@ import { IIsBinaryFile } from '@/utils/libs/isbinaryfile';
 import { CAdmZip } from '@/utils/libs/adm-zip';
 import { ISimpleGit, SimpleGit } from '@/utils/libs/simple-git';
 import { IJudgerConfig } from '@/config/judger.config';
+import { Judger } from '@/lib/services/judger';
 
 export type CJudgerService = JudgerService;
 
@@ -60,6 +61,27 @@ export default class JudgerService {
     simpleGit: ISimpleGit,
   ) {
     this.git = simpleGit(judgerConfig.dataPath);
+  }
+
+  /**
+   * 获取语言配置缓存。
+   * 如果未找到缓存，则返回 `null`
+   */
+  private async _getLanguageConfigCache(): Promise<IMJudgerLanguageConfig | null> {
+    return this.ctx.helper.redisGet<IMJudgerLanguageConfig>(this.redisKey.judgerLanguageConfig);
+  }
+
+  /**
+   * 设置语言配置缓存。
+   * @param data 数据
+   */
+  private async _setLanguageConfigCache(data: IMJudgerLanguageConfig): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.judgerLanguageConfig,
+      [],
+      data,
+      data ? this.durations.cacheDetailLong : this.durations.cacheDetailNull,
+    );
   }
 
   /**
@@ -224,5 +246,21 @@ export default class JudgerService {
       this.git.addConfig('user.name', this.judgerConfig.dataGitUser);
       this.git.addConfig('user.email', this.judgerConfig.dataGitEmail);
     }
+  }
+
+  /**
+   * 获取评测机语言配置缓存。
+   */
+  async getLanguageConfig(): Promise<IMJudgerLanguageConfig> {
+    let res: IMJudgerLanguageConfig | null = null;
+    const cached = await this._getLanguageConfigCache();
+    cached && (res = cached);
+    if (!res) {
+      // @ts-ignore
+      const judger = this.ctx.app.judger as Judger;
+      res = ((await judger.getLanguageConfig()) || []) as IMJudgerLanguageConfig;
+      await this._setLanguageConfigCache(res);
+    }
+    return res;
   }
 }

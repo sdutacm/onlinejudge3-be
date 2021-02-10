@@ -10,6 +10,7 @@ import {
   IGetJudgerDataFileReq,
   IGetJudgerDataArchiveReq,
   IUploadJudgerDataReq,
+  IGetLanguageConfigResp,
 } from '@/common/contracts/judger';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
@@ -85,5 +86,10 @@ export default class JudgerController {
       throw new ReqError(Codes.JUDGER_INVALID_DATA);
     }
     await this.service.commitAndPushDataGit(problemId, name, email, commitMessage);
+  }
+
+  @route()
+  async [routesBe.getLanguageConfig.i](_ctx: Context): Promise<IGetLanguageConfigResp> {
+    return this.service.getLanguageConfig();
   }
 }

@@ -1,3 +1,10 @@
+export type IMJudgerLanguageConfig = {
+  language: string;
+  compile: string;
+  run: string;
+  version: string;
+}[];
+
 //#region service.getDataFile
 export type IMJudgerServiceGetDataFileRes = {
   type: 'file' | 'directory';

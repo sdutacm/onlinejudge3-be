@@ -79,6 +79,21 @@ const judgerContract = {
     additionalProperties: true,
     required: ['problemId', 'name', 'email', 'commitMessage'],
   } as defContract.ContractSchema,
+
+  getLanguageConfigResp: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        language: { type: 'string' },
+        compile: { type: 'string' },
+        run: { type: 'string' },
+        version: { type: 'string' },
+      },
+      additionalProperties: false,
+      required: ['language', 'compile', 'run', 'version'],
+    },
+  } as defContract.ContractSchema,
 };
 
 export type IJudgerContract = typeof judgerContract;
