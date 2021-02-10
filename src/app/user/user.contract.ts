@@ -314,7 +314,6 @@ const userContract = {
       },
       defaultLanguage: {
         type: 'string',
-        enum: ['', 'gcc', 'g++', 'java', 'python2', 'python3', 'c#'],
       },
       forbidden: { type: 'number', enum: [0, 1, 2] },
       permission: { type: 'number', enum: [0, 1, 2, 3] },

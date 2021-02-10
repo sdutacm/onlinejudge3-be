@@ -75,7 +75,7 @@ export default class JudgerService {
    * 设置语言配置缓存。
    * @param data 数据
    */
-  private async _setLanguageConfigCache(data: IMJudgerLanguageConfig): Promise<void> {
+  private async _setLanguageConfigCache(data: IMJudgerLanguageConfig | null): Promise<void> {
     return this.ctx.helper.redisSet(
       this.redisKey.judgerLanguageConfig,
       [],
@@ -256,10 +256,16 @@ export default class JudgerService {
     const cached = await this._getLanguageConfigCache();
     cached && (res = cached);
     if (!res) {
-      // @ts-ignore
-      const judger = this.ctx.app.judger as Judger;
-      res = ((await judger.getLanguageConfig()) || []) as IMJudgerLanguageConfig;
-      await this._setLanguageConfigCache(res);
+      try {
+        // @ts-ignore
+        const judger = this.ctx.app.judger as Judger;
+        res = (await judger.getLanguageConfig()) as IMJudgerLanguageConfig;
+        await this._setLanguageConfigCache(res);
+      } catch (e) {
+        this.ctx.logger.error('getLanguageConfig error', e);
+        await this._setLanguageConfigCache(null);
+        throw e;
+      }
     }
     return res;
   }

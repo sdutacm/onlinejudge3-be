@@ -10,6 +10,7 @@ module.exports = (app: Application) => {
         this.ctx.socket.join(room);
         this.ctx.socket.emit('res', `subscribed ${solutionId}`);
       });
+      console.log('rooms:', this.ctx.socket.rooms);
     }
   }
   return Controller;

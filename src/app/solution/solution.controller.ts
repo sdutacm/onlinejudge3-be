@@ -35,6 +35,7 @@ import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EContestType, EContestUserStatus, ESolutionResult } from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { CJudgerService } from '../judger/judger.service';
 
 @provide()
 @controller('/')
@@ -50,6 +51,9 @@ export default class SolutionController {
 
   @inject()
   contestService: CContestService;
+
+  @inject()
+  judgerService: CJudgerService;
 
   @inject()
   utils: IUtils;
@@ -167,6 +171,11 @@ export default class SolutionController {
   @rateLimitUser(60, 6)
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
     const { problemId, language, code } = ctx.request.body as ISubmitSolutionReq;
+    const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
+    const languageConfig = await this.judgerService.getLanguageConfig();
+    if (!languageConfig.find((l) => l.language === judgerLanguage)) {
+      throw new ReqError(Codes.SOLUTION_INVALID_LANGUAGE);
+    }
     let { contestId } = ctx.request.body as ISubmitSolutionReq;
     if (!contestId) {
       if (!ctx.loggedIn) {

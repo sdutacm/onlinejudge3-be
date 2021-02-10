@@ -7,9 +7,11 @@ import * as os from 'os';
 const MAX_FETCH_PENDING_SOLUTIONS = 100;
 const MAX_JUDGE_PENDING_SOLUTIONS = 10;
 
+const isProd = process.env.NODE_ENV === 'production';
+
 @provide()
 @schedule({
-  interval: 5000,
+  interval: isProd ? 5000 : 60000,
   type: 'worker',
   immediate: true,
 })

@@ -805,7 +805,7 @@ export default class SolutionService {
   }
 
   /**
-   * 获取 Pending 的提交列表
+   * 获取 Pending 的提交列表。
    * @param limit 拉取数量
    */
   async getPendingSolutions(limit: number): Promise<IMSolutionServiceGetPendingSolutionsRes> {
@@ -821,7 +821,17 @@ export default class SolutionService {
   }
 
   /**
-   * 提交评测
+   * 推送评测状态到所有订阅的客户端。
+   * @param solutionId
+   * @param status
+   */
+  pushJudgeStatus(solutionId: ISolutionModel['solutionId'], status: ArrayBuffer) {
+    // @ts-ignore
+    this.ctx.app.io.of('/judger').to(`s:${solutionId}`).emit('s', status);
+  }
+
+  /**
+   * 提交评测。
    * @param options
    */
   async judge(options: IMSolutionServiceJudgeOpt): Promise<IMSolutionServiceJudgeRes> {
@@ -846,9 +856,6 @@ export default class SolutionService {
     // @ts-ignore
     const judger = this.ctx.app.judger as Judger;
     const judgeType = river.JudgeType.Standard;
-    // @ts-ignore
-    const io: any = this.ctx.app.io;
-    const socketRoom = io.of('/judger').to(`s:${solutionId}`);
     logger.info(
       `[${solutionId}/${problemId}/${userId}] getJudgeCall`,
       JSON.stringify({
@@ -875,7 +882,7 @@ export default class SolutionService {
           judgeType,
           ESolutionResult.JG,
         );
-        socketRoom.emit('s', status);
+        this.pushJudgeStatus(solutionId, status);
       },
       onJudgeCaseStart: (current, total) => {
         console.log(`${current}/${total} Running`);
@@ -894,7 +901,7 @@ export default class SolutionService {
           current,
           total,
         );
-        socketRoom.emit('s', status);
+        this.pushJudgeStatus(solutionId, status);
       },
       onJudgeCaseDone: (current, total, res) => {
         console.log(`${current}/${total} Done:`, res);
@@ -917,7 +924,7 @@ export default class SolutionService {
           });
           await this.clearDetailCache(solutionId);
           const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
-          socketRoom.emit('s', status);
+          this.pushJudgeStatus(solutionId, status);
           break;
         }
         case 'SystemError': {
@@ -928,7 +935,7 @@ export default class SolutionService {
           });
           await this.clearDetailCache(solutionId);
           const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
-          socketRoom.emit('s', status);
+          this.pushJudgeStatus(solutionId, status);
           break;
         }
         case 'Done': {
@@ -950,7 +957,7 @@ export default class SolutionService {
           });
           await this.clearDetailCache(solutionId);
           const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
-          socketRoom.emit('s', status);
+          this.pushJudgeStatus(solutionId, status);
           // 更新计数
           let res: any[];
           let userAccepted: number;
