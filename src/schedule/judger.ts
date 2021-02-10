@@ -9,7 +9,7 @@ const MAX_JUDGE_PENDING_SOLUTIONS = 10;
 
 @provide()
 @schedule({
-  interval: 30000,
+  interval: 5000,
   type: 'worker',
   immediate: true,
 })
@@ -55,7 +55,7 @@ export class JudgerCron implements CommonSchedule {
         code: solution.code,
       };
     });
-    console.log('toJudgeSolutionIds', toJudgeSolutionIds);
+    // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);
     this.logger.info('[judger] to judge solutionIds:', toJudgeSolutionIds);
     toJudgeSolutions.forEach((s) => this.solutionService.judge(s));
   }

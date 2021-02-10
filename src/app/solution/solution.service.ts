@@ -836,6 +836,8 @@ export default class SolutionService {
       throw new Error(`No Problem Specified`);
     }
     const { solutionId, problemId, userId } = options;
+    const logger = this.ctx.getLogger('judgerLogger');
+    logger.info(`[${solutionId}/${problemId}/${userId}] begin`);
     await this.setSolutionJudgeStatus(solutionId, {
       hostname: os.hostname(),
       pid: process.pid,
@@ -843,18 +845,41 @@ export default class SolutionService {
     });
     // @ts-ignore
     const judger = this.ctx.app.judger as Judger;
+    const judgeType = river.JudgeType.Standard;
+    // @ts-ignore
+    const io: any = this.ctx.app.io;
+    const socketRoom = io.of('/judger').to(`s:${solutionId}`);
+    logger.info(
+      `[${solutionId}/${problemId}/${userId}] getJudgeCall`,
+      JSON.stringify({
+        problemId,
+        language,
+        code: `string(${options.code.length})`,
+        timeLimit: options.timeLimit,
+        memoryLimit: options.memoryLimit,
+        judgeType,
+      }),
+    );
     const call = judger.getJudgeCall({
       problemId,
       language,
       code: options.code,
       timeLimit: options.timeLimit,
       memoryLimit: options.memoryLimit,
-      judgeType: river.JudgeType.Standard,
+      judgeType,
       onStart: () => {
         console.log(process.pid, 'start judge', solutionId);
+        logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);
+        const status = this.utils.judger.encodeJudgeStatusBuffer(
+          solutionId,
+          judgeType,
+          ESolutionResult.JG,
+        );
+        socketRoom.emit('s', status);
       },
       onJudgeCaseStart: (current, total) => {
         console.log(`${current}/${total} Running`);
+        logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseStart ${current}/${total}`);
         this.setSolutionJudgeStatus(solutionId, {
           hostname: os.hostname(),
           pid: process.pid,
@@ -862,15 +887,25 @@ export default class SolutionService {
           current,
           total,
         });
+        const status = this.utils.judger.encodeJudgeStatusBuffer(
+          solutionId,
+          judgeType,
+          ESolutionResult.JG,
+          current,
+          total,
+        );
+        socketRoom.emit('s', status);
       },
       onJudgeCaseDone: (current, total, res) => {
         console.log(`${current}/${total} Done:`, res);
+        logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseDone ${current}/${total}`);
         return res.result === river.JudgeResultEnum.Accepted;
       },
     });
     try {
       const jResult = await call.run();
       console.log('call res', jResult);
+      logger.info(`[${solutionId}/${problemId}/${userId}] done`, JSON.stringify(jResult));
       await this.delSolutionJudgeStatus(solutionId);
       switch (jResult.type) {
         case 'CompileError': {
@@ -881,18 +916,23 @@ export default class SolutionService {
             compileInfo,
           });
           await this.clearDetailCache(solutionId);
+          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
+          socketRoom.emit('s', status);
           break;
         }
         case 'SystemError': {
+          logger.warn(`[${solutionId}/${problemId}/${userId}] SystemError`, jResult.res);
           const result = ESolutionResult.SE;
           await this.update(solutionId, {
             result,
           });
           await this.clearDetailCache(solutionId);
+          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
+          socketRoom.emit('s', status);
           break;
         }
         case 'Done': {
-          const result: river.JudgeResultEnum = this.utils.judger.convertRiverResultToOJ(
+          const result: ESolutionResult = this.utils.judger.convertRiverResultToOJ(
             jResult.res[jResult.res.length - 1].result!,
           );
           let maxTimeUsed = 0;
@@ -909,6 +949,9 @@ export default class SolutionService {
             memory: maxMemoryUsed,
           });
           await this.clearDetailCache(solutionId);
+          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
+          socketRoom.emit('s', status);
+          // 更新计数
           let res: any[];
           let userAccepted: number;
           let userSubmitted: number;
@@ -976,22 +1019,14 @@ export default class SolutionService {
             type: QueryTypes.UPDATE,
           });
           // await this.problemService.clearDetailCache(problemId);
-          console.log('ok');
+          console.log('judge all ok');
           // break;
         }
       }
     } catch (e) {
       this.delSolutionJudgeStatus(solutionId);
       console.error('Judger error', e);
+      logger.error(`[${solutionId}/${problemId}/${userId}] error`, e);
     }
-    // const y = this.ctx.app.messenger.on('resp-worker-pids', (pids: number[]) => {
-    //   console.log('pids', pids);
-    // });
-    // const x = this.ctx.app.messenger.sendToAgent('req-worker-pids', {
-    //   fromPid: process.pid,
-    // });
-    // const pids = await getWorkerPids(this.ctx.app);
-    // console.log('x', pids);
-    // console.log('ojbk');
   }
 }

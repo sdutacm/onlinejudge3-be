@@ -54,6 +54,26 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
+  config.io = {
+    init: {},
+    namespace: {
+      '/': {
+        connectionMiddleware: ['auth'],
+        packetMiddleware: ['filter'],
+      },
+      '/judger': {
+        connectionMiddleware: [],
+        packetMiddleware: [],
+      },
+    },
+    redis: {
+      host: '127.0.0.1',
+      port: 6379,
+      auth_pass: null,
+      db: 0,
+    },
+  };
+
   config.onerror = {
     html(err: Error, ctx: Context) {
       switch (err.message) {
@@ -108,6 +128,9 @@ export default (appInfo: EggAppInfo) => {
     },
     scheduleLogger: {
       file: path.join(appInfo.root, 'logs', appInfo.name, 'schedule.log'),
+    },
+    judgerLogger: {
+      file: path.join(appInfo.root, 'logs', appInfo.name, 'judger.log'),
     },
   };
 
