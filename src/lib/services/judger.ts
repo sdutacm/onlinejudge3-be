@@ -239,7 +239,7 @@ export class JudgerCall {
         throw new Error(
           `No judge cases for problem ${
             this.opts.problemId
-          } (getCases resp: ${judgeCases} ${typeof judgeCases})`,
+          } (getCases resp: ${judgeCases} ${typeof judgeCases} ${JSON.stringify(judgeCases)})`,
         );
       }
       for (let i = 0; i < judgeCases.length; ++i) {
