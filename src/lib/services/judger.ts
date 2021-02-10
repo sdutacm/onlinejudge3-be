@@ -44,7 +44,9 @@ export class Judger {
       this.client.languageConfig({}, function (err: Error, resp: river.ILanguageConfigResponse) {
         if (err) {
           rj(err);
+          return;
         }
+        console.log('getLanguageConfig resp', JSON.stringify(resp));
         rs(resp.languages!);
       });
     });
@@ -55,7 +57,9 @@ export class Judger {
       this.client.ls({ pid: problemId }, function (err: Error, resp: river.ILsResponse) {
         if (err) {
           rj(err);
+          return;
         }
+        console.log('getCases resp', JSON.stringify(resp));
         rs(resp.cases!);
       });
     });
@@ -233,7 +237,9 @@ export class JudgerCall {
       const judgeCases = await this.judger.getCases(this.opts.problemId);
       if (!judgeCases?.length) {
         throw new Error(
-          `No judge cases for problem ${this.opts.problemId} (getCases resp: ${judgeCases})`,
+          `No judge cases for problem ${
+            this.opts.problemId
+          } (getCases resp: ${judgeCases} ${typeof judgeCases})`,
         );
       }
       for (let i = 0; i < judgeCases.length; ++i) {
