@@ -232,7 +232,9 @@ export class JudgerCall {
       // 评测
       const judgeCases = await this.judger.getCases(this.opts.problemId);
       if (!judgeCases?.length) {
-        throw new Error(`No judge cases for problem ${this.opts.problemId}`);
+        throw new Error(
+          `No judge cases for problem ${this.opts.problemId} (getCases resp: ${judgeCases})`,
+        );
       }
       for (let i = 0; i < judgeCases.length; ++i) {
         const judgeCase = judgeCases[i];
