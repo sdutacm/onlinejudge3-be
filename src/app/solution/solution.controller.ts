@@ -168,7 +168,7 @@ export default class SolutionController {
   }
 
   @route()
-  @rateLimitUser(60, 6)
+  @rateLimitUser(60, 120) // 临时调整
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
     const { problemId, language, code } = ctx.request.body as ISubmitSolutionReq;
     const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
