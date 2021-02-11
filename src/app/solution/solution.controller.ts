@@ -272,7 +272,7 @@ export default class SolutionController {
       pq.add(async () => {
         // t-judger
         await this.service.update(solutionId, {
-          result: ESolutionResult.WT,
+          result: ESolutionResult.RPD,
         });
         await this.service.clearDetailCache(solutionId);
       }),
