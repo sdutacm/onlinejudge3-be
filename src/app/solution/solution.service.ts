@@ -1092,14 +1092,6 @@ export default class SolutionService {
             memory: maxMemoryUsed,
           });
           await this.clearDetailCache(solutionId);
-          const status = this.utils.judger.encodeJudgeStatusBuffer(
-            solutionId,
-            judgeType,
-            result,
-            jResult.last,
-            jResult.total,
-          );
-          this.pushJudgeStatus(solutionId, status);
           // 更新评测信息
           await this.updateJudgerInfo(solutionId, {
             lastCase: jResult.last,
@@ -1116,6 +1108,15 @@ export default class SolutionService {
             finishedAt: new Date(),
           });
           await this.clearSolutionJudgeInfoCache(solutionId);
+          const status = this.utils.judger.encodeJudgeStatusBuffer(
+            solutionId,
+            judgeType,
+            result,
+            jResult.last,
+            jResult.total,
+          );
+          // 推送完成状态
+          this.pushJudgeStatus(solutionId, status);
           // 更新计数
           let res: any[];
           let userAccepted: number;
