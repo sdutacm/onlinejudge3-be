@@ -35,6 +35,11 @@ import {
   IMSolutionServiceJudgeRes,
   IMSolutionServiceGetPendingSolutionsRes,
   IMSolutionJudgeStatus,
+  IMSolutionServiceUpdateJudgeInfoOpt,
+  IMSolutionJudgeInfo,
+  IMSolutionServiceGetRelativeJudgeInfoRes,
+  TMJudgeInfoFields,
+  IMSolutionJudgeInfoFull,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -49,6 +54,7 @@ import DB from '@/lib/models/db';
 import { Judger } from '@/lib/services/judger';
 import { river } from '@/proto/river';
 import * as os from 'os';
+import { TJudgeInfoModel } from '@/lib/models/judgeInfo.model';
 
 export type CSolutionService = SolutionService;
 
@@ -82,6 +88,14 @@ const solutionDetailFields: Array<TMSolutionDetailFields> = [
   'createdAt',
 ];
 
+const solutionJudgeInfoFields: Array<TMJudgeInfoFields> = [
+  'solutionId',
+  'lastCase',
+  'totalCase',
+  'detail',
+  'finishedAt',
+];
+
 @provide()
 export default class SolutionService {
   @inject('solutionMeta')
@@ -95,6 +109,9 @@ export default class SolutionService {
 
   @inject()
   codeModel: TCodeModel;
+
+  @inject()
+  judgeInfoModel: TJudgeInfoModel;
 
   @inject()
   problemService: CProblemService;
@@ -251,6 +268,36 @@ export default class SolutionService {
     );
   }
 
+  /**
+   * 获取评测信息缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param solutionId solutionId
+   */
+  private async _getSolutionJudgeInfoCache(
+    solutionId: ISolutionModel['solutionId'],
+  ): Promise<IMSolutionJudgeInfo | null> {
+    return this.ctx.helper.redisGet<IMSolutionJudgeInfo>(this.redisKey.solutionJudgeInfo, [
+      solutionId,
+    ]);
+  }
+
+  /**
+   * 设置评测信息缓存。
+   * @param solutionId solutionId
+   * @param data 数据
+   */
+  private async _setSolutionJudgeInfoCache(
+    solutionId: ISolutionModel['solutionId'],
+    data: IMSolutionJudgeInfo | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.solutionJudgeInfo,
+      [solutionId],
+      data,
+      data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
+    );
+  }
+
   private _formatListQuery(opts: IMSolutionServiceGetListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       solutionId: opts.solutionId,
@@ -287,20 +334,24 @@ export default class SolutionService {
     const userIds = data.filter((d) => !d.isContestUser).map((d) => d.userId);
     const contestUserIds = data.filter((d) => d.isContestUser).map((d) => d.userId);
     const contestIds = data.filter((d) => d.contestId > 0).map((d) => d.contestId);
+    const solutionIds = data.map((d) => d.solutionId);
     const [
       relativeProblems,
       relativeUsers,
       relativeContestUsers,
       relativeContests,
+      relativeJudgeInfos,
     ] = await Promise.all([
       this.problemService.getRelative(problemIds, null),
       this.userService.getRelative(userIds, null),
       this.contestService.getRelativeContestUser(contestUserIds),
       this.contestService.getRelative(contestIds, null),
+      this.getRelativeJudgeInfo(solutionIds),
     ]);
     return data.map((d) => {
       const relativeProblem = relativeProblems[d.problemId];
       const relativeContest = relativeContests[d.contestId];
+      const relativeJudgeInfo = relativeJudgeInfos[d.solutionId];
       let user: IMSolutionRelativeUser;
       if (d.isContestUser) {
         const relativeUser = relativeContestUsers[d.userId];
@@ -341,6 +392,7 @@ export default class SolutionService {
               endAt: relativeContest.endAt,
             }
           : undefined,
+        judgeInfo: relativeJudgeInfo,
       });
       if (!relativeContest) {
         delete ret.contest;
@@ -505,6 +557,55 @@ export default class SolutionService {
       handledRes[k] = handledResArr[index];
     });
     return handledRes;
+  }
+
+  /**
+   * 按 solutionId 关联查询评测信息。
+   * 如果部分查询的 solutionId 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 solutionId 列表
+   */
+  async getRelativeJudgeInfo(
+    keys: ISolutionModel['solutionId'][],
+  ): Promise<IMSolutionServiceGetRelativeJudgeInfoRes> {
+    const ks = this.lodash.uniq(keys);
+    const res: IMSolutionServiceGetRelativeJudgeInfoRes = {};
+    let uncached: typeof keys = [];
+    for (const k of ks) {
+      const cached = await this._getSolutionJudgeInfoCache(k);
+      if (cached) {
+        res[k] = cached;
+      } else if (cached === null) {
+        uncached.push(k);
+      }
+    }
+    if (uncached.length) {
+      const dbRes = await this.judgeInfoModel
+        // .scope(scope || undefined)
+        .findAll({
+          attributes: solutionJudgeInfoFields,
+          where: {
+            solutionId: {
+              [Op.in]: uncached,
+            },
+          },
+        })
+        .then((r) =>
+          r.map((d) => {
+            const plain = d.get({ plain: true }) as IMSolutionJudgeInfoFull;
+            return plain;
+          }),
+        );
+      for (const d of dbRes) {
+        const { solutionId } = d;
+        delete d.solutionId;
+        res[solutionId] = d;
+        await this._setSolutionJudgeInfoCache(solutionId, d);
+      }
+      for (const k of ks) {
+        !res[k] && (await this._setSolutionJudgeInfoCache(k, null));
+      }
+    }
+    return res;
   }
 
   /**
@@ -831,6 +932,41 @@ export default class SolutionService {
   }
 
   /**
+   * 更新 judge info 数据。
+   * @param solutionId
+   * @param data
+   */
+  async updateJudgerInfo(
+    solutionId: ISolutionModel['solutionId'],
+    data: IMSolutionServiceUpdateJudgeInfoOpt,
+  ) {
+    await this.judgeInfoModel.findOrCreate({
+      where: {
+        solutionId,
+      },
+      defaults: {
+        lastCase: 0,
+        totalCase: 0,
+        detail: null,
+        finishedAt: new Date(),
+      },
+    });
+    await this.judgeInfoModel.update(data, {
+      where: {
+        solutionId,
+      },
+    });
+  }
+
+  /**
+   * 清除评测信息缓存。
+   * @param solutionId solutionId
+   */
+  async clearSolutionJudgeInfoCache(solutionId: ISolutionModel['solutionId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.solutionJudgeInfo, [solutionId]);
+  }
+
+  /**
    * 提交评测。
    * @param options
    */
@@ -956,8 +1092,30 @@ export default class SolutionService {
             memory: maxMemoryUsed,
           });
           await this.clearDetailCache(solutionId);
-          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
+          const status = this.utils.judger.encodeJudgeStatusBuffer(
+            solutionId,
+            judgeType,
+            result,
+            jResult.last,
+            jResult.total,
+          );
           this.pushJudgeStatus(solutionId, status);
+          // 更新评测信息
+          await this.updateJudgerInfo(solutionId, {
+            lastCase: jResult.last,
+            totalCase: jResult.total,
+            detail: {
+              cases: jResult.res.map((r) => ({
+                result: this.utils.judger.convertRiverResultToOJ(r.result!),
+                // @ts-ignore
+                time: r.timeUsed as number,
+                // @ts-ignore
+                memory: r.memoryUsed as number,
+              })),
+            },
+            finishedAt: new Date(),
+          });
+          await this.clearSolutionJudgeInfoCache(solutionId);
           // 更新计数
           let res: any[];
           let userAccepted: number;

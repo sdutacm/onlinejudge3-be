@@ -216,7 +216,7 @@ export class JudgerCall {
   public async run(): Promise<
     | { type: 'CompileError'; res: string }
     | { type: 'SystemError'; res: string }
-    | { type: 'Done'; res: river.IJudgeResult[] }
+    | { type: 'Done'; res: river.IJudgeResult[]; last: number; total: number }
   > {
     try {
       // 编译
@@ -242,13 +242,14 @@ export class JudgerCall {
           } (getCases resp: ${typeof judgeCases} ${JSON.stringify(judgeCases)})`,
         );
       }
-      for (let i = 0; i < judgeCases.length; ++i) {
-        const judgeCase = judgeCases[i];
-        this.opts.onJudgeCaseStart?.(i + 1, judgeCases.length);
+      let index: number;
+      for (index = 0; index < judgeCases.length; ++index) {
+        const judgeCase = judgeCases[index];
+        this.opts.onJudgeCaseStart?.(index + 1, judgeCases.length);
         const judgeRes = await this.judge(judgeCase.in!, judgeCase.out!);
         this.judgeResults.push(judgeRes);
         const judgeNext = this.opts.onJudgeCaseDone
-          ? this.opts.onJudgeCaseDone(i + 1, judgeCases.length, judgeRes)
+          ? this.opts.onJudgeCaseDone(index + 1, judgeCases.length, judgeRes)
           : true;
         if (judgeRes.result === river.JudgeResultEnum.SystemError) {
           return {
@@ -259,10 +260,15 @@ export class JudgerCall {
         if (!judgeNext) {
           break;
         }
+        if (index === judgeCases.length - 1) {
+          break;
+        }
       }
       return {
         type: 'Done',
         res: this.judgeResults,
+        last: index + 1,
+        total: judgeCases.length,
       };
     } finally {
       this.end();

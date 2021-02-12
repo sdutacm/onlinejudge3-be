@@ -92,6 +92,36 @@ const solutionContract = {
             codeLength: { type: 'number' },
             shared: { type: 'boolean' },
             isContestUser: { type: 'boolean' },
+            judgeInfo: {
+              type: 'object',
+              properties: {
+                lastCase: { type: 'number' },
+                totalCase: { type: 'number' },
+                detail: {
+                  type: 'object',
+                  properties: {
+                    cases: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          result: { type: 'number' },
+                          time: { type: 'number' },
+                          memory: { type: 'number' },
+                        },
+                        additionalProperties: false,
+                        required: ['result', 'time', 'memory'],
+                      },
+                    },
+                  },
+                  additionalProperties: false,
+                  required: ['cases'],
+                },
+                finishedAt: { type: 'string', format: 'date-time' },
+              },
+              additionalProperties: false,
+              required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+            },
             createdAt: { type: 'string', format: 'date-time' },
           },
           additionalProperties: false,
@@ -168,6 +198,36 @@ const solutionContract = {
       code: { type: 'string' },
       shared: { type: 'boolean' },
       isContestUser: { type: 'boolean' },
+      judgeInfo: {
+        type: 'object',
+        properties: {
+          lastCase: { type: 'number' },
+          totalCase: { type: 'number' },
+          detail: {
+            type: 'object',
+            properties: {
+              cases: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    result: { type: 'number' },
+                    time: { type: 'number' },
+                    memory: { type: 'number' },
+                  },
+                  additionalProperties: false,
+                  required: ['result', 'time', 'memory'],
+                },
+              },
+            },
+            additionalProperties: false,
+            required: ['cases'],
+          },
+          finishedAt: { type: 'string', format: 'date-time' },
+        },
+        additionalProperties: false,
+        required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+      },
       createdAt: { type: 'string', format: 'date-time' },
     },
     additionalProperties: false,
@@ -250,6 +310,36 @@ const solutionContract = {
         code: { type: 'string' },
         shared: { type: 'boolean' },
         isContestUser: { type: 'boolean' },
+        judgeInfo: {
+          type: 'object',
+          properties: {
+            lastCase: { type: 'number' },
+            totalCase: { type: 'number' },
+            detail: {
+              type: 'object',
+              properties: {
+                cases: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      result: { type: 'number' },
+                      time: { type: 'number' },
+                      memory: { type: 'number' },
+                    },
+                    additionalProperties: false,
+                    required: ['result', 'time', 'memory'],
+                  },
+                },
+              },
+              additionalProperties: false,
+              required: ['cases'],
+            },
+            finishedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+        },
         createdAt: { type: 'string', format: 'date-time' },
       },
       additionalProperties: false,

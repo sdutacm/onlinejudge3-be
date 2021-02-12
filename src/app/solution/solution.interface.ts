@@ -19,6 +19,26 @@ export interface ISolutionModel {
   createdAt: Date;
 }
 
+interface IJudgeInfoDetailCase {
+  result: number;
+  time: number;
+  memory: number;
+  compileInfo?: string;
+}
+
+interface IJudgeInfoDetail {
+  cases: IJudgeInfoDetailCase[];
+}
+
+export interface IJudgeInfoModel {
+  judgeInfoId: number;
+  solutionId: number;
+  lastCase: number;
+  totalCase: number;
+  detail: IJudgeInfoDetail | null;
+  finishedAt: Date;
+}
+
 export type TSolutionModelFields = keyof ISolutionModel;
 
 export type TMSolutionLiteFields = Extract<
@@ -53,6 +73,21 @@ export type TMSolutionDetailFields = Extract<
   | 'createdAt'
 >;
 
+export type TJudgeInfoModelFields = keyof IJudgeInfoModel;
+export type TMJudgeInfoFields = Extract<
+  TJudgeInfoModelFields,
+  'solutionId' | 'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+>;
+
+export type IMSolutionJudgeInfo = Pick<
+  IJudgeInfoModel,
+  'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+>;
+export type IMSolutionJudgeInfoFull = Pick<
+  IJudgeInfoModel,
+  'solutionId' | 'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+>;
+
 export type IMSolutionRelativeProblem = Pick<
   IProblemModel,
   'problemId' | 'title' | 'timeLimit' | 'memoryLimit'
@@ -76,6 +111,8 @@ export type IMSolutionLite = Omit<
   user: IMSolutionRelativeUser;
 } & {
   contest?: IMSolutionRelativeContest;
+} & {
+  judgeInfo?: IMSolutionJudgeInfo;
 };
 export type IMSolutionDetailPlain = Pick<ISolutionModel, TMSolutionDetailFields>;
 export type IMSolutionDetailPlainFull = Pick<ISolutionModel, TMSolutionDetailFields> & {
@@ -91,6 +128,8 @@ export type IMSolutionDetail = Omit<
   user: IMSolutionRelativeUser;
 } & {
   contest?: IMSolutionRelativeContest;
+} & {
+  judgeInfo?: IMSolutionJudgeInfo;
 } & {
   compileInfo: string;
   code: string;
@@ -144,6 +183,13 @@ export type IMSolutionServiceGetDetailRes = defModel.DetailModelRes<IMSolutionDe
 export type IMSolutionServiceGetRelativeRes = Record<
   ISolutionModel['solutionId'],
   IMSolutionDetail
+>;
+//#endregion
+
+//#region service.getRelativeJudgeInfo
+export type IMSolutionServiceGetRelativeJudgeInfoRes = Record<
+  ISolutionModel['solutionId'],
+  IMSolutionJudgeInfo
 >;
 //#endregion
 
@@ -209,6 +255,15 @@ export type IMSolutionServiceGetPendingSolutionsRes = Array<{
   problemId: ISolutionModel['problemId'];
   userId: ISolutionModel['userId'];
 }>;
+//#endregion
+
+//#region service.updateJudgeInfo
+export interface IMSolutionServiceUpdateJudgeInfoOpt {
+  lastCase: number;
+  totalCase: number;
+  detail: IJudgeInfoDetail;
+  finishedAt: Date;
+}
 //#endregion
 
 //#region service.judge
