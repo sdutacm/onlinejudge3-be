@@ -65,32 +65,45 @@ export default class SolutionController {
   PromiseQueue: CPromiseQueue;
 
   @route()
-  @pagination()
-  @getList(undefined, {
-    beforeGetList(ctx) {
-      const { contestId } = ctx.request.body as IGetSolutionListReq;
-      if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
-        delete ctx.request.body.contestId;
+  async [routesBe.getSolutionList.i](ctx: Context) {
+    const req = { ...ctx.request.body } as IGetSolutionListReq;
+    const { contestId } = req;
+    if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
+      delete req.contestId;
+    }
+    const { lt, gt, limit, order = [] } = req;
+    if (lt === undefined && gt === undefined) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    delete req.lt;
+    delete req.gt;
+    delete req.limit;
+    delete req.order;
+    const list = await this.service.getList(req, {
+      lt,
+      gt,
+      limit,
+      order,
+    });
+    list.forEach((d) => {
+      if (
+        d.contest &&
+        !ctx.helper.isContestEnded(d.contest) &&
+        !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
+        !ctx.isPerm
+      ) {
+        delete d.time;
+        delete d.memory;
+        delete d.codeLength;
       }
-    },
-    afterGetList(ctx) {
-      const list = ctx.list as IMSolutionServiceGetListRes;
-      list.rows.forEach((d) => {
-        if (
-          d.contest &&
-          !ctx.helper.isContestEnded(d.contest) &&
-          !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
-          !ctx.isPerm
-        ) {
-          delete d.time;
-          delete d.memory;
-          delete d.codeLength;
-        }
-      });
-    },
-  })
-  @respList()
-  async [routesBe.getSolutionList.i](_ctx: Context) {}
+    });
+    return {
+      lt,
+      gt,
+      limit: limit,
+      rows: list,
+    };
+  }
 
   @route()
   @id()

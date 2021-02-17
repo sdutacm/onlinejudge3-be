@@ -1,6 +1,5 @@
 import { providerWrapper } from 'midway';
 import { defContract } from '@/typings/contract';
-import judgerConfig from '../../config/judger.config';
 
 export const factory = () => solutionContract;
 providerWrapper([
@@ -13,7 +12,9 @@ providerWrapper([
 const solutionContract = {
   getSolutionListReq: {
     properties: {
-      page: { type: 'number', minimum: 1 },
+      // page: { type: 'number', minimum: 1 },
+      lt: { anyOf: [{ type: 'number', minimum: 1 }, { type: 'null' }] },
+      gt: { type: 'number', minimum: 0 },
       limit: { type: 'number', minimum: 1, maximum: 1000 },
       order: {
         type: 'array',
@@ -40,9 +41,9 @@ const solutionContract = {
 
   getSolutionListResp: {
     properties: {
-      page: { type: 'number', minimum: 1 },
+      lt: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+      gt: { type: 'number' },
       limit: { type: 'number', minimum: 0 },
-      count: { type: 'number', minimum: 0 },
       rows: {
         type: 'array',
         items: {
@@ -139,7 +140,7 @@ const solutionContract = {
       },
     },
     additionalProperties: false,
-    required: ['page', 'limit', 'count', 'rows'],
+    required: ['limit', 'rows'],
   } as defContract.ContractSchema,
 
   getSolutionDetailReq: {

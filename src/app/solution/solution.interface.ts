@@ -134,7 +134,12 @@ export type IMSolutionDetail = Omit<
   compileInfo: string;
   code: string;
 };
-export type IMSolutionListPagination = defService.ServiceListOpt<TSolutionModelFields>;
+export interface IMSolutionListPagination {
+  lt?: number | null;
+  gt?: number;
+  limit?: number;
+  order: Array<[TSolutionModelFields, 'ASC' | 'DESC']>;
+}
 
 export interface IMSolutionUserProblemResultStats {
   acceptedProblemIds: ISolutionModel['problemId'][];
@@ -172,7 +177,7 @@ export interface IMSolutionServiceGetListOpt {
   language?: ISolutionModel['language'];
 }
 
-export type IMSolutionServiceGetListRes = defModel.ListModelRes<IMSolutionLite>;
+export type IMSolutionServiceGetListRes = IMSolutionLite[];
 //#endregion
 
 //#region service.getDetail

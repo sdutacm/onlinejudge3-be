@@ -408,25 +408,49 @@ export default class SolutionService {
    */
   async getList(
     options: IMSolutionServiceGetListOpt,
-    pagination: IMSolutionListPagination = {},
+    pagination: IMSolutionListPagination,
   ): Promise<IMSolutionServiceGetListRes> {
     const query = this._formatListQuery(options);
+    const pkOrderDirection = pagination.gt !== undefined ? 'ASC' : 'DESC';
+    let pkWhere: any;
+    if (pagination.lt) {
+      pkWhere = {
+        [Op.lt]: pagination.lt,
+      };
+    } else if (pagination.gt) {
+      pkWhere = {
+        [Op.gt]: pagination.gt,
+      };
+    }
+    let needReverse = false;
+    let order = [...pagination.order];
+    const solutionOrderIndex = order.findIndex((o) => o[0] === 'solutionId');
+    if (solutionOrderIndex === -1) {
+      order.unshift(['solutionId', pkOrderDirection]);
+    } else {
+      if (pkOrderDirection !== order[solutionOrderIndex][1]) {
+        needReverse = true;
+      }
+      order[solutionOrderIndex] = ['solutionId', pkOrderDirection];
+    }
     const res = await this.model
-      .findAndCountAll({
+      .findAll({
         attributes: solutionLiteFields,
-        where: query.where,
+        where:
+          query.where.solutionId || !pkWhere
+            ? query.where
+            : {
+                ...query.where,
+                solutionId: pkWhere,
+              },
         limit: pagination.limit,
-        offset: pagination.offset,
-        order: pagination.order,
+        order,
       })
-      .then((r) => ({
-        ...r,
-        rows: r.rows.map((d) => d.get({ plain: true }) as IMSolutionLitePlain),
-      }));
-    return {
-      ...res,
-      rows: await this._handleRelativeData(res.rows),
-    };
+      .then((r) => {
+        const rows = r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain);
+        return needReverse ? rows.reverse() : rows;
+      });
+    return this._handleRelativeData(res);
   }
 
   /**
