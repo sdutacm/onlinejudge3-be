@@ -1,15 +1,5 @@
 import { Context, controller, inject, provide } from 'midway';
-import {
-  route,
-  pagination,
-  getList,
-  respList,
-  getDetail,
-  id,
-  login,
-  rateLimitUser,
-  auth,
-} from '@/lib/decorators/controller.decorator';
+import { route, getDetail, id, rateLimitUser, auth } from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -25,12 +15,7 @@ import {
   IBatchGetSolutionDetailReq,
   IRejudgeSolutionReq,
 } from '@/common/contracts/solution';
-import {
-  IMSolutionServiceGetListRes,
-  IMSolutionDetail,
-  IMSolutionServiceCreateOpt,
-  ISolutionModel,
-} from './solution.interface';
+import { IMSolutionDetail, IMSolutionServiceCreateOpt, ISolutionModel } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EContestType, EContestUserStatus, ESolutionResult } from '@/common/enums';
@@ -181,7 +166,7 @@ export default class SolutionController {
   }
 
   @route()
-  @rateLimitUser(60, 120) // 临时调整
+  @rateLimitUser(60, 12)
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
     const { problemId, language, code } = ctx.request.body as ISubmitSolutionReq;
     const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
