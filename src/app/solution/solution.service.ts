@@ -1131,6 +1131,8 @@ export default class SolutionService {
                 time: r.timeUsed as number,
                 // @ts-ignore
                 memory: r.memoryUsed as number,
+                errMsg: r.errmsg as string | undefined,
+                outMsg: r.outmsg as string | undefined,
               })),
             },
             finishedAt: new Date(),

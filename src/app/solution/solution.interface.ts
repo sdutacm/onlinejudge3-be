@@ -24,6 +24,8 @@ interface IJudgeInfoDetailCase {
   time: number;
   memory: number;
   compileInfo?: string;
+  errMsg?: string;
+  outMsg?: string;
 }
 
 interface IJudgeInfoDetail {
