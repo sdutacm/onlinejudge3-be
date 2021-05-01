@@ -78,6 +78,7 @@ export interface IJudgerCallOptions {
   timeLimit: number;
   memoryLimit: number;
   judgeType: river.JudgeType;
+  spjFile?: string;
 
   /**
    * 当评测（编译阶段）开始
@@ -184,6 +185,7 @@ export class JudgerCall {
         timeLimit: this.opts.timeLimit,
         memoryLimit: this.opts.memoryLimit,
         judgeType: this.opts.judgeType,
+        spjFile: this.opts.spjFile,
       },
     };
     return new Promise<river.IJudgeResult>((rs, rj) => {

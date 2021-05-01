@@ -246,6 +246,7 @@ export default class SolutionController {
       userId: ctx.session.userId,
       language,
       code,
+      spj: problem.spj,
     });
     // const REDIS_QUEUE_NAME = 'judge:queue';
     // const task = {

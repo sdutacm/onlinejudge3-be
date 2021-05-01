@@ -55,6 +55,7 @@ export class JudgerCron implements CommonSchedule {
         userId: solution.user?.userId,
         language: solution.language,
         code: solution.code,
+        spj: solution.problem?.spj,
       };
     });
     // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);

@@ -752,6 +752,9 @@ export namespace river {
         /** JudgeData outFile */
         outFile?: (string|null);
 
+        /** JudgeData spjFile */
+        spjFile?: (string|null);
+
         /** JudgeData timeLimit */
         timeLimit?: (number|null);
 
@@ -776,6 +779,9 @@ export namespace river {
 
         /** JudgeData outFile. */
         public outFile: string;
+
+        /** JudgeData spjFile. */
+        public spjFile: string;
 
         /** JudgeData timeLimit. */
         public timeLimit: number;
@@ -859,7 +865,8 @@ export namespace river {
 
     /** JudgeType enum. */
     enum JudgeType {
-        Standard = 0
+        Standard = 0,
+        Special = 1
     }
 
     /** Properties of a JudgeRequest. */
@@ -996,6 +1003,9 @@ export namespace river {
 
         /** JudgeResult errmsg */
         errmsg?: (string|null);
+
+        /** JudgeResult outmsg */
+        outmsg?: (string|null);
     }
 
     /** Represents a JudgeResult. */
@@ -1018,6 +1028,9 @@ export namespace river {
 
         /** JudgeResult errmsg. */
         public errmsg: string;
+
+        /** JudgeResult outmsg. */
+        public outmsg: string;
 
         /**
          * Creates a new JudgeResult instance using the specified properties.

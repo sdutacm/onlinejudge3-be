@@ -1597,6 +1597,7 @@ $root.river = (function() {
          * @interface IJudgeData
          * @property {string|null} [inFile] JudgeData inFile
          * @property {string|null} [outFile] JudgeData outFile
+         * @property {string|null} [spjFile] JudgeData spjFile
          * @property {number|null} [timeLimit] JudgeData timeLimit
          * @property {number|null} [memoryLimit] JudgeData memoryLimit
          * @property {river.JudgeType|null} [judgeType] JudgeData judgeType
@@ -1632,6 +1633,14 @@ $root.river = (function() {
          * @instance
          */
         JudgeData.prototype.outFile = "";
+
+        /**
+         * JudgeData spjFile.
+         * @member {string} spjFile
+         * @memberof river.JudgeData
+         * @instance
+         */
+        JudgeData.prototype.spjFile = "";
 
         /**
          * JudgeData timeLimit.
@@ -1691,6 +1700,8 @@ $root.river = (function() {
                 writer.uint32(/* id 4, wireType 0 =*/32).int32(message.memoryLimit);
             if (message.judgeType != null && Object.hasOwnProperty.call(message, "judgeType"))
                 writer.uint32(/* id 5, wireType 0 =*/40).int32(message.judgeType);
+            if (message.spjFile != null && Object.hasOwnProperty.call(message, "spjFile"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.spjFile);
             return writer;
         };
 
@@ -1730,6 +1741,9 @@ $root.river = (function() {
                     break;
                 case 2:
                     message.outFile = reader.string();
+                    break;
+                case 6:
+                    message.spjFile = reader.string();
                     break;
                 case 3:
                     message.timeLimit = reader.int32();
@@ -1781,6 +1795,9 @@ $root.river = (function() {
             if (message.outFile != null && message.hasOwnProperty("outFile"))
                 if (!$util.isString(message.outFile))
                     return "outFile: string expected";
+            if (message.spjFile != null && message.hasOwnProperty("spjFile"))
+                if (!$util.isString(message.spjFile))
+                    return "spjFile: string expected";
             if (message.timeLimit != null && message.hasOwnProperty("timeLimit"))
                 if (!$util.isInteger(message.timeLimit))
                     return "timeLimit: integer expected";
@@ -1792,6 +1809,7 @@ $root.river = (function() {
                 default:
                     return "judgeType: enum value expected";
                 case 0:
+                case 1:
                     break;
                 }
             return null;
@@ -1813,6 +1831,8 @@ $root.river = (function() {
                 message.inFile = String(object.inFile);
             if (object.outFile != null)
                 message.outFile = String(object.outFile);
+            if (object.spjFile != null)
+                message.spjFile = String(object.spjFile);
             if (object.timeLimit != null)
                 message.timeLimit = object.timeLimit | 0;
             if (object.memoryLimit != null)
@@ -1821,6 +1841,10 @@ $root.river = (function() {
             case "Standard":
             case 0:
                 message.judgeType = 0;
+                break;
+            case "Special":
+            case 1:
+                message.judgeType = 1;
                 break;
             }
             return message;
@@ -1845,6 +1869,7 @@ $root.river = (function() {
                 object.timeLimit = 0;
                 object.memoryLimit = 0;
                 object.judgeType = options.enums === String ? "Standard" : 0;
+                object.spjFile = "";
             }
             if (message.inFile != null && message.hasOwnProperty("inFile"))
                 object.inFile = message.inFile;
@@ -1856,6 +1881,8 @@ $root.river = (function() {
                 object.memoryLimit = message.memoryLimit;
             if (message.judgeType != null && message.hasOwnProperty("judgeType"))
                 object.judgeType = options.enums === String ? $root.river.JudgeType[message.judgeType] : message.judgeType;
+            if (message.spjFile != null && message.hasOwnProperty("spjFile"))
+                object.spjFile = message.spjFile;
             return object;
         };
 
@@ -1878,10 +1905,12 @@ $root.river = (function() {
      * @name river.JudgeType
      * @enum {number}
      * @property {number} Standard=0 Standard value
+     * @property {number} Special=1 Special value
      */
     river.JudgeType = (function() {
         var valuesById = {}, values = Object.create(valuesById);
         values[valuesById[0] = "Standard"] = 0;
+        values[valuesById[1] = "Special"] = 1;
         return values;
     })();
 
@@ -2186,6 +2215,7 @@ $root.river = (function() {
          * @property {Long|null} [memoryUsed] JudgeResult memoryUsed
          * @property {river.JudgeResultEnum|null} [result] JudgeResult result
          * @property {string|null} [errmsg] JudgeResult errmsg
+         * @property {string|null} [outmsg] JudgeResult outmsg
          */
 
         /**
@@ -2236,6 +2266,14 @@ $root.river = (function() {
         JudgeResult.prototype.errmsg = "";
 
         /**
+         * JudgeResult outmsg.
+         * @member {string} outmsg
+         * @memberof river.JudgeResult
+         * @instance
+         */
+        JudgeResult.prototype.outmsg = "";
+
+        /**
          * Creates a new JudgeResult instance using the specified properties.
          * @function create
          * @memberof river.JudgeResult
@@ -2267,6 +2305,8 @@ $root.river = (function() {
                 writer.uint32(/* id 3, wireType 0 =*/24).int32(message.result);
             if (message.errmsg != null && Object.hasOwnProperty.call(message, "errmsg"))
                 writer.uint32(/* id 4, wireType 2 =*/34).string(message.errmsg);
+            if (message.outmsg != null && Object.hasOwnProperty.call(message, "outmsg"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.outmsg);
             return writer;
         };
 
@@ -2312,6 +2352,9 @@ $root.river = (function() {
                     break;
                 case 4:
                     message.errmsg = reader.string();
+                    break;
+                case 5:
+                    message.outmsg = reader.string();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -2373,6 +2416,9 @@ $root.river = (function() {
             if (message.errmsg != null && message.hasOwnProperty("errmsg"))
                 if (!$util.isString(message.errmsg))
                     return "errmsg: string expected";
+            if (message.outmsg != null && message.hasOwnProperty("outmsg"))
+                if (!$util.isString(message.outmsg))
+                    return "outmsg: string expected";
             return null;
         };
 
@@ -2450,6 +2496,8 @@ $root.river = (function() {
             }
             if (object.errmsg != null)
                 message.errmsg = String(object.errmsg);
+            if (object.outmsg != null)
+                message.outmsg = String(object.outmsg);
             return message;
         };
 
@@ -2479,6 +2527,7 @@ $root.river = (function() {
                     object.memoryUsed = options.longs === String ? "0" : 0;
                 object.result = options.enums === String ? "Accepted" : 0;
                 object.errmsg = "";
+                object.outmsg = "";
             }
             if (message.timeUsed != null && message.hasOwnProperty("timeUsed"))
                 if (typeof message.timeUsed === "number")
@@ -2494,6 +2543,8 @@ $root.river = (function() {
                 object.result = options.enums === String ? $root.river.JudgeResultEnum[message.result] : message.result;
             if (message.errmsg != null && message.hasOwnProperty("errmsg"))
                 object.errmsg = message.errmsg;
+            if (message.outmsg != null && message.hasOwnProperty("outmsg"))
+                object.outmsg = message.outmsg;
             return object;
         };
 

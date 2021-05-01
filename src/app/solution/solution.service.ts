@@ -381,6 +381,7 @@ export default class SolutionService {
           title: relativeProblem?.title,
           timeLimit: relativeProblem?.timeLimit,
           memoryLimit: relativeProblem?.memoryLimit,
+          spj: relativeProblem?.spj,
         },
         user,
         contest: relativeContest
@@ -1015,7 +1016,8 @@ export default class SolutionService {
     });
     // @ts-ignore
     const judger = this.ctx.app.judger as Judger;
-    const judgeType = river.JudgeType.Standard;
+    const judgeType = options.spj ? river.JudgeType.Special : river.JudgeType.Standard;
+    const spjFile = options.spj ? 'spj' : undefined;
     logger.info(
       `[${solutionId}/${problemId}/${userId}] getJudgeCall`,
       JSON.stringify({
@@ -1025,6 +1027,7 @@ export default class SolutionService {
         timeLimit: options.timeLimit,
         memoryLimit: options.memoryLimit,
         judgeType,
+        spjFile,
       }),
     );
     const call = judger.getJudgeCall({
@@ -1034,6 +1037,7 @@ export default class SolutionService {
       timeLimit: options.timeLimit,
       memoryLimit: options.memoryLimit,
       judgeType,
+      spjFile,
       onStart: () => {
         console.log(process.pid, 'start judge', solutionId);
         logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);

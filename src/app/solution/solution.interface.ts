@@ -90,7 +90,7 @@ export type IMSolutionJudgeInfoFull = Pick<
 
 export type IMSolutionRelativeProblem = Pick<
   IProblemModel,
-  'problemId' | 'title' | 'timeLimit' | 'memoryLimit'
+  'problemId' | 'title' | 'timeLimit' | 'memoryLimit' | 'spj'
 >;
 export type IMSolutionRelativeUser = Pick<
   IUserModel,
@@ -280,6 +280,7 @@ export interface IMSolutionServiceJudgeOpt {
   userId: ISolutionModel['userId'];
   language: string;
   code: string;
+  spj?: boolean;
 }
 
 export type IMSolutionServiceJudgeRes = void;
