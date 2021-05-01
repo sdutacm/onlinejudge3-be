@@ -190,10 +190,6 @@ export default class SolutionController {
     if (!problem) {
       throw new ReqError(Codes.SOLUTION_PROBLEM_NOT_EXIST);
     }
-    // 暂不支持 SPJ
-    if (problem.spj) {
-      throw new ReqError(Codes.GENERAL_UNKNOWN_ERROR);
-    }
     // 比赛提交
     if (contestId) {
       if (!contest) {
