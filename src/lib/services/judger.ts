@@ -185,7 +185,7 @@ export class JudgerCall {
         timeLimit: this.opts.timeLimit,
         memoryLimit: this.opts.memoryLimit,
         judgeType: this.opts.judgeType,
-        spjFile: this.opts.spjFile,
+        spjFile: `${this.opts.problemId}/${this.opts.spjFile}`,
       },
     };
     return new Promise<river.IJudgeResult>((rs, rj) => {
