@@ -6,6 +6,7 @@ import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
 import judgerConfig from './judger.config';
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 
 export default (appInfo: EggAppInfo) => {

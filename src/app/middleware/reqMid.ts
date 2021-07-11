@@ -1,4 +1,5 @@
 import { Context } from 'midway';
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 
 export default function (options: any, app: any) {
