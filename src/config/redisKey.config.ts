@@ -28,11 +28,13 @@ const redisKey = {
   userASProblemsStatsRunInfo: 'stats:user_a_s_problems_run_info',
   userAcceptedProblemsStats: 'stats:user_accepted_problems:%d',
   userSubmittedProblemsStats: 'stats:user_submitted_problems:%d',
+  activeUserCountStats: 'stats:active_user_count',
   contestRankData: 'temp:contest_rank_data:%d',
   solutionJudgeStatus: 'status:solution_judge_status:%d',
   contestRatingStatus: 'status:contest_rating_status:%d',
   rateIp: 'rateIp:%s:%s', // {interfaceName} {ip}
   rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
+  session: 'session:%d:%s', // {userId} {sessionKey}
 };
 
 export default redisKey;

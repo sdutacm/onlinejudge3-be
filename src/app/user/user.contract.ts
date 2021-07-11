@@ -416,6 +416,55 @@ const userContract = {
       required: ['date', 'count'],
     },
   } as defContract.ContractSchema,
+
+  getSessionListResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'string' },
+            isCurrent: { type: 'boolean' },
+            loginUa: { type: 'string' },
+            loginIp: { type: 'string' },
+            loginAt: { type: 'string', format: 'date-time' },
+            lastAccessIp: { type: 'string' },
+            lastAccessAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: [
+            'sessionId',
+            'isCurrent',
+            'loginUa',
+            'loginIp',
+            'loginAt',
+            'lastAccessIp',
+            'lastAccessAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  clearSessionReq: {
+    properties: {
+      sessionId: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['sessionId'],
+  } as defContract.ContractSchema,
+
+  getActiveUserCountResp: {
+    properties: {
+      count: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['count'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;

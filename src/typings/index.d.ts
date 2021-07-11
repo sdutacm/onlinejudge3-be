@@ -2,6 +2,7 @@ import 'egg';
 
 declare module 'egg' {
   interface Context {
+    requestId: string;
     userId?: number;
     loggedIn: boolean;
     isPerm: boolean;
@@ -29,6 +30,11 @@ declare module 'egg' {
       nickname: string;
       permission: number;
       avatar: string | null;
+      loginUa: string;
+      loginIp: string;
+      loginAt: string;
+      lastAccessIp: string;
+      lastAccessAt: string;
       contests: {
         [x: number]:
           | {

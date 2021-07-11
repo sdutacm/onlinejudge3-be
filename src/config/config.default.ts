@@ -6,6 +6,7 @@ import { formatLoggerHelper } from '@/utils/format';
 import redisKey from './redisKey.config';
 import durations from './durations.config';
 import judgerConfig from './judger.config';
+import { v4 as uuidv4 } from 'uuid';
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
@@ -24,6 +25,13 @@ export default (appInfo: EggAppInfo) => {
   config.security = {
     csrf: {
       enable: false,
+    },
+  };
+
+  config.session = {
+    renew: true,
+    genid: (ctx: Context) => {
+      return `session:${ctx.userId || 0}:${uuidv4()}`;
     },
   };
 
@@ -114,7 +122,10 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta);
     },
     contextFormatter(meta: any) {
-      return formatLoggerHelper(meta, `${meta.paddingMessage}`);
+      if (meta.ctx?.requestId) {
+        meta.requestId = meta.ctx.requestId;
+      }
+      return formatLoggerHelper(meta, `[${meta.requestId}] ${meta.paddingMessage}`);
     },
     consoleLevel: 'DEBUG',
   };

@@ -34,6 +34,9 @@ import {
   ICreateUserReq,
   ICreateUserResp,
   IBatchCreateUsersReq,
+  IGetSessionListResp,
+  IClearSessionReq,
+  IGetActiveUserCountResp,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -44,6 +47,9 @@ import { IFs } from '@/utils/libs/fs-extra';
 import { ILodash } from '@/utils/libs/lodash';
 import { CSolutionService } from '../solution/solution.service';
 import { EUserPermission } from '@/common/enums';
+import { IRedisKeyConfig } from '@/config/redisKey.config';
+import util from 'util';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -82,6 +88,12 @@ export default class UserController {
 
   @config()
   uploadLimit: IAppConfig['uploadLimit'];
+
+  @config()
+  redisKey: IRedisKeyConfig;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   /**
    * 获取 Session。
@@ -122,12 +134,21 @@ export default class UserController {
     if (!user) {
       throw new ReqError(Codes.USER_INCORRECT_LOGIN_INFO);
     }
+    ctx.userId = user.userId;
+    // @ts-ignore
+    await ctx.session._sessCtx.initFromExternal();
+    const loginAt = new Date();
     ctx.session = {
       userId: user.userId,
       username: user.username,
       nickname: user.nickname,
       permission: user.permission,
       avatar: user.avatar,
+      loginUa: ctx.request.headers['user-agent'],
+      loginIp: ctx.ip,
+      loginAt: loginAt.toISOString(),
+      lastAccessIp: ctx.ip,
+      lastAccessAt: loginAt.toISOString(),
       contests: {},
     };
     this.service.updateUserLastStatus(user.userId, { lastIp: ctx.ip }).then(() => {
@@ -185,12 +206,21 @@ export default class UserController {
       password: this.utils.misc.hashPassword(password),
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    ctx.userId = newId;
+    // @ts-ignore
+    await ctx.session._sessCtx.initFromExternal();
+    const loginAt = new Date();
     ctx.session = {
       userId: newId,
       username: username,
       nickname: nickname,
       permission: EUserPermission.normal,
       avatar: '',
+      loginUa: ctx.request.headers['user-agent'],
+      loginIp: ctx.ip,
+      loginAt: loginAt.toISOString(),
+      lastAccessIp: ctx.ip,
+      lastAccessAt: loginAt.toISOString(),
       contests: {},
     };
     this.service.updateUserLastStatus(newId, { lastIp: ctx.ip }).then(() => {
@@ -682,5 +712,103 @@ export default class UserController {
     const userId = ctx.id!;
     const { result } = ctx.request.body as IGetUserSolutionCalendarReq;
     return this.solutionService.getUserSolutionCalendar(userId, result);
+  }
+
+  /**
+   * 获取当前 Session 列表。
+   * @returns Session 列表。
+   */
+  @route()
+  async [routesBe.getSessionList.i](ctx: Context): Promise<IGetSessionListResp> {
+    if (!ctx.helper.isGlobalLoggedIn()) {
+      return ctx.helper.formatFullList(0, []);
+    }
+    // @ts-ignore
+    const currentSessionKey: string = ctx.session._sessCtx.externalKey;
+    const sessionKeys = await ctx.helper.redisKeys(this.redisKey.session, [
+      ctx.session.userId,
+      '*',
+    ]);
+    const sessionList = (
+      await Promise.all(
+        sessionKeys.map((k) =>
+          ctx.helper.redisGet(k).then((r) => ({
+            ...r,
+            sessionId: k.replace(/^session:\d+:/, ''),
+            isCurrent: k === currentSessionKey,
+          })),
+        ),
+      )
+    ).filter((f) => f);
+    sessionList.sort((a, b) => {
+      return new Date(a.loginAt).getTime() - new Date(b.loginAt).getTime();
+    });
+
+    return ctx.helper.formatFullList(
+      sessionList.length,
+      sessionList.map((item) => ({
+        sessionId: item.sessionId,
+        isCurrent: item.isCurrent,
+        loginUa: item.loginUa,
+        loginIp: item.loginIp,
+        loginAt: item.loginAt,
+        lastAccessIp: item.lastAccessIp,
+        lastAccessAt: item.lastAccessAt,
+      })),
+    );
+  }
+
+  /**
+   * 清除指定 session。
+   */
+  @route()
+  @login()
+  async [routesBe.clearSession.i](ctx: Context): Promise<void> {
+    const { sessionId } = ctx.request.body as IClearSessionReq;
+    const userId = ctx.session.userId;
+    const sessionKey = util.format(this.redisKey.session, userId, sessionId);
+    // @ts-ignore
+    const currentSessionKey: string = ctx.session._sessCtx.externalKey;
+    if (sessionKey === currentSessionKey) {
+      throw new ReqError(Codes.USER_CANNOT_CLEAR_CURRENT_SESSION);
+    }
+    const session = await ctx.helper.redisGet(sessionKey);
+    if (session) {
+      await ctx.helper.redisDel(sessionKey);
+    }
+  }
+
+  /**
+   * 获取在线活跃用户数。
+   */
+  @route()
+  async [routesBe.getActiveUserCount.i](ctx: Context): Promise<IGetActiveUserCountResp> {
+    const cached = await ctx.helper.redisGet(this.redisKey.activeUserCountStats);
+    if (cached) {
+      return cached;
+    }
+    const ACTIVE_TIME = 3600 * 1000; // 最近一小时活动过视为活跃用户
+    const sessionKeys = await ctx.helper.redisScan('session:*', [], 10000);
+    const activeUserIdSet = new Set<number>();
+    const pq = new this.PromiseQueue(100, Infinity);
+    const queueTasks = sessionKeys.map((k) =>
+      pq.add(async () => {
+        const session = await ctx.helper.redisGet(k);
+        if (
+          session?.lastAccessAt &&
+          Date.now() - new Date(session.lastAccessAt).getTime() <= ACTIVE_TIME
+        ) {
+          activeUserIdSet.add(session.userId);
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+    await ctx.helper.redisSet(
+      this.redisKey.activeUserCountStats,
+      [],
+      { count: activeUserIdSet.size },
+      300,
+    );
+    return { count: activeUserIdSet.size };
   }
 }

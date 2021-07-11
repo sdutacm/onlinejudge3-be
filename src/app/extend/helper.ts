@@ -243,6 +243,46 @@ export default {
   },
 
   /**
+   * redis lrange。
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param start 开始位置
+   * @param stop 结束位置
+   */
+  async redisLrange<T = any>(key: string, args: any[] = [], start: number, end = -1): Promise<T[]> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const redisRet = await redis.lrange(k, start, end);
+    let ret = redisRet.map((r) => {
+      try {
+        if (r) {
+          return JSON.parse(r);
+        } else {
+          return r ?? null;
+        }
+      } catch (e) {
+        return r ?? null;
+      }
+    });
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.lrange](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ret,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.lrange](${cost}ms) [${k}] [${getString(redisRet, 20)}]`);
+    return ret;
+  },
+
+  /**
    * redis rpush
    * @param key redis key 配置
    * @param args key 格式化参数
@@ -274,6 +314,76 @@ export default {
             20,
           )}] [${number}]`,
         );
+  },
+
+  /**
+   * redis keys
+   *
+   * 注意是否会存在性能问题
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   */
+  async redisKeys(key: string, args: any[] = []): Promise<string[]> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const redisRet = await redis.keys(k);
+    const ret = redisRet.filter((f) => f);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.keys](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ret,
+      );
+    isProd &&
+      ctx.getLogger('redisLogger').info(`[redis.keys](${cost}ms) [${k}] [${getString(ret, 20)}]`);
+    return ret;
+  },
+
+  /**
+   * redis scan
+   *
+   * 注意是否会存在性能问题
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param limit count
+   */
+  async redisScan(key: string, args: any[] = [], limit: number): Promise<string[]> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    let cursor = '0';
+    let redisRet: string[];
+    const resSet = new Set<string>();
+    do {
+      [cursor, redisRet] = await redis.scan(cursor, 'match', k, 'count', limit);
+      redisRet.forEach((r) => {
+        if (r) {
+          resSet.add(r);
+        }
+      });
+    } while (cursor !== '0');
+    const ret = Array.from(resSet);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.scan](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        consoleColors.INFO(`[${limit}]`),
+        ret,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.scan](${cost}ms) [${k}] [${limit}] [${getString(ret, 20)}]`);
+    return ret;
   },
 
   /**
