@@ -78,7 +78,13 @@ export default class JudgerController {
     if (!data) {
       throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
     }
-    if (data.mime !== 'application/zip') {
+    ctx.logger.error('data mime:', data.mime);
+    const availableMimeList = [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-zip',
+    ];
+    if (!availableMimeList.includes(data.mime)) {
       throw new ReqError(Codes.JUDGER_UNSUPPORTED_DATA_FORMAT);
     }
     const updateRes = await this.service.updateData(problemId, data.filepath);
