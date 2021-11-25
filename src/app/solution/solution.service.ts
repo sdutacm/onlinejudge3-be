@@ -55,6 +55,15 @@ import { Judger } from '@/lib/services/judger';
 import { river } from '@/proto/river';
 import * as os from 'os';
 import { TJudgeInfoModel } from '@/lib/models/judgeInfo.model';
+import Axios from 'axios';
+import http from 'http';
+import { IJudgerConfig } from '@/config/judger.config';
+
+const httpAgent = new http.Agent({ keepAlive: true });
+const axiosSocketBrideInstance = Axios.create({
+  httpAgent,
+  timeout: 5000,
+});
 
 export type CSolutionService = SolutionService;
 
@@ -136,6 +145,9 @@ export default class SolutionService {
 
   @config()
   durations: IDurationsConfig;
+
+  @config('judger')
+  judgerConfig: IJudgerConfig;
 
   /**
    * 获取详情缓存。
@@ -949,11 +961,25 @@ export default class SolutionService {
   /**
    * 推送评测状态到所有订阅的客户端。
    * @param solutionId
-   * @param status
+   * @param statusFormArray
    */
-  pushJudgeStatus(solutionId: ISolutionModel['solutionId'], status: ArrayBuffer) {
-    // @ts-ignore
-    this.ctx.app.io.of('/judger').to(`s:${solutionId}`).emit('s', status);
+  pushJudgeStatus(solutionId: ISolutionModel['solutionId'], statusFormArray: any[]) {
+    // // @ts-ignore
+    // this.ctx.app.io.of('/judger').to(`s:${solutionId}`).emit('s', status);
+    const start = Date.now();
+    axiosSocketBrideInstance({
+      url: `${this.judgerConfig.socketBridgeBaseUrl}/pushJudgeStatus`,
+      method: 'POST',
+      data: statusFormArray,
+    })
+      .then((res) => {
+        this.ctx.logger.info(
+          `pushJudgeStatus(${Date.now() - start}ms) succ, solutionId: ${solutionId}`,
+        );
+      })
+      .catch((e) => {
+        this.ctx.logger.error(`pushJudgeStatus err, solutionId: ${solutionId}, err:`, e.message);
+      });
   }
 
   /**
@@ -1041,12 +1067,7 @@ export default class SolutionService {
       onStart: () => {
         console.log(process.pid, 'start judge', solutionId);
         logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);
-        const status = this.utils.judger.encodeJudgeStatusBuffer(
-          solutionId,
-          judgeType,
-          ESolutionResult.JG,
-        );
-        this.pushJudgeStatus(solutionId, status);
+        this.pushJudgeStatus(solutionId, [solutionId, judgeType, ESolutionResult.JG]);
       },
       onJudgeCaseStart: (current, total) => {
         console.log(`${current}/${total} Running`);
@@ -1058,14 +1079,13 @@ export default class SolutionService {
           current,
           total,
         });
-        const status = this.utils.judger.encodeJudgeStatusBuffer(
+        this.pushJudgeStatus(solutionId, [
           solutionId,
           judgeType,
           ESolutionResult.JG,
           current,
           total,
-        );
-        this.pushJudgeStatus(solutionId, status);
+        ]);
       },
       onJudgeCaseDone: (current, total, res) => {
         console.log(`${current}/${total} Done:`, res);
@@ -1087,8 +1107,7 @@ export default class SolutionService {
             compileInfo,
           });
           await this.clearDetailCache(solutionId);
-          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
-          this.pushJudgeStatus(solutionId, status);
+          this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
           break;
         }
         case 'SystemError': {
@@ -1098,8 +1117,7 @@ export default class SolutionService {
             result,
           });
           await this.clearDetailCache(solutionId);
-          const status = this.utils.judger.encodeJudgeStatusBuffer(solutionId, judgeType, result);
-          this.pushJudgeStatus(solutionId, status);
+          this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
           break;
         }
         case 'Done': {
@@ -1138,15 +1156,14 @@ export default class SolutionService {
             finishedAt: new Date(),
           });
           await this.clearSolutionJudgeInfoCache(solutionId);
-          const status = this.utils.judger.encodeJudgeStatusBuffer(
+          // 推送完成状态
+          this.pushJudgeStatus(solutionId, [
             solutionId,
             judgeType,
             result,
             jResult.last,
             jResult.total,
-          );
-          // 推送完成状态
-          this.pushJudgeStatus(solutionId, status);
+          ]);
           // 更新计数
           let res: any[];
           let userAccepted: number;

@@ -1,0 +1,67 @@
+{
+  "name": "onlinejudge3-be-socket-io",
+  "version": "3.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "init": "npm i",
+    "build": "midway-bin build -c -p tsconfig.prod.json",
+    "ci": "npm run cov",
+    "clean": "midway-bin clean",
+    "cov": "cross-env DEBUG=-* midway-bin cov --ts",
+    "cov-serve": "static-server coverage/lcov-report -p 7087",
+    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin debug --ts --sticky",
+    "dev": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin dev --ts --sticky",
+    "dev-w2": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git,egg-socket.io* midway-bin dev --ts --sticky --workers=2",
+    "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts --sticky",
+    "lint": "eslint --fix {src,test}/**/*.ts",
+    "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be-socket-io --framework=midway --ts --sticky --workers=1",
+    "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be-socket-io",
+    "test": "cross-env DEBUG=-* npm run lint && npm run devtest"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "egg-alinode": "^2.0.1",
+    "egg-scripts": "^2.10.0",
+    "egg-socket.io": "^4.1.6",
+    "ip": "^1.1.5",
+    "midway": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/ip": "^1.1.0",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^10.17.18",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "cross-env": "^6.0.0",
+    "egg-ci": "^1.8.0",
+    "eslint": "^6.8.0",
+    "eslint-config-alloy": "^3.6.0",
+    "midway-bin": "1",
+    "midway-mock": "1",
+    "mocha": "^6.2.0",
+    "ts-node": "^8.3.0",
+    "tsconfig-paths": "^3.9.0",
+    "tslib": "^1.8.1",
+    "typescript": "3.8.3"
+  },
+  "engines": {
+    "node": ">=10.16.0"
+  },
+  "ci": {
+    "version": "10, 12"
+  },
+  "midway-bin-clean": [
+    ".vscode/.tsbuildinfo",
+    "dist"
+  ],
+  "midway-bin-build": {
+    "include": []
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "bLue",
+  "license": ""
+}

@@ -1,0 +1,38 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+    "module": "commonjs",
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "outDir": "dist",
+    "pretty": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "stripInternal": true,
+    "target": "ES2018",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "noErrorTruncation": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "app/public",
+    "app/views",
+    "dist",
+    "node_modules*",
+    "**/*.spec.ts"
+  ]
+}

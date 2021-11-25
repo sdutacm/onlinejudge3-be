@@ -56,10 +56,10 @@ export default class SolutionController {
     if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
       delete req.contestId;
     }
-    const { lt, gt, limit, order = [] } = req;
-    if (lt === undefined && gt === undefined) {
-      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
-    }
+    const { lt = null, gt, limit, order = [] } = req;
+    // if (lt === undefined && gt === undefined) {
+    //   throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    // }
     delete req.lt;
     delete req.gt;
     delete req.limit;

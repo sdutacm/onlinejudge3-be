@@ -20,10 +20,10 @@ export const alinode = {
   package: 'egg-alinode',
 };
 
-export const io = {
-  enable: true,
-  package: 'egg-socket.io',
-};
+// export const io = {
+//   enable: true,
+//   package: 'egg-socket.io',
+// };
 
 export const sessionRedis = {
   enable: true,

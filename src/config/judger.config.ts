@@ -8,6 +8,7 @@ const judgerConfig = {
   languages: ['gcc', 'g++', 'java', 'python2', 'python3', 'c#'],
   host: '119.23.50.74',
   port: 4003,
+  socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge',
 };
 
 export default judgerConfig;
