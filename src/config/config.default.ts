@@ -86,6 +86,7 @@ export default (appInfo: EggAppInfo) => {
   config.onerror = {
     html(err: Error, ctx: Context) {
       switch (err.message) {
+        case 'missing csrf token':
         case 'invalid csrf token':
           ctx.body = codeMsgs[Codes.GENERAL_ILLEGAL_REQUEST];
           ctx.status = 403;
@@ -101,10 +102,11 @@ export default (appInfo: EggAppInfo) => {
     json(err: Error, ctx: Context) {
       const logger = ctx.getLogger('reqLogger');
       switch (err.message) {
+        case 'missing csrf token':
         case 'invalid csrf token':
           ctx.body = ctx.helper.rFail(Codes.GENERAL_ILLEGAL_REQUEST, { reason: err.message });
           ctx.status = 403;
-          logger.warn('Invalid csrf token');
+          logger.warn('Missing/Invalid csrf token');
           return;
         case 'Reach fileSize limit':
           ctx.body = ctx.helper.rFail(Codes.GENERAL_INVALID_MEDIA_SIZE);
