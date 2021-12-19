@@ -52,17 +52,18 @@ export default class TopicController {
   @login()
   @rateLimitUser(60, 3)
   async [routesBe.createTopic.i](ctx: Context): Promise<ICreateTopicResp> {
-    const { title, content, problemId } = ctx.request.body as ICreateTopicReq;
-    if (problemId && !(await this.problemService.getDetail(problemId, null))) {
-      throw new ReqError(Codes.TOPIC_PROBLEM_NOT_EXIST);
-    }
-    const newId = await this.service.create({
-      title,
-      content,
-      userId: ctx.session.userId,
-      problemId,
-    });
-    return { topicId: newId };
+    throw new ReqError(Codes.GENERAL_FEATURE_NOT_AVAILABLE);
+    // const { title, content, problemId } = ctx.request.body as ICreateTopicReq;
+    // if (problemId && !(await this.problemService.getDetail(problemId, null))) {
+    //   throw new ReqError(Codes.TOPIC_PROBLEM_NOT_EXIST);
+    // }
+    // const newId = await this.service.create({
+    //   title,
+    //   content,
+    //   userId: ctx.session.userId,
+    //   problemId,
+    // });
+    // return { topicId: newId };
   }
 
   @route()
@@ -70,13 +71,14 @@ export default class TopicController {
   @getDetail()
   @requireSelf()
   async [routesBe.updateTopicDetail.i](ctx: Context): Promise<void> {
-    const topicId = ctx.id!;
-    const { title, content } = ctx.request.body as IUpdateTopicDetailReq;
-    await this.service.update(topicId, {
-      title,
-      content,
-    });
-    await this.service.clearDetailCache(topicId);
+    throw new ReqError(Codes.GENERAL_FEATURE_NOT_AVAILABLE);
+    // const topicId = ctx.id!;
+    // const { title, content } = ctx.request.body as IUpdateTopicDetailReq;
+    // await this.service.update(topicId, {
+    //   title,
+    //   content,
+    // });
+    // await this.service.clearDetailCache(topicId);
   }
 
   @route()

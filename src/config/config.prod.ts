@@ -23,7 +23,13 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}]`);
     },
     contextFormatter(meta: any) {
-      return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}] ${meta.paddingMessage}`);
+      if (meta?.ctx?.requestId) {
+        meta.requestId = meta.ctx.requestId;
+      }
+      return formatLoggerHelper(
+        meta,
+        `[${meta.hostname}:${meta.pid}] [${meta.requestId}] ${meta.paddingMessage}`,
+      );
     },
   };
 
@@ -52,6 +58,10 @@ export default (appInfo: EggAppInfo) => {
   //#endregion
 
   //#region alinode
+
+  //#endregion
+
+  //#region cloud
 
   //#endregion
 

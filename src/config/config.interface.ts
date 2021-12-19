@@ -37,4 +37,8 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     dirPath: string;
     logPath: string;
   };
+  tencentCloud: {
+    secretId: string;
+    secretKey: string;
+  };
 }

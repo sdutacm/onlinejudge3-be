@@ -52,6 +52,7 @@
     "sharp": "^0.25.3",
     "simple-git": "^2.9.0",
     "sleep-promise": "^8.0.1",
+    "tencentcloud-sdk-nodejs": "^4.0.259",
     "traverse": "^0.6.6",
     "uuid": "^8.3.2"
   },

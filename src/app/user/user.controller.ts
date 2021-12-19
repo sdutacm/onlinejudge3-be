@@ -50,6 +50,7 @@ import { EUserPermission } from '@/common/enums';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import util from 'util';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { CContentChecker } from '@/utils/content-check';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -94,6 +95,9 @@ export default class UserController {
 
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
+
+  @inject()
+  contentChecker: CContentChecker;
 
   /**
    * 获取 Session。
@@ -198,6 +202,9 @@ export default class UserController {
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
+    if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+      throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
+    }
     const newId = await this.service.create({
       username,
       nickname,
@@ -236,6 +243,7 @@ export default class UserController {
    *
    * 校验逻辑：
    * 1. 检查用户名、昵称、邮箱均不被占用
+   * 2. 检查昵称是否可以通过文本内容检查
    * @returns 用户 ID
    */
   @route()
@@ -258,6 +266,8 @@ export default class UserController {
       throw new ReqError(Codes.USER_NICKNAME_EXISTS);
     } else if (email && (await this.service.isEmailExists(email))) {
       throw new ReqError(Codes.USER_EMAIL_EXISTS);
+    } else if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+      throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
     }
     const newId = await this.service.create({
       username,
@@ -289,6 +299,11 @@ export default class UserController {
     const { users, conflict } = ctx.request.body as IBatchCreateUsersReq;
     for (const user of users) {
       const { username, nickname, password, school, college, major, class: _class, grade } = user;
+      if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+        throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT, {
+          nickname,
+        });
+      }
       if (await this.service.isUsernameExists(username)) {
         if (conflict === 'upsert') {
           // 覆盖更新

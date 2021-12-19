@@ -45,24 +45,25 @@ export default class ReplyController {
   @login()
   @rateLimitUser(60, 10)
   async [routesBe.createReply.i](ctx: Context): Promise<ICreateReplyResp> {
-    const { topicId, content } = ctx.request.body as ICreateReplyReq;
-    if (!(await this.topicService.getDetail(topicId))) {
-      throw new ReqError(Codes.TOPIC_NOT_EXIST);
-    }
-    const createdAt = new Date();
-    const newId = await this.service.create({
-      topicId,
-      content,
-      userId: ctx.session.userId,
-      createdAt,
-    });
-    await this.topicService.update(topicId, {
-      replyCount: await this.service.countTopicReplies(topicId),
-      lastTime: createdAt,
-      lastUserId: ctx.session.userId,
-    });
-    await this.topicService.clearDetailCache(topicId);
-    return { replyId: newId };
+    throw new ReqError(Codes.GENERAL_FEATURE_NOT_AVAILABLE);
+    // const { topicId, content } = ctx.request.body as ICreateReplyReq;
+    // if (!(await this.topicService.getDetail(topicId))) {
+    //   throw new ReqError(Codes.TOPIC_NOT_EXIST);
+    // }
+    // const createdAt = new Date();
+    // const newId = await this.service.create({
+    //   topicId,
+    //   content,
+    //   userId: ctx.session.userId,
+    //   createdAt,
+    // });
+    // await this.topicService.update(topicId, {
+    //   replyCount: await this.service.countTopicReplies(topicId),
+    //   lastTime: createdAt,
+    //   lastUserId: ctx.session.userId,
+    // });
+    // await this.topicService.clearDetailCache(topicId);
+    // return { replyId: newId };
   }
 
   @route()

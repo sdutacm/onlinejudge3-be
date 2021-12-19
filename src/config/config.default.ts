@@ -146,6 +146,9 @@ export default (appInfo: EggAppInfo) => {
     judgerLogger: {
       file: path.join(appInfo.root, 'logs', appInfo.name, 'judger.log'),
     },
+    contentCheckLogger: {
+      file: path.join(appInfo.root, 'logs', appInfo.name, 'content-check.log'),
+    },
   };
 
   const staticBasePath = path.join(__dirname, '../app/public/sf/');
@@ -190,6 +193,13 @@ export default (appInfo: EggAppInfo) => {
     appid: '',
     secret: '',
   };
+
+  // #region cloud
+  config.tencentCloud = {
+    secretId: '',
+    secretKey: '',
+  };
+  // #endregion
 
   return config;
 };
