@@ -4,6 +4,7 @@ import { Context } from 'midway';
 import { Application } from 'egg';
 import { consoleColors, getString } from '@/utils/format';
 import { EUserPermission } from '@/common/enums';
+import { EPerm, checkPermExpr } from '@/common/configs/perm.config';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -422,6 +423,7 @@ export default {
 
   /**
    * 判断当前用户是否是权限人士。
+   * @deprecated
    */
   isPerm() {
     const { ctx } = getThis.call(this);
@@ -430,6 +432,7 @@ export default {
 
   /**
    * 判断当前用户是否是管理员。
+   * @deprecated
    */
   isAdmin() {
     const { ctx } = getThis.call(this);
@@ -439,6 +442,7 @@ export default {
   /**
    * 判断当前用户是否是自己或权限人士（教师及以上）。
    * @param userId 要判断的 userId
+   * @deprecated
    */
   isSelfOrPerm(userId: number | string) {
     const { ctx } = getThis.call(this);
@@ -448,10 +452,20 @@ export default {
   /**
    * 判断当前用户是否是自己或管理员。
    * @param userId 要判断的 userId
+   * @deprecated
    */
   isSelfOrAdmin(userId: number | string) {
     const { ctx } = getThis.call(this);
     return ctx.session.userId === +userId || ctx.session.permission! >= EUserPermission.admin;
+  },
+
+  /**
+   * 判断当前用户是否有所有指定的权限（需保证 `ctx.permission` 已挂载）。
+   * @param ...perms 要检查的权限表达式
+   */
+  checkPerms(...permExpr: (EPerm | EPerm[])[]) {
+    const { ctx } = getThis.call(this);
+    return checkPermExpr(permExpr, ctx.permissions);
   },
 
   /**

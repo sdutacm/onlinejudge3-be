@@ -8,8 +8,8 @@ import {
   getList,
   respList,
   respDetail,
-  auth,
-  authOrRequireSelf,
+  authPerm,
+  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CSetMeta } from './set.meta';
 import { routesBe } from '@/common/routes';
@@ -18,6 +18,7 @@ import { CProblemService } from '../problem/problem.service';
 import { ICreateSetResp, ICreateSetReq, IUpdateSetDetailReq } from '@/common/contracts/set';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -47,7 +48,7 @@ export default class SetController {
   async [routesBe.getSetDetail.i](_ctx: Context) {}
 
   @route()
-  @auth('perm')
+  @authPerm(EPerm.WriteSet)
   async [routesBe.createSet.i](ctx: Context): Promise<ICreateSetResp> {
     const { title, description, type, props, hidden } = ctx.request.body as ICreateSetReq;
     switch (type) {
@@ -79,7 +80,7 @@ export default class SetController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireSelf('perm')
+  @authPermOrRequireSelf(undefined, EPerm.WriteSet)
   async [routesBe.updateSetDetail.i](ctx: Context): Promise<void> {
     const setId = ctx.id!;
     const { title, description, type, props, hidden } = ctx.request.body as IUpdateSetDetailReq;
@@ -112,7 +113,7 @@ export default class SetController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireSelf('perm')
+  @authPermOrRequireSelf(undefined, EPerm.DeleteSet)
   async [routesBe.deleteSet.i](ctx: Context): Promise<void> {
     const setId = ctx.id!;
     await this.service.update(setId, {

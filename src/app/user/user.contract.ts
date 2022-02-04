@@ -19,10 +19,11 @@ const userContract = {
           username: { type: 'string' },
           nickname: { type: 'string' },
           permission: { type: 'number' },
+          permissions: { type: 'array', items: { type: 'string' } },
           avatar: { type: ['string', 'null'] },
         },
         additionalProperties: false,
-        required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+        required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
       },
       {
         type: 'null',
@@ -45,10 +46,11 @@ const userContract = {
       username: { type: 'string' },
       nickname: { type: 'string' },
       permission: { type: 'number' },
+      permissions: { type: 'array', items: { type: 'string' } },
       avatar: { type: ['string', 'null'] },
     },
     additionalProperties: false,
-    required: ['userId', 'username', 'nickname', 'permission', 'avatar'],
+    required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
   } as defContract.ContractSchema,
 
   registerReq: {
@@ -464,6 +466,43 @@ const userContract = {
     },
     additionalProperties: false,
     required: ['count'],
+  } as defContract.ContractSchema,
+
+  getAllUserPermissionsMapResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            avatar: { type: ['string', 'null'] },
+            permissions: { type: 'array', items: { type: 'string' } },
+          },
+          additionalProperties: false,
+          required: ['userId', 'username', 'nickname', 'avatar', 'permissions'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  setUserPermissionsReq: {
+    properties: {
+      userId: { type: 'number' },
+      permissions: {
+        type: 'array',
+        items: {
+          type: 'string',
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['userId', 'permissions'],
   } as defContract.ContractSchema,
 };
 

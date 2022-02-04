@@ -7,10 +7,10 @@ import {
   route,
   getList,
   respList,
-  auth,
   requireSelf,
   login,
-  authOrRequireSelf,
+  authPerm,
+  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CUserMeta } from './user.meta';
 import { routesBe } from '@/common/routes';
@@ -37,6 +37,8 @@ import {
   IGetSessionListResp,
   IClearSessionReq,
   IGetActiveUserCountResp,
+  IGetAllUserPermissionsMapResp,
+  ISetUserPermissionsReq,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -50,7 +52,9 @@ import { EUserPermission } from '@/common/enums';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import util from 'util';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
-import { CContentChecker } from '@/utils/content-check';
+// import { CContentChecker } from '@/utils/content-check';
+import { CAuthService } from '../auth/auth.service';
+import { EPerm } from '@/common/configs/perm.config';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -65,6 +69,9 @@ export default class UserController {
 
   @inject('userService')
   service: CUserService;
+
+  @inject()
+  authService: CAuthService;
 
   @inject()
   verificationService: CVerificationService;
@@ -96,8 +103,8 @@ export default class UserController {
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
 
-  @inject()
-  contentChecker: CContentChecker;
+  // @inject()
+  // contentChecker: CContentChecker;
 
   /**
    * 获取 Session。
@@ -111,6 +118,7 @@ export default class UserController {
           username: ctx.session.username,
           nickname: ctx.session.nickname,
           permission: ctx.session.permission,
+          permissions: await this.authService.getPermissions(ctx.session.userId),
           avatar: ctx.session.avatar,
         }
       : null;
@@ -163,6 +171,7 @@ export default class UserController {
       username: user.username,
       nickname: user.nickname,
       permission: user.permission,
+      permissions: await this.authService.getPermissions(ctx.session.userId),
       avatar: user.avatar,
     };
   }
@@ -202,9 +211,9 @@ export default class UserController {
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
-    if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
-      throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
-    }
+    // if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+    //   throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
+    // }
     const newId = await this.service.create({
       username,
       nickname,
@@ -239,15 +248,13 @@ export default class UserController {
   /**
    * 创建用户。
    *
-   * 权限：管理员
-   *
    * 校验逻辑：
    * 1. 检查用户名、昵称、邮箱均不被占用
    * 2. 检查昵称是否可以通过文本内容检查
    * @returns 用户 ID
    */
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteUser)
   async [routesBe.createUser.i](ctx: Context): Promise<ICreateUserResp> {
     const {
       username,
@@ -266,9 +273,10 @@ export default class UserController {
       throw new ReqError(Codes.USER_NICKNAME_EXISTS);
     } else if (email && (await this.service.isEmailExists(email))) {
       throw new ReqError(Codes.USER_EMAIL_EXISTS);
-    } else if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
-      throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
     }
+    // else if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+    //   throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT);
+    // }
     const newId = await this.service.create({
       username,
       nickname,
@@ -287,23 +295,21 @@ export default class UserController {
   /**
    * 批量创建用户。
    *
-   * 权限：管理员
-   *
    * 校验逻辑：
    * 1. 检查用户名、昵称、邮箱均不被占用
    * 2. 如果有用户名被占用，且 conflict 为 upsert，则除 password 外字段覆盖更新
    */
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteUser)
   async [routesBe.batchCreateUsers.i](ctx: Context): Promise<void> {
     const { users, conflict } = ctx.request.body as IBatchCreateUsersReq;
     for (const user of users) {
       const { username, nickname, password, school, college, major, class: _class, grade } = user;
-      if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
-        throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT, {
-          nickname,
-        });
-      }
+      // if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
+      //   throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT, {
+      //     nickname,
+      //   });
+      // }
       if (await this.service.isUsernameExists(username)) {
         if (conflict === 'upsert') {
           // 覆盖更新
@@ -368,7 +374,7 @@ export default class UserController {
   @pagination()
   @getList(undefined, {
     beforeGetList: (ctx) => {
-      if (!ctx.isAdmin) {
+      if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
         delete ctx.request.body.forbidden;
         delete ctx.request.body.permission;
         delete ctx.request.body.verified;
@@ -376,7 +382,7 @@ export default class UserController {
     },
     afterGetList: (ctx) => {
       const list = ctx.list as IMUserServiceGetListRes;
-      if (!ctx.isAdmin) {
+      if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
         list.rows.forEach((d) => {
           delete d.permission;
           delete d.verified;
@@ -416,7 +422,7 @@ export default class UserController {
       ...detail,
       ...acceptedAndSubmittedCount,
     } as TreatDateFieldsAsString<typeof detail>;
-    if (!ctx.helper.isSelfOrAdmin(userId)) {
+    if (!ctx.helper.isSelf(userId) && !ctx.helper.checkPerms(EPerm.ReadUser)) {
       return this.lodash.omit(detailResp, [
         'email',
         'defaultLanguage',
@@ -434,7 +440,7 @@ export default class UserController {
   /**
    * 更新用户信息。
    *
-   * 权限：当前登录用户或管理员
+   * 权限：当前登录用户或相应权限
    *
    * 如果用户不是管理员，则无法更新以下字段：
    * - nickname
@@ -442,13 +448,13 @@ export default class UserController {
    * - permission
    */
   @route()
-  @authOrRequireSelf('admin')
+  @authPermOrRequireSelf(undefined, EPerm.WriteUser)
   @id()
   @getDetail(null)
   async [routesBe.updateUserDetail.i](ctx: Context): Promise<void> {
     const userId = ctx.id!;
     const req = ctx.request.body as IUpdateUserDetailReq;
-    if (!ctx.isAdmin) {
+    if (!ctx.helper.checkPerms(EPerm.WriteUser)) {
       delete req.nickname;
       delete req.forbidden;
       delete req.permission;
@@ -511,11 +517,9 @@ export default class UserController {
 
   /**
    * 强制重置密码。
-   *
-   * 权限：管理员。
    */
   @route()
-  @auth('admin')
+  @authPerm(EPerm.ResetUserPassword)
   @id()
   @getDetail()
   async [routesBe.resetUserPasswordByAdmin.i](ctx: Context): Promise<void> {
@@ -825,5 +829,38 @@ export default class UserController {
       300,
     );
     return { count: activeUserIdSet.size };
+  }
+
+  /**
+   * 获取全部有权限的用户及其权限列表。
+   */
+  @route()
+  @authPerm(EPerm.ReadUserPermission)
+  async [routesBe.getAllUserPermissionsMap.i](
+    _ctx: Context,
+  ): Promise<IGetAllUserPermissionsMapResp> {
+    const map = await this.authService.getAllUserPermissionsMap();
+    const userIds = Object.keys(map).map((userId) => +userId);
+    const relativeUsers = await this.service.getRelative(userIds, null);
+    return {
+      count: userIds.length,
+      rows: userIds.map((userId) => ({
+        userId,
+        username: relativeUsers[userId].username,
+        nickname: relativeUsers[userId].nickname,
+        avatar: relativeUsers[userId].avatar,
+        permissions: map[userId],
+      })),
+    };
+  }
+
+  /**
+   * 获取全部有权限的用户及其权限列表。
+   */
+  @route()
+  @authPerm(EPerm.WriteUserPermission)
+  async [routesBe.setUserPermissions.i](ctx: Context): Promise<void> {
+    const { userId, permissions } = ctx.request.body as ISetUserPermissionsReq;
+    await this.authService.setUserPermissions(userId, permissions as EPerm[]);
   }
 }

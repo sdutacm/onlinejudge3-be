@@ -15,6 +15,9 @@ import { ReqError } from '@/lib/global/error';
 import { consoleColors } from '@/utils/format';
 import redisKey from '@/config/redisKey.config';
 import { isPrivate as isPrivateIp } from 'ip';
+import { EPerm } from '@/common/configs/perm.config';
+import { CAuthService } from '@/app/auth/auth.service';
+import { camelCase, upperFirst } from 'lodash';
 
 /**
  * 获取 meta。
@@ -41,11 +44,19 @@ export function id(): MethodDecorator {
   };
 }
 
+function checkModuleReadPermForScope(ctx: Context, module: string) {
+  if (ctx.scope === undefined) {
+    return true;
+  }
+  const permission = `Read${upperFirst(camelCase(module))}` as EPerm;
+  return ctx.helper.checkPerms(permission);
+}
+
 /**
  * 通过 service 的 `getDetail()` 获取详情数据并挂载到 `ctx.detail`。
  * 需要先通过 `@id()` 挂载 `ctx.id`。
  * 如果请求实体未找到，则直接拦截并响应请求错误。
- * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * 如果请求参数中指定了 `_scope` 且有指定模块的 Read 权限则按照指定 scope 查询，否则抛出 403。
  * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
  * @param hooks 钩子
  */
@@ -67,11 +78,13 @@ export function getDetail(
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
+      if (!checkModuleReadPermForScope(ctx, service.meta?.module)) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
       await hooks.beforeGetDetail?.(ctx);
-      const detail = await service.getDetail(
-        ctx.id,
-        scope === undefined && ctx.isAdmin ? ctx.scope : scope,
-      );
+      const detail = await service.getDetail(ctx.id, scope === undefined ? ctx.scope : scope);
       if (!detail) {
         ctx.body = ctx.helper.rFail(Codes.GENERAL_ENTITY_NOT_EXIST);
         return;
@@ -254,7 +267,7 @@ export function pagination(
 /**
  * 通过 service 的 `getList()` 获取列表数据并挂载到 `ctx.list`。
  * 需要先通过 `@pagination()` 挂载 `ctx.pagination`。
- * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * 如果请求参数中指定了 `_scope` 且有指定模块的 Read 权限则按照指定 scope 查询，否则抛出 403。
  * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
  * @param hooks 钩子
  * - beforeGetList：开始 getList 前。如果返回 false 则不进行 getList 操作并视作列表为空。
@@ -278,6 +291,11 @@ export function getList(
       // const service = await ctx.requestContext.getAsync(serviceName);
       // @ts-ignore
       const service = this.service;
+      if (!checkModuleReadPermForScope(ctx, service.meta?.module)) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
       const continueGetList = await hooks.beforeGetList?.(ctx);
       if (continueGetList === false) {
         ctx.list = {
@@ -288,7 +306,7 @@ export function getList(
         const list = await service.getList(
           ctx.request.body,
           pagination,
-          scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+          scope === undefined ? ctx.scope : scope,
         );
         ctx.list = list;
       }
@@ -327,7 +345,7 @@ export function respList(): MethodDecorator {
 
 /**
  * 通过 service 的 `getFullList()` 获取列表数据并挂载到 `ctx.fullList`。
- * 如果请求参数中指定了 `_scope` 且权限为 admin，则按照指定 scope 查询。
+ * 如果请求参数中指定了 `_scope` 且有指定模块的 Read 权限则按照指定 scope 查询，否则抛出 403。
  * @param scope 指定 scope（将覆盖请求参数中的 `_scope`）
  * @param hooks 钩子
  * - beforeGetFullList：开始 getFullList 前。如果返回 false 则不进行 getFullList 操作并视作列表为空。
@@ -347,6 +365,11 @@ export function getFullList(
       const pagination = ctx.pagination;
       // @ts-ignore
       const service = this.service;
+      if (!checkModuleReadPermForScope(ctx, service.meta?.module)) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
       const continueGetFullList = await hooks.beforeGetFullList?.(ctx);
       if (continueGetFullList === false) {
         ctx.fullList = {
@@ -357,7 +380,7 @@ export function getFullList(
         const fullList = await service.getFullList(
           ctx.request.body,
           pagination,
-          scope === undefined && ctx.isAdmin ? ctx.scope : scope,
+          scope === undefined ? ctx.scope : scope,
         );
         ctx.fullList = fullList;
       }
@@ -394,6 +417,7 @@ export function respFullList(): MethodDecorator {
  * 初始挂载的属性：
  * - ctx.userId：当前登录用户 userId，如未登录则为 undefined
  * - ctx.loggedIn：是否登录
+ * - ctx.permissions：当前登录用户的权限列表
  * - ctx.scope：查询 scope
  */
 function ctxBaseInfo(): MethodDecorator {
@@ -404,12 +428,13 @@ function ctxBaseInfo(): MethodDecorator {
       if (ctx.helper.isGlobalLoggedIn()) {
         ctx.userId = ctx.session.userId;
         ctx.loggedIn = true;
+        const authService: CAuthService = ctx.requestContext.get('authService');
+        ctx.permissions = await authService.getPermissions(ctx.session.userId);
       } else {
         ctx.userId = undefined;
         ctx.loggedIn = false;
+        ctx.permissions = [];
       }
-      ctx.isPerm = ctx.helper.isPerm();
-      ctx.isAdmin = ctx.helper.isAdmin();
       ctx.scope = ctx.request.body._scope;
       if (ctx.request.headers['content-type']?.startsWith('multipart/')) {
         const numberFields = ['userId'];
@@ -523,6 +548,7 @@ export function login(): MethodDecorator {
  * auth 逻辑实现。
  * @param ctx
  * @param perm
+ * @deprecated
  */
 function authImpl(ctx: Context, perm: 'perm' | 'admin') {
   switch (perm) {
@@ -538,6 +564,15 @@ function authImpl(ctx: Context, perm: 'perm' | 'admin') {
       break;
   }
   return true;
+}
+
+/**
+ * auth 权限逻辑实现。
+ * @param ctx
+ * @param perms
+ */
+function authPermsImpl(ctx: Context, permExpr: (EPerm | EPerm[])[]) {
+  return ctx.helper.checkPerms(...permExpr);
 }
 
 /**
@@ -573,6 +608,7 @@ function requireContestSessionImpl(ctx: Context, selectContestId?: (ctx: Context
 /**
  * 鉴权。
  * @param perm 要求的最低权限
+ * @deprecated
  */
 export function auth(perm: 'perm' | 'admin'): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
@@ -580,6 +616,26 @@ export function auth(perm: 'perm' | 'admin'): MethodDecorator {
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authImpl(ctx, perm)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 按权限鉴权。
+ * @param ...perms 要求的权限列表
+ */
+export function authPerm(...permExpr: (EPerm | EPerm[])[]): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authPermsImpl(ctx, permExpr)) {
+        ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
@@ -620,6 +676,7 @@ export function requireSelf(selectUserId?: (ctx: Context) => number): MethodDeco
  * （先尝试鉴权，如果没有权限则校验实体所有者）
  * @param perm 要求的最低权限（参数同 `@auth()`）
  * @param selectUserId 自定义如何取得实体所有者的 userId（参数同 `@requireSelf()`）
+ * @deprecated
  */
 export function authOrRequireSelf(
   perm: 'perm' | 'admin',
@@ -630,6 +687,31 @@ export function authOrRequireSelf(
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authImpl(ctx, perm) && !requireSelfImpl(ctx, selectUserId)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 鉴权或校验要操作的实体的所有者是否是当前登录用户。
+ * （先尝试鉴权，如果没有权限则校验实体所有者）
+ * @param selectUserId 自定义如何取得实体所有者的 userId（参数同 `@requireSelf()`）
+ * @param perms 要求的权限列表（参数同 `@authPerm()`）
+ */
+export function authPermOrRequireSelf(
+  selectUserId?: (ctx: Context) => number,
+  ...permExpr: (EPerm | EPerm[])[]
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authPermsImpl(ctx, permExpr) && !requireSelfImpl(ctx, selectUserId)) {
+        ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
@@ -654,6 +736,7 @@ export function requireContestSession(selectContestId?: (ctx: Context) => number
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!requireContestSessionImpl(ctx, selectContestId)) {
+        ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }
@@ -668,6 +751,7 @@ export function requireContestSession(selectContestId?: (ctx: Context) => number
  * （先尝试鉴权，如果没有权限则校验比赛 Session）
  * @param perm 要求的最低权限（参数同 `@auth()`）
  * @param selectContestId 自定义如何取得 contestId（参数同 `@requireContestSession()`）
+ * @deprecated
  */
 export function authOrRequireContestSession(
   perm: 'perm' | 'admin',
@@ -678,6 +762,31 @@ export function authOrRequireContestSession(
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authImpl(ctx, perm) && !requireContestSessionImpl(ctx, selectContestId)) {
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 鉴权或校验是否有比赛 Session。
+ * （先尝试鉴权，如果没有权限则校验比赛 Session）
+ * @param selectContestId 自定义如何取得 contestId（参数同 `@requireContestSession()`）
+ * @param perms 要求的权限列表（参数同 `@authPerm()`）
+ */
+export function authPermOrRequireContestSession(
+  selectContestId?: (ctx: Context) => number,
+  ...permExpr: (EPerm | EPerm[])[]
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authPermsImpl(ctx, permExpr) && !requireContestSessionImpl(ctx, selectContestId)) {
+        ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;
       }

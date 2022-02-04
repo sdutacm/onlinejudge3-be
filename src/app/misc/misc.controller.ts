@@ -1,5 +1,5 @@
 import { Context, controller, inject, provide, config } from 'midway';
-import { route, login, rateLimitUser, auth } from '@/lib/decorators/controller.decorator';
+import { route, login, rateLimitUser, authPerm } from '@/lib/decorators/controller.decorator';
 import { CMiscMeta } from './misc.meta';
 import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
@@ -9,6 +9,7 @@ import { IAppConfig } from '@/config/config.interface';
 import path from 'path';
 import { IFs } from '@/utils/libs/fs-extra';
 import { IUploadMediaResp, IUploadAssetResp } from '@/common/contracts/misc';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -69,8 +70,6 @@ export default class MiscController {
   /**
    * 上传资源文件。
    *
-   * 权限：global admin
-   *
    * 图片校验逻辑：
    * 1. 格式限制：jpeg/png/gif
    * 2. 大小限制
@@ -78,7 +77,7 @@ export default class MiscController {
    * 上传成功后保留原图。
    */
   @route()
-  @auth('admin')
+  @authPerm(EPerm.UploadAsset)
   async [routesBe.uploadAsset.i](ctx: Context): Promise<IUploadAssetResp> {
     const { prefix } = ctx.request.body;
     const ALLOWED_TYPE = ['image/jpeg', 'image/png', 'image/gif'];

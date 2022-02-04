@@ -6,7 +6,7 @@ import {
   respList,
   login,
   rateLimitUser,
-  auth,
+  authPerm,
 } from '@/lib/decorators/controller.decorator';
 import { CMessageMeta } from './message.meta';
 import { routesBe } from '@/common/routes';
@@ -24,6 +24,7 @@ import { CUserService } from '../user/user.service';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -101,7 +102,7 @@ export default class MessageController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.SendSystemMessage)
   async [routesBe.batchSendMessage.i](ctx: Context): Promise<void> {
     const { toUserIds, title, content, anonymous, asSystem } = ctx.request
       .body as IBatchSendMessageReq;

@@ -1,12 +1,12 @@
 import 'egg';
+import { EPerm } from '@/common/configs/perm.config';
 
 declare module 'egg' {
   interface Context {
     requestId: string;
     userId?: number;
     loggedIn: boolean;
-    isPerm: boolean;
-    isAdmin: boolean;
+    permissions: EPerm[];
     scope?: string | null;
     id?: number;
     detail?: any;

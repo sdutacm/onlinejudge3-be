@@ -18,6 +18,7 @@ import { IAddNoteReq, IDeleteNoteReq } from '@/common/contracts/note';
 import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
 import { CSolutionService } from '../solution/solution.service';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -103,7 +104,7 @@ export default class NoteController {
           throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
         }
         if (
-          !ctx.isPerm &&
+          !ctx.helper.checkPerms(EPerm.ReadSolution) &&
           !solution.shared &&
           !this.solutionService.isSolutionSelf(ctx, solution)
         ) {

@@ -9,7 +9,7 @@ import {
   rateLimitUser,
   id,
   getDetail,
-  authOrRequireSelf,
+  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CReplyMeta } from './reply.meta';
 import { routesBe } from '@/common/routes';
@@ -19,6 +19,7 @@ import { Codes } from '@/common/codes';
 import { ICreateReplyResp, ICreateReplyReq } from '@/common/contracts/reply';
 import { CTopicService } from '../topic/topic.service';
 import { IMReplyDetail } from './reply.interface';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -69,7 +70,7 @@ export default class ReplyController {
   @route()
   @id()
   @getDetail()
-  @authOrRequireSelf('perm')
+  @authPermOrRequireSelf(undefined, EPerm.DeleteReply)
   async [routesBe.deleteReply.i](ctx: Context): Promise<void> {
     const replyId = ctx.id!;
     const detail = ctx.detail as IMReplyDetail;

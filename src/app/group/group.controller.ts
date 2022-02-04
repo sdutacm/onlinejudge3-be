@@ -9,7 +9,7 @@ import {
   respList,
   login,
   rateLimitUser,
-  auth,
+  authPerm,
 } from '@/lib/decorators/controller.decorator';
 import { CGroupMeta } from './group.meta';
 import { routesBe } from '@/common/routes';
@@ -34,6 +34,7 @@ import { Codes } from '@/common/codes';
 import { EGroupMemberPermission, EGroupJoinChannel, EGroupMemberStatus } from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CUserService } from '../user/user.service';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -60,7 +61,7 @@ export default class GroupController {
   @pagination()
   @getList(undefined, {
     beforeGetList: (ctx) => {
-      if (!ctx.isAdmin) {
+      if (!ctx.helper.checkPerms(EPerm.ReadGroup)) {
         ctx.request.body.private = false;
         const { groupId, name } = ctx.request.body as IGetGroupListReq;
         if (!groupId && !name) {
@@ -110,7 +111,7 @@ export default class GroupController {
   @rateLimitUser(60, 2)
   async [routesBe.createGroup.i](ctx: Context): Promise<ICreateGroupResp> {
     const data = ctx.request.body as ICreateGroupReq;
-    if (!ctx.isAdmin) {
+    if (!ctx.helper.checkPerms(EPerm.WriteGroup)) {
       delete data.verified;
     }
     if (data.private) {
@@ -130,14 +131,12 @@ export default class GroupController {
   /**
    * 创建空群组。
    *
-   * 权限：global admin
-   *
    * 逻辑：
    * - joinChannel 会被强制置为 invitation
    * @returns 群组 ID
    */
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteGroup)
   async [routesBe.createEmptyGroup.i](ctx: Context): Promise<ICreateEmptyGroupResp> {
     const data = ctx.request.body as ICreateEmptyGroupReq;
     const newId = await this.service.create({
@@ -150,7 +149,7 @@ export default class GroupController {
   /**
    * 更新群组。
    *
-   * 权限：group.admin+ 或 global admin
+   * 权限：group.admin+ 或全局权限
    *
    * 逻辑：
    * - 如果群组为 private，则 joinChannel 会被强制置为 invitation
@@ -166,7 +165,7 @@ export default class GroupController {
     if (!(await this.service.hasGroupAdminPerm(groupId))) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
-    if (!ctx.isAdmin) {
+    if (!ctx.helper.checkPerms(EPerm.WriteGroup)) {
       delete data.verified;
     }
     if (data.private) {
@@ -179,7 +178,7 @@ export default class GroupController {
   /**
    * 解散群组。
    *
-   * 权限：group.master 或 global admin
+   * 权限：group.master 或全局权限
    */
   @route()
   @login()
@@ -187,7 +186,10 @@ export default class GroupController {
   @getDetail()
   async [routesBe.deleteGroup.i](ctx: Context): Promise<void> {
     const groupId = ctx.id!;
-    if (!ctx.isAdmin && !(await this.service.isGroupMaster(groupId, ctx.session.userId))) {
+    if (
+      !ctx.helper.checkPerms(EPerm.DeleteGroup) &&
+      !(await this.service.isGroupMaster(groupId, ctx.session.userId))
+    ) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
     await this.service.update(groupId, {
@@ -322,7 +324,7 @@ export default class GroupController {
   /**
    * 更新群组成员。
    *
-   * 权限：group.admin+ 或 global admin
+   * 权限：group.admin+ 或全局权限
    *
    * 逻辑：
    * - 只能修改比自己权限低的用户
@@ -343,7 +345,7 @@ export default class GroupController {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
     // 验证权限，只能修改比自己权限低的用户
-    const selfPerm = ctx.isAdmin
+    const selfPerm = ctx.helper.checkPerms(EPerm.WriteGroup)
       ? Infinity
       : (await this.service.getPermInGroupByUserId(groupId, ctx.session.userId))!;
     const targetPerm = member.permission;
@@ -376,7 +378,7 @@ export default class GroupController {
   /**
    * 踢出群组成员。
    *
-   * 权限：group.admin+ 或 global admin
+   * 权限：group.admin+ 或全局权限
    *
    * 逻辑：
    * - 只能踢出比自己权限低的用户
@@ -396,7 +398,7 @@ export default class GroupController {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
     // 验证权限，只能踢出比自己权限低的用户
-    const selfPerm = ctx.isAdmin
+    const selfPerm = ctx.helper.checkPerms(EPerm.WriteGroup)
       ? Infinity
       : (await this.service.getPermInGroupByUserId(groupId, ctx.session.userId))!;
     const targetPerm = member.permission;

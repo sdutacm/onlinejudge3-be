@@ -1,3 +1,4 @@
+/* eslint-disable no-return-await */
 import { provide, inject, Context, config } from 'midway';
 import { Op } from 'sequelize';
 import { CGroupMeta } from './group.meta';
@@ -46,6 +47,7 @@ import { IUserModel } from '../user/user.interface';
 import { CUserService } from '../user/user.service';
 import { TGroupMemberModel } from '@/lib/models/groupMember.model';
 import { EGroupMemberStatus, EGroupMemberPermission } from '@/common/enums';
+import { EPerm } from '@/common/configs/perm.config';
 
 export type CGroupService = GroupService;
 
@@ -563,7 +565,7 @@ export default class GroupService {
   }
 
   /**
-   * 批量创建群组用户。
+   * 批量创建群组用户。
    * @param groupId groupId
    * @param data 创建数据
    */
@@ -731,7 +733,10 @@ export default class GroupService {
       return this.isGroupMember(groupId, this.ctx.session.userId);
     }
     // eslint-disable-next-line no-return-await
-    return this.ctx.isAdmin || (await this.isGroupMember(groupId, this.ctx.session.userId));
+    return (
+      this.ctx.helper.checkPerms(EPerm.ReadGroup) ||
+      (await this.isGroupMember(groupId, this.ctx.session.userId))
+    );
   }
 
   /**
@@ -747,7 +752,10 @@ export default class GroupService {
       return this.isGroupAdmin(groupId, this.ctx.session.userId);
     }
     // eslint-disable-next-line no-return-await
-    return this.ctx.isAdmin || (await this.isGroupAdmin(groupId, this.ctx.session.userId));
+    return (
+      this.ctx.helper.checkPerms(EPerm.WriteGroup) ||
+      (await this.isGroupAdmin(groupId, this.ctx.session.userId))
+    );
   }
 
   /**

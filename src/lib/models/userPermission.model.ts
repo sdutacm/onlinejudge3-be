@@ -1,5 +1,6 @@
 import { Model, Table, Column, DataType, Index, ForeignKey } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
+import UserModel from './user.model';
 
 export const factory = () => UserPermissionModel;
 providerWrapper([
@@ -26,6 +27,7 @@ export default class UserPermissionModel extends Model<UserPermissionModel> {
     order: 'ASC',
     unique: true,
   })
+  @ForeignKey(() => UserModel)
   userId: number;
 
   @Column({
@@ -40,3 +42,6 @@ export default class UserPermissionModel extends Model<UserPermissionModel> {
   })
   permission: string;
 }
+
+export type TUserPermissionModel = typeof UserPermissionModel;
+export type CUserPermissionModel = UserPermissionModel;

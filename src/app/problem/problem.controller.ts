@@ -7,7 +7,7 @@ import {
   id,
   getDetail,
   respDetail,
-  auth,
+  authPerm,
 } from '@/lib/decorators/controller.decorator';
 import { CProblemMeta } from './problem.meta';
 import { routesBe } from '@/common/routes';
@@ -22,6 +22,7 @@ import {
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -48,7 +49,7 @@ export default class ProblemController {
   @pagination()
   @getList(undefined, {
     beforeGetList(ctx) {
-      !ctx.isAdmin && delete ctx.request.body.display;
+      !ctx.helper.checkPerms(EPerm.ReadProblem) && delete ctx.request.body.display;
     },
   })
   @respList()
@@ -61,7 +62,7 @@ export default class ProblemController {
   async [routesBe.getProblemDetail.i](_ctx: Context) {}
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteProblem)
   async [routesBe.createProblem.i](ctx: Context): Promise<ICreateProblemResp> {
     const data = ctx.request.body as ICreateProblemReq;
     const newId = await this.service.create({
@@ -72,7 +73,7 @@ export default class ProblemController {
   }
 
   @route()
-  @auth('perm')
+  @authPerm(EPerm.WriteProblem)
   @id()
   @getDetail(null)
   async [routesBe.updateProblemDetail.i](ctx: Context): Promise<void> {
@@ -80,7 +81,8 @@ export default class ProblemController {
     const data = this.lodash.omit(ctx.request.body as IUpdateProblemDetailReq, ['problemId']);
     await this.service.update(
       problemId,
-      ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
+      // ctx.isAdmin ? data : this.lodash.pick(data, ['difficulty']),
+      data,
     );
     // 清除题目详情缓存和被加入的比赛的比赛题目缓存
     await this.service.clearDetailCache(problemId);
@@ -93,7 +95,7 @@ export default class ProblemController {
   }
 
   @route()
-  @auth('perm')
+  @authPerm(EPerm.WriteProblemTag)
   @id()
   @getDetail(null)
   async [routesBe.setProblemTags.i](ctx: Context): Promise<void> {

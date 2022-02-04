@@ -31,8 +31,7 @@ export default class StatController {
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
 
-  UASP_MAX_USER_NUM = 2000;
-  UASP_MAX_USER_NUM_PERM = 5000;
+  UASP_MAX_USER_NUM = 5000;
 
   /**
    * 获取分时段用户 AC 数排名统计。
@@ -62,7 +61,7 @@ export default class StatController {
   @route()
   async [routesBe.getUserAcceptedProblems.i](ctx: Context): Promise<IGetUserAcceptedProblemsResp> {
     let { userIds } = ctx.request.body as IGetUserAcceptedProblemsReq;
-    const maxUserNum = ctx.isPerm ? this.UASP_MAX_USER_NUM_PERM : this.UASP_MAX_USER_NUM;
+    const maxUserNum = this.UASP_MAX_USER_NUM;
     userIds = userIds.slice(0, maxUserNum);
     const stats: Record<IUserModel['userId'], IMStatUserAcceptedProblems> = {};
     const pq = new this.PromiseQueue(20, Infinity);
@@ -92,7 +91,7 @@ export default class StatController {
     ctx: Context,
   ): Promise<IGetUserSubmittedProblemsResp> {
     let { userIds } = ctx.request.body as IGetUserSubmittedProblemsReq;
-    const maxUserNum = ctx.isPerm ? this.UASP_MAX_USER_NUM_PERM : this.UASP_MAX_USER_NUM;
+    const maxUserNum = this.UASP_MAX_USER_NUM;
     userIds = userIds.slice(0, maxUserNum);
     const stats: Record<IUserModel['userId'], IMStatUserSubmittedProblems> = {};
     const pq = new this.PromiseQueue(20, Infinity);

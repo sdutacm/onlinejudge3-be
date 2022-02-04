@@ -8,13 +8,14 @@ import {
   getList,
   respList,
   respDetail,
-  authOrRequireSelf,
-  auth,
+  authPerm,
+  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CPostMeta } from './post.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { ICreatePostReq, ICreatePostResp, IUpdatePostDetailReq } from '@/common/contracts/post';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -32,7 +33,7 @@ export default class PostController {
   @pagination()
   @getList(undefined, {
     beforeGetList: (ctx) => {
-      if (!ctx.isAdmin) {
+      if (!ctx.helper.checkPerms(EPerm.ReadPost)) {
         delete ctx.request.body.display;
       }
     },
@@ -47,7 +48,7 @@ export default class PostController {
   async [routesBe.getPostDetail.i](_ctx: Context) {}
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WritePost)
   async [routesBe.createPost.i](ctx: Context): Promise<ICreatePostResp> {
     const { title, content, display } = ctx.request.body as ICreatePostReq;
     const newId = await this.service.create({
@@ -62,7 +63,7 @@ export default class PostController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireSelf('admin')
+  @authPermOrRequireSelf(undefined, EPerm.WritePost)
   async [routesBe.updatePostDetail.i](ctx: Context): Promise<void> {
     const postId = ctx.id!;
     const { title, content, display } = ctx.request.body as IUpdatePostDetailReq;

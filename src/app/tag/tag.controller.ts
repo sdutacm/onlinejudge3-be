@@ -3,9 +3,9 @@ import {
   route,
   id,
   getDetail,
-  auth,
   getFullList,
   respFullList,
+  authPerm,
 } from '@/lib/decorators/controller.decorator';
 import { CTagMeta } from './tag.meta';
 import { routesBe } from '@/common/routes';
@@ -15,6 +15,7 @@ import { ICreateTagResp, ICreateTagReq, IUpdateTagDetailReq } from '@/common/con
 import { ILodash } from '@/utils/libs/lodash';
 import { CProblemService } from '../problem/problem.service';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -43,7 +44,7 @@ export default class TagController {
   async [routesBe.getTagFullList.i](_ctx: Context) {}
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteTag)
   async [routesBe.createTag.i](ctx: Context): Promise<ICreateTagResp> {
     const data = ctx.request.body as ICreateTagReq;
     const newId = await this.service.create(data);
@@ -52,7 +53,7 @@ export default class TagController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteTag)
   @id()
   @getDetail(null)
   async [routesBe.updateTagDetail.i](ctx: Context): Promise<void> {

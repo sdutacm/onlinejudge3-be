@@ -9,9 +9,9 @@ import {
   respList,
   respDetail,
   login,
-  authOrRequireSelf,
   requireSelf,
   rateLimitUser,
+  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CTopicMeta } from './topic.meta';
 import { routesBe } from '@/common/routes';
@@ -20,6 +20,7 @@ import { ICreateTopicReq, ICreateTopicResp, IUpdateTopicDetailReq } from '@/comm
 import { CProblemService } from '../problem/problem.service';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -84,7 +85,7 @@ export default class TopicController {
   @route()
   @id()
   @getDetail()
-  @authOrRequireSelf('perm')
+  @authPermOrRequireSelf(undefined, EPerm.DeleteTopic)
   async [routesBe.deleteTopic.i](ctx: Context): Promise<void> {
     const topicId = ctx.id!;
     await this.service.update(topicId, {

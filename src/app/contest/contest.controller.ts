@@ -7,9 +7,9 @@ import {
   id,
   getDetail,
   respDetail,
-  authOrRequireContestSession,
-  auth,
   login,
+  authPerm,
+  authPermOrRequireContestSession,
 } from '@/lib/decorators/controller.decorator';
 import { CContestMeta } from './contest.meta';
 import { routesBe } from '@/common/routes';
@@ -54,6 +54,7 @@ import { IAppConfig } from '@/config/config.interface';
 import { exec } from 'child_process';
 import path from 'path';
 import { CProblemService } from '../problem/problem.service';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -95,7 +96,7 @@ export default class ContestController {
   @pagination()
   @getList(undefined, {
     beforeGetList: (ctx) => {
-      !ctx.isAdmin && delete ctx.request.body.hidden;
+      !ctx.helper.checkPerms(EPerm.ReadContest) && delete ctx.request.body.hidden;
       if (ctx.request.body.joined) {
         ctx.request.body.userId = ctx.session.userId;
       }
@@ -114,7 +115,7 @@ export default class ContestController {
       return ctx.helper.getContestSession(contestId)!;
     }
     // 搬运自 oj2 api-ng，如果是权限人士则认为任何比赛都有权限进入
-    if (ctx.helper.isPerm()) {
+    if (ctx.helper.checkPerms(EPerm.ContestAccess)) {
       const session = {
         userId: ctx.session.userId,
         username: ctx.session.username,
@@ -308,11 +309,11 @@ export default class ContestController {
   }
 
   @route()
-  @authOrRequireContestSession('admin')
+  @authPermOrRequireContestSession(undefined, EPerm.ReadContest)
   @id()
   @getDetail(null, {
     afterGetDetail: (ctx) => {
-      if (!ctx.isAdmin) {
+      if (!ctx.helper.checkPerms(EPerm.ReadContest)) {
         delete ctx.detail.password;
         if (ctx.helper.isContestPending(ctx.detail as IMContestDetail)) {
           delete ctx.detail.description;
@@ -324,7 +325,7 @@ export default class ContestController {
   async [routesBe.getContestDetail.i](_ctx: Context) {}
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteContest)
   async [routesBe.createContest.i](ctx: Context): Promise<ICreateContestResp> {
     const data = ctx.request.body as ICreateContestReq;
     const newId = await this.service.create({
@@ -335,7 +336,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteContest)
   @id()
   @getDetail(null)
   async [routesBe.updateContestDetail.i](ctx: Context): Promise<void> {
@@ -346,20 +347,20 @@ export default class ContestController {
   }
 
   @route()
-  @authOrRequireContestSession('admin')
+  @authPermOrRequireContestSession(undefined, [EPerm.ReadContestProblem, EPerm.ContestAccess])
   @id()
   @getDetail(null)
   async [routesBe.getContestProblems.i](ctx: Context) {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
-    if (!ctx.isAdmin && ctx.helper.isContestPending(detail)) {
+    if (!ctx.helper.checkPerms(EPerm.ReadContestProblem) && ctx.helper.isContestPending(detail)) {
       throw new ReqError(Codes.CONTEST_PENDING);
     }
     return this.service.getContestProblems(contestId);
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.ReadContestProblem)
   @id()
   @getDetail(null)
   async [routesBe.getContestProblemConfig.i](ctx: Context): Promise<IGetContestProblemConfigResp> {
@@ -377,7 +378,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteContestProblem)
   @id()
   @getDetail(null)
   async [routesBe.setContestProblemConfig.i](ctx: Context) {
@@ -408,7 +409,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.ReadContestUser)
   @id()
   @getDetail(null)
   async [routesBe.getContestUsers.i](ctx: Context) {
@@ -434,7 +435,7 @@ export default class ContestController {
     if (!detail) {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
-    if (!ctx.isAdmin && ctx.session.username !== detail.username) {
+    if (!ctx.helper.checkPerms(EPerm.ReadContestUser) && ctx.session.username !== detail.username) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
     const contestDetail = await this.service.getDetail(detail.contestId, null);
@@ -453,8 +454,9 @@ export default class ContestController {
     const contestId = ctx.id!;
     const detail = ctx.detail as IMContestDetail;
     const data = ctx.request.body as ICreateContestUserReq;
-    const username = (ctx.isAdmin && data.username) || ctx.session.username;
-    if (!ctx.isAdmin) {
+    const username =
+      (ctx.helper.checkPerms(EPerm.WriteContestUser) && data.username) || ctx.session.username;
+    if (!ctx.helper.checkPerms(EPerm.WriteContestUser)) {
       delete data.status;
     }
     if (detail.type !== EContestType.register) {
@@ -462,7 +464,7 @@ export default class ContestController {
     }
     const now = new Date();
     if (
-      !ctx.isAdmin &&
+      !ctx.helper.checkPerms(EPerm.WriteContestUser) &&
       (!detail?.registerStartAt ||
         !detail?.registerEndAt ||
         !(now >= detail.registerStartAt && now < detail.registerEndAt))
@@ -483,7 +485,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteContestUser)
   @id()
   @getDetail(null)
   async [routesBe.batchCreateContestUsers.i](ctx: Context): Promise<void> {
@@ -520,7 +522,7 @@ export default class ContestController {
     const detail = ctx.detail as IMContestDetail;
     const data = ctx.request.body as IUpdateContestUserReq;
     const { contestUserId } = data;
-    if (!ctx.isAdmin) {
+    if (!ctx.helper.checkPerms(EPerm.WriteContestUser)) {
       data.status = EContestUserStatus.waiting;
     }
     if (detail.type !== EContestType.register) {
@@ -528,7 +530,7 @@ export default class ContestController {
     }
     const now = new Date();
     if (
-      !ctx.isAdmin &&
+      !ctx.helper.checkPerms(EPerm.WriteContestUser) &&
       (!detail?.registerStartAt ||
         !detail?.registerEndAt ||
         !(now >= detail.registerStartAt && now < detail.registerEndAt))
@@ -540,7 +542,7 @@ export default class ContestController {
     if (!contestUser) {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
-    if (!ctx.isAdmin && username !== contestUser.username) {
+    if (!ctx.helper.checkPerms(EPerm.WriteContestUser) && username !== contestUser.username) {
       throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     }
     await this.service.updateContestUser(
@@ -551,7 +553,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.AuditContestUser)
   @id()
   @getDetail(null)
   async [routesBe.auditContestUser.i](ctx: Context): Promise<void> {
@@ -611,7 +613,7 @@ export default class ContestController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireContestSession('perm')
+  @authPermOrRequireContestSession(undefined, EPerm.ContestAccess)
   async [routesBe.getContestProblemSolutionStats.i](
     ctx: Context,
   ): Promise<IGetContestProblemSolutionStatsResp> {
@@ -624,11 +626,11 @@ export default class ContestController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireContestSession('perm')
+  @authPermOrRequireContestSession(undefined, EPerm.ContestAccess)
   async [routesBe.getContestRanklist.i](ctx: Context): Promise<IGetContestRanklistResp> {
     const detail = ctx.detail as IMContestDetail;
     let { god = false } = ctx.request.body as IGetContestRanklistReq;
-    if (!ctx.isPerm) {
+    if (!ctx.helper.checkPerms(EPerm.ContestAccess)) {
       god = false;
     }
     return this.service.getRanklist(detail, god);
@@ -637,7 +639,7 @@ export default class ContestController {
   @route()
   @id()
   @getDetail(null)
-  @authOrRequireContestSession('perm')
+  @authPermOrRequireContestSession(undefined, EPerm.ContestAccess)
   async [routesBe.getContestRatingStatus.i](ctx: Context): Promise<IGetContestRatingStatusResp> {
     const contestId = ctx.id!;
     const status = await this.service.getRatingStatus(contestId);
@@ -648,7 +650,7 @@ export default class ContestController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.EndContest)
   @id()
   @getDetail(null)
   async [routesBe.endContest.i](ctx: Context): Promise<void> {

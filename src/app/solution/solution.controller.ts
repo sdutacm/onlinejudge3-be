@@ -1,5 +1,11 @@
 import { Context, controller, inject, provide } from 'midway';
-import { route, getDetail, id, rateLimitUser, auth } from '@/lib/decorators/controller.decorator';
+import {
+  route,
+  getDetail,
+  id,
+  rateLimitUser,
+  authPerm,
+} from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -21,6 +27,7 @@ import { Codes } from '@/common/codes';
 import { EContestType, EContestUserStatus, ESolutionResult } from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CJudgerService } from '../judger/judger.service';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -75,7 +82,7 @@ export default class SolutionController {
         d.contest &&
         !ctx.helper.isContestEnded(d.contest) &&
         !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
-        !ctx.isPerm
+        !ctx.helper.checkPerms(EPerm.ContestAccess)
       ) {
         delete d.time;
         delete d.memory;
@@ -100,7 +107,7 @@ export default class SolutionController {
     if (detail.contest) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
     }
-    if (!(ctx.isPerm || canSharedView || isSelf)) {
+    if (!(ctx.helper.checkPerms(EPerm.ReadSolution) || canSharedView || isSelf)) {
       if (
         detail.contest &&
         !ctx.helper.isContestEnded(detail.contest) &&
@@ -129,7 +136,7 @@ export default class SolutionController {
         if (detail.contest) {
           canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
         }
-        if (!(ctx.isPerm || canSharedView || isSelf)) {
+        if (!(ctx.helper.checkPerms(EPerm.ReadSolution) || canSharedView || isSelf)) {
           if (
             detail.contest &&
             !ctx.helper.isContestEnded(detail.contest) &&
@@ -218,7 +225,7 @@ export default class SolutionController {
     if (!sess) {
       throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
     }
-    if (!problem.display && !ctx.isPerm && contestId <= 0) {
+    if (!problem.display && contestId <= 0) {
       throw new ReqError(Codes.SOLUTION_PROBLEM_NO_PERMISSION);
     }
     const data: IMSolutionServiceCreateOpt = {
@@ -258,7 +265,7 @@ export default class SolutionController {
   }
 
   @route()
-  @auth('perm')
+  @authPerm(EPerm.RejudgeSolution)
   async [routesBe.rejudgeSolution.i](ctx: Context) {
     const data = ctx.request.body as IRejudgeSolutionReq;
     const solutionIds = await this.service.findAllSolutionIds(data);

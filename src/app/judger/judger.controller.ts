@@ -1,5 +1,5 @@
 import { Context, controller, inject, provide } from 'midway';
-import { route, auth } from '@/lib/decorators/controller.decorator';
+import { route, authPerm } from '@/lib/decorators/controller.decorator';
 import { CJudgerMeta } from './judger.meta';
 import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
@@ -14,6 +14,7 @@ import {
 } from '@/common/contracts/judger';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
+import { EPerm } from '@/common/configs/perm.config';
 
 @provide()
 @controller('/')
@@ -34,14 +35,14 @@ export default class JudgerController {
   lodash: ILodash;
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.ReadProblemData)
   async [routesBe.getJudgerDataFile.i](ctx: Context) {
     const { path } = ctx.request.body as IGetJudgerDataFileReq;
     return this.service.getDataFile(path);
   }
 
   @route(undefined, { customResp: true })
-  @auth('admin')
+  @authPerm(EPerm.ReadProblemData)
   async [routesBe.getJudgerDataArchive.i](ctx: Context) {
     const { problemId } = ctx.request.body as IGetJudgerDataArchiveReq;
     const res = await this.service.getDataArchive(problemId);
@@ -55,7 +56,7 @@ export default class JudgerController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteProblemData)
   async [routesBe.prepareJudgerDataUpdate.i](_ctx: Context) {
     const checkRes = await this.service.checkIsDataGitStatusClean();
     if (!checkRes) {
@@ -66,7 +67,7 @@ export default class JudgerController {
   }
 
   @route()
-  @auth('admin')
+  @authPerm(EPerm.WriteProblemData)
   async [routesBe.uploadJudgerData.i](ctx: Context) {
     const { name, email, commitMessage } = ctx.request.body as IUploadJudgerDataReq;
     let { problemId } = ctx.request.body as IUploadJudgerDataReq;
