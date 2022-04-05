@@ -71,7 +71,7 @@ export default class FieldController {
   @route()
   @id()
   @getDetail(null)
-  @authPerm(EPerm.WriteField)
+  @authPerm(EPerm.DeleteField)
   async [routesBe.deleteField.i](ctx: Context): Promise<void> {
     const fieldId = ctx.id!;
     await this.service.delete(fieldId);
