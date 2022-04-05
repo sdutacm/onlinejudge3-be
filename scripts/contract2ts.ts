@@ -20,6 +20,7 @@ import setContract from '../src/app/set/set.contract';
 import groupContract from '../src/app/group/group.contract';
 import miscContract from '../src/app/misc/misc.contract';
 import statContract from '../src/app/stat/stat.contract';
+import fieldContract from '../src/app/field/field.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -41,6 +42,7 @@ const contracts = [
   [groupContract, 'group'],
   [miscContract, 'misc'],
   [statContract, 'stat'],
+  [fieldContract, 'field'],
 ];
 
 const banner = `/**
