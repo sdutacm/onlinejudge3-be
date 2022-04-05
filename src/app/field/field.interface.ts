@@ -81,3 +81,7 @@ export interface IMFieldServiceUpdateOpt {
 
 export type IMFieldServiceUpdateRes = boolean;
 //#endregion
+
+//#region service.update
+export type IMFieldServiceDeleteRes = boolean;
+//#endregion

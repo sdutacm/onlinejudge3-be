@@ -19,6 +19,7 @@ import {
   IMFieldListPagination,
   IMFieldLitePlain,
   IMFieldDetailPlain,
+  IMFieldServiceDeleteRes,
 } from './field.interface';
 import { Op } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -221,6 +222,24 @@ export default class FieldService {
         fieldId,
       },
     });
+    return res[0] > 0;
+  }
+
+  /**
+   * 删除场地。
+   * @param fieldId fieldId
+   */
+  async delete(fieldId: IFieldModel['fieldId']): Promise<IMFieldServiceDeleteRes> {
+    const res = await this.model.update(
+      {
+        deleted: true,
+      },
+      {
+        where: {
+          fieldId,
+        },
+      },
+    );
     return res[0] > 0;
   }
 

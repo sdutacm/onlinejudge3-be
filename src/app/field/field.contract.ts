@@ -188,6 +188,14 @@ const fieldContract = {
     additionalProperties: false,
     required: ['fieldId'],
   } as defContract.ContractSchema,
+
+  deleteFieldReq: {
+    properties: {
+      fieldId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['fieldId'],
+  } as defContract.ContractSchema,
 };
 
 export type IFieldContract = typeof fieldContract;

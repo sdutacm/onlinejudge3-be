@@ -9,7 +9,6 @@ import {
   respList,
   respDetail,
   authPerm,
-  authPermOrRequireSelf,
 } from '@/lib/decorators/controller.decorator';
 import { CFieldMeta } from './field.meta';
 import { routesBe } from '@/common/routes';
@@ -55,7 +54,7 @@ export default class FieldController {
   @route()
   @id()
   @getDetail(null)
-  @authPermOrRequireSelf(undefined, EPerm.WriteField)
+  @authPerm(EPerm.WriteField)
   async [routesBe.updateFieldDetail.i](ctx: Context): Promise<void> {
     const fieldId = ctx.id!;
     const { name, shortName, seatingArrangement, deleted } = ctx.request
@@ -66,6 +65,16 @@ export default class FieldController {
       seatingArrangement,
       deleted,
     });
+    await this.service.clearDetailCache(fieldId);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authPerm(EPerm.WriteField)
+  async [routesBe.deleteField.i](ctx: Context): Promise<void> {
+    const fieldId = ctx.id!;
+    await this.service.delete(fieldId);
     await this.service.clearDetailCache(fieldId);
   }
 }
