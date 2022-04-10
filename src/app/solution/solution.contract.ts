@@ -385,6 +385,7 @@ const solutionContract = {
       problemId: { type: 'number', minimum: 1 },
       contestId: { type: 'number', minimum: 1 },
       language: { type: 'string' },
+      codeFormat: { type: 'string', enum: ['raw', 'base64'] },
       code: { type: 'string', minLength: 1, maxLength: 10 * 1024 * 1024 },
     },
     additionalProperties: false,

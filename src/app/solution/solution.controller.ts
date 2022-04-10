@@ -175,7 +175,11 @@ export default class SolutionController {
   @route()
   @rateLimitUser(60, 12)
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
-    const { problemId, language, code } = ctx.request.body as ISubmitSolutionReq;
+    const { problemId, language, codeFormat = 'raw' } = ctx.request.body as ISubmitSolutionReq;
+    let { code } = ctx.request.body as ISubmitSolutionReq;
+    if (codeFormat === 'base64') {
+      code = Buffer.from(code, 'base64').toString();
+    }
     const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
     const languageConfig = await this.judgerService.getLanguageConfig();
     if (!languageConfig.find((l) => l.language === judgerLanguage)) {
