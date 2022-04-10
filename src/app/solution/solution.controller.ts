@@ -178,7 +178,12 @@ export default class SolutionController {
     const { problemId, language, codeFormat = 'raw' } = ctx.request.body as ISubmitSolutionReq;
     let { code } = ctx.request.body as ISubmitSolutionReq;
     if (codeFormat === 'base64') {
-      code = Buffer.from(code, 'base64').toString();
+      try {
+        code = Buffer.from(code, 'base64').toString();
+      } catch (e) {
+        ctx.logger.error('cannot decode code from base64 format:', ctx.request.body.code);
+        throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
+      }
     }
     const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
     const languageConfig = await this.judgerService.getLanguageConfig();
