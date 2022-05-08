@@ -162,6 +162,7 @@ export default class UserController {
       lastAccessIp: ctx.ip,
       lastAccessAt: loginAt.toISOString(),
       contests: {},
+      competitions: {},
     };
     this.service.updateUserLastStatus(user.userId, { lastIp: ctx.ip }).then(() => {
       this.service.clearDetailCache(user.userId);
@@ -238,6 +239,7 @@ export default class UserController {
       lastAccessIp: ctx.ip,
       lastAccessAt: loginAt.toISOString(),
       contests: {},
+      competitions: {},
     };
     this.service.updateUserLastStatus(newId, { lastIp: ctx.ip }).then(() => {
       this.service.clearDetailCache(newId);

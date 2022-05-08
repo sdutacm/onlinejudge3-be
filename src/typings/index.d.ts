@@ -1,5 +1,6 @@
 import 'egg';
 import { EPerm } from '@/common/configs/perm.config';
+import { ECompetitionUserRole } from '@/common/enums';
 
 declare module 'egg' {
   interface Context {
@@ -43,6 +44,17 @@ declare module 'egg' {
               nickname: string;
               permission: number;
               avatar: string | null;
+            }
+          | undefined;
+      };
+      competitions: {
+        [x: number]:
+          | {
+              // global OJ account info
+              userId: number;
+              // competition user info
+              nickname: string;
+              role: ECompetitionUserRole;
             }
           | undefined;
       };

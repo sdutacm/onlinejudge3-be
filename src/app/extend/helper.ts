@@ -512,4 +512,22 @@ export default {
     const now = new Date();
     return now >= endAt;
   },
+
+  /**
+   * 获取比赛 session。
+   * @param competitionId competitionId
+   */
+  getCompetitionSession(competitionId: number) {
+    const { ctx } = getThis.call(this);
+    return ctx.session.competitions?.[competitionId] ?? null;
+  },
+
+  /**
+   * 判断是否已登录指定比赛。
+   * @param competitionId 要判断的 competitionId
+   */
+  isCompetitionLoggedIn(competitionId: number) {
+    const { ctx } = getThis.call(this);
+    return !!ctx.session.competitions?.[competitionId];
+  },
 };
