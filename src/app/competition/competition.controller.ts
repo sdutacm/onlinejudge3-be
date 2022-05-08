@@ -31,6 +31,8 @@ import {
   IGetCompetitionSessionResp,
   ILoginCompetitionReq,
   ILoginCompetitionResp,
+  IGetCompetitionUsersReq,
+  IGetCompetitionUserDetailReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus } from '@/common/enums';
 
@@ -136,4 +138,52 @@ export default class CompetitionController {
   })
   @respDetail()
   async [routesBe.getCompetitionDetail.i](_ctx: Context) {}
+
+  // @route()
+  // @authPerm(EPerm.WriteCompetition)
+  // async [routesBe.createCompetition.i](ctx: Context): Promise<ICreateCompetitionResp> {
+  //   const data = ctx.request.body as ICreateCompetitionReq;
+  //   const newId = await this.service.create({
+  //     ...data,
+  //     author: ctx.session.userId,
+  //   });
+  //   return { competitionId: newId };
+  // }
+
+  // @route()
+  // @authPerm(EPerm.WriteCompetition)
+  // @id()
+  // @getDetail(null)
+  // async [routesBe.updateCompetitionDetail.i](ctx: Context): Promise<void> {
+  //   const competitionId = ctx.id!;
+  //   const data = this.lodash.omit(ctx.request.body as IUpdateCompetitionDetailReq, ['competitionId']);
+  //   await this.service.update(competitionId, data);
+  //   await this.service.clearDetailCache(competitionId);
+  // }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionUsers.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const req = ctx.request.body as IGetCompetitionUsersReq;
+    const list = await this.service.getCompetitionUsers(competitionId, req);
+    return list;
+  }
+
+  @route()
+  async [routesBe.getCompetitionUserDetail.i](ctx: Context) {
+    const { competitionId, userId } = ctx.request.body as IGetCompetitionUserDetailReq;
+    const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    // if (
+    //   !ctx.helper.checkPerms(EPerm.ReadCompetitionUser) &&
+    //   ctx.session.username !== detail.username
+    // ) {
+    //   throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    // }
+    return detail;
+  }
 }

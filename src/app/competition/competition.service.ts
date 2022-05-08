@@ -689,6 +689,7 @@ export default class CompetitionService {
     competitionId: ICompetitionModel['competitionId'],
     options: IMCompetitionServiceGetCompetitionUsersOpt,
   ): Promise<IMCompetitionServiceGetCompetitionUsersRes> {
+    // TODO 缓存
     const res = await this.competitionUserModel
       .findAll({
         attributes: competitionUserDetailFields,
@@ -700,6 +701,7 @@ export default class CompetitionService {
           fieldShortName: options.fieldShortName,
           seatNo: options.seatNo,
         }),
+        order: [['createdAt', 'ASC']],
       })
       .then((r) =>
         r.map((d) => {
