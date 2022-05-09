@@ -7,6 +7,7 @@ import {
   AllowNull,
   Default,
   CreatedAt,
+  UpdatedAt,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { ICompetitionUserModel } from '@/app/competition/competition.interface';
@@ -132,6 +133,14 @@ export default class CompetitionUserModel extends Model<CompetitionUserModel>
     type: DataType.DATE,
   })
   createdAt: Date;
+
+  @AllowNull(false)
+  @UpdatedAt
+  @Column({
+    field: 'updated_at',
+    type: DataType.DATE,
+  })
+  updatedAt: Date;
 }
 
 export type TCompetitionUserModel = typeof CompetitionUserModel;

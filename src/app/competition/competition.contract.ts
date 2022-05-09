@@ -96,10 +96,11 @@ const competitionContract = {
         properties: {
           userId: { type: 'number' },
           nickname: { type: 'string' },
+          subname: { type: 'string' },
           role: { type: 'number' },
         },
         additionalProperties: false,
-        required: ['userId', 'nickname', 'role'],
+        required: ['userId', 'nickname', 'subname', 'role'],
       },
       {
         type: 'null',
@@ -121,10 +122,11 @@ const competitionContract = {
     properties: {
       userId: { type: 'number' },
       nickname: { type: 'string' },
+      subname: { type: 'string' },
       role: { type: 'number' },
     },
     additionalProperties: false,
-    required: ['userId', 'nickname', 'role'],
+    required: ['userId', 'nickname', 'subname', 'role'],
   } as defContract.ContractSchema,
 
   logoutCompetitionReq: {
@@ -203,6 +205,7 @@ const competitionContract = {
             userId: { type: 'number' },
             role: { type: 'number' },
             status: { type: 'number' },
+            password: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
             banned: { type: 'boolean' },
@@ -267,6 +270,7 @@ const competitionContract = {
       userId: { type: 'number' },
       role: { type: 'number' },
       status: { type: 'number' },
+      password: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
       banned: { type: 'boolean' },
@@ -425,6 +429,23 @@ const competitionContract = {
       'unofficialParticipation',
       'createdAt',
     ],
+  } as defContract.ContractSchema,
+
+  requestCompetitionParticipantPasswordReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'userId'],
+  } as defContract.ContractSchema,
+
+  requestCompetitionParticipantPasswordResp: {
+    properties: {
+      password: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['password'],
   } as defContract.ContractSchema,
 };
 

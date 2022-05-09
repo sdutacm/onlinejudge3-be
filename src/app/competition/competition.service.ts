@@ -57,6 +57,8 @@ import {
   IMCompetitionServiceFindOneCompetitionUserOpt,
   IMCompetitionServiceFindOneCompetitionUserRes,
   IMCompetitionServiceIsCompetitionUserExistsOpt,
+  IMCompetitionServiceUpdateCompetitionUserOpt,
+  IMCompetitionServiceUpdateCompetitionUserRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -106,6 +108,7 @@ const competitionUserLiteFields: Array<TMCompetitionUserLiteFields> = [
   'role',
   'status',
   'info',
+  'password',
   'fieldShortName',
   'seatNo',
   'banned',
@@ -119,6 +122,7 @@ const competitionUserDetailFields: Array<TMCompetitionUserDetailFields> = [
   'role',
   'status',
   'info',
+  'password',
   'fieldShortName',
   'seatNo',
   'banned',
@@ -867,30 +871,35 @@ export default class CompetitionService {
   //   return res.competitionUserId;
   // }
 
-  // /**
-  //  * 更新比赛用户（部分更新）。
-  //  * @param competitionUserId competitionUserId
-  //  * @param data 更新数据
-  //  */
-  // async updateCompetitionUser(
-  //   competitionUserId: ICompetitionUserModel['competitionUserId'],
-  //   data: IMCompetitionServiceUpdateCompetitionUserOpt,
-  // ): Promise<IMCompetitionServiceUpdateCompetitionUserRes> {
-  //   const res = await this.competitionUserModel.update(this._formatCompetitionUser(data), {
-  //     where: {
-  //       competitionUserId,
-  //     },
-  //   });
-  //   return res[0] > 0;
-  // }
+  /**
+   * 更新比赛用户（部分更新）。
+   * @param competitionId competitionId
+   * @param userId userId
+   * @param data 更新数据
+   */
+  async updateCompetitionUser(
+    competitionId: ICompetitionUserModel['competitionId'],
+    userId: ICompetitionUserModel['userId'],
+    data: IMCompetitionServiceUpdateCompetitionUserOpt,
+  ): Promise<IMCompetitionServiceUpdateCompetitionUserRes> {
+    const res = await this.competitionUserModel.update(data, {
+      where: {
+        competitionId,
+        userId,
+      },
+    });
+    return res[0] > 0;
+  }
 
-  // /**
-  //  * 清除比赛用户详情缓存。
-  //  * @param competitionUserId competitionUserId
-  //  */
-  // async clearCompetitionUserDetailCache(
-  //   competitionUserId: ICompetitionUserModel['competitionUserId'],
-  // ): Promise<void> {
-  //   return this.ctx.helper.redisDel(this.redisKey.competitionUserDetail, [competitionUserId]);
-  // }
+  /**
+   * 清除比赛用户详情缓存。
+   * @param competitionId competitionId
+   * @param userId userId
+   */
+  async clearCompetitionUserDetailCache(
+    competitionId: ICompetitionUserModel['competitionId'],
+    userId: ICompetitionUserModel['userId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionUserDetail, [competitionId, userId]);
+  }
 }

@@ -100,16 +100,25 @@ export default class CompetitionController {
     });
     if (!competitionUser) {
       throw new ReqError(Codes.COMPETITION_INCORRECT_PASSWORD);
+    } else if (competitionUser.status === ECompetitionUserStatus.quitted) {
+      throw new ReqError(Codes.COMPETITION_USER_QUITTED);
     } else if (
-      competitionUser.status !== ECompetitionUserStatus.available &&
-      competitionUser.status !== ECompetitionUserStatus.entered &&
-      competitionUser.status !== ECompetitionUserStatus.quitted
+      ![ECompetitionUserStatus.available, ECompetitionUserStatus.entered].includes(
+        competitionUser.status,
+      )
     ) {
       throw new ReqError(Codes.COMPETITION_USER_STATUS_CANNOT_ACCESS);
+    }
+    if (competitionUser.role === ECompetitionUserRole.participant) {
+      await this.service.updateCompetitionUser(competitionId, userId, {
+        password: null,
+      });
+      await this.service.clearCompetitionUserDetailCache(competitionId, userId);
     }
     const session = {
       userId: competitionUser.userId,
       nickname: competitionUser.info?.nickname || '',
+      subname: competitionUser.info?.subname || '',
       role: competitionUser.role,
     };
     if (ctx.session?.competitions) {
@@ -165,6 +174,7 @@ export default class CompetitionController {
   @route()
   @id()
   @getDetail(null)
+  // TODO 删除 password
   async [routesBe.getCompetitionUsers.i](ctx: Context) {
     const competitionId = ctx.id!;
     const req = ctx.request.body as IGetCompetitionUsersReq;
@@ -173,6 +183,7 @@ export default class CompetitionController {
   }
 
   @route()
+  // TODO 删除 password
   async [routesBe.getCompetitionUserDetail.i](ctx: Context) {
     const { competitionId, userId } = ctx.request.body as IGetCompetitionUserDetailReq;
     const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
@@ -207,6 +218,7 @@ export default class CompetitionController {
       count: filtered.length,
       rows: filtered.map((user) => {
         const u = { ...user };
+        delete u.password;
         if (u.info) {
           delete u.info.schoolNo;
           delete u.info.tel;
@@ -236,6 +248,7 @@ export default class CompetitionController {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
     const u = { ...detail };
+    delete u.password;
     if (u.info) {
       delete u.info.schoolNo;
       delete u.info.tel;
@@ -245,5 +258,39 @@ export default class CompetitionController {
       delete u.info.birthDate;
     }
     return u;
+  }
+
+  @route()
+  async [routesBe.requestCompetitionParticipantPassword.i](ctx: Context) {
+    const { competitionId, userId } = ctx.request.body as IGetPublicCompetitionParticipantDetailReq;
+    const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (
+      !detail ||
+      detail.role !== ECompetitionUserRole.participant ||
+      ![
+        ECompetitionUserStatus.available,
+        ECompetitionUserStatus.entered,
+        ECompetitionUserStatus.quitted,
+      ].includes(detail.status)
+    ) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (detail.status === ECompetitionUserStatus.quitted) {
+      throw new ReqError(Codes.COMPETITION_USER_QUITTED);
+    }
+    let password = detail.password;
+    if (!detail.password) {
+      password = this.utils.misc.randomString({
+        length: 6,
+        characters: 'ABCDEFGHJKLMNPQRTUVWXY346789',
+      });
+      await this.service.updateCompetitionUser(competitionId, userId, {
+        password,
+      });
+      await this.service.clearCompetitionUserDetailCache(competitionId, userId);
+    }
+    return {
+      password,
+    };
   }
 }

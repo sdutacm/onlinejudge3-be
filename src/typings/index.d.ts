@@ -54,6 +54,7 @@ declare module 'egg' {
               userId: number;
               // competition user info
               nickname: string;
+              subname: string;
               role: ECompetitionUserRole;
             }
           | undefined;

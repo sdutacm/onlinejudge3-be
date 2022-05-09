@@ -111,6 +111,7 @@ export type TMCompetitionUserLiteFields = Extract<
   | 'role'
   | 'status'
   | 'info'
+  | 'password'
   | 'fieldShortName'
   | 'seatNo'
   | 'banned'
@@ -125,6 +126,7 @@ export type TMCompetitionUserDetailFields = Extract<
   | 'role'
   | 'status'
   | 'info'
+  | 'password'
   | 'fieldShortName'
   | 'seatNo'
   | 'banned'
@@ -150,6 +152,7 @@ export interface IMCompetitionUserDetailPlain {
   role: ICompetitionUserModel['role'];
   status: ICompetitionUserModel['status'];
   info: ICompetitionUserModel['info'];
+  password: ICompetitionUserModel['password'];
   fieldShortName: ICompetitionUserModel['fieldShortName'];
   seatNo: ICompetitionUserModel['seatNo'];
   banned: ICompetitionUserModel['banned'];
@@ -403,29 +406,20 @@ export type IMCompetitionServiceIsCompetitionUserExistsOpt = Partial<ICompetitio
 // export type IMCompetitionServiceCreateCompetitionUserRes = ICompetitionUserModel['competitionUserId'];
 // //#endregion
 
-// //#region service.updateCompetitionUser
-// export interface IMCompetitionServiceUpdateCompetitionUserOpt {
-//   nickname?: ICompetitionUserModel['nickname'];
-//   subname?: ICompetitionUserModel['subname'];
-//   status?: ICompetitionUserModel['status'];
-//   sitNo?: ICompetitionUserModel['sitNo'];
-//   unofficial?: ICompetitionUserModel['unofficial'];
-//   password?: ICompetitionUserModel['password'];
-//   members?: Array<{
-//     schoolNo: string;
-//     name: string;
-//     school: string;
-//     college: string;
-//     major: string;
-//     class: string;
-//     tel: string;
-//     email: string;
-//     clothing: string;
-//   }>;
-// }
+//#region service.updateCompetitionUser
+export interface IMCompetitionServiceUpdateCompetitionUserOpt {
+  role?: ICompetitionUserModel['role'];
+  status?: ICompetitionUserModel['status'];
+  info?: ICompetitionUserModel['info'];
+  password?: ICompetitionUserModel['password'];
+  fieldShortName?: ICompetitionUserModel['fieldShortName'];
+  seatNo?: ICompetitionUserModel['seatNo'];
+  banned?: ICompetitionUserModel['banned'];
+  unofficialParticipation?: ICompetitionUserModel['unofficialParticipation'];
+}
 
-// export type IMCompetitionServiceUpdateCompetitionUserRes = boolean;
-// //#endregion
+export type IMCompetitionServiceUpdateCompetitionUserRes = boolean;
+//#endregion
 
 // //#region service.getRanklist
 // export type IMCompetitionServiceGetRanklistRes = defModel.FullListModelRes<
