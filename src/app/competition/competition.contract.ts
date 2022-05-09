@@ -310,6 +310,122 @@ const competitionContract = {
       'createdAt',
     ],
   } as defContract.ContractSchema,
+
+  getPublicCompetitionParticipantsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getPublicCompetitionParticipantsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            competitionId: { type: 'number' },
+            userId: { type: 'number' },
+            role: { type: 'number' },
+            status: { type: 'number' },
+            fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+            banned: { type: 'boolean' },
+            unofficialParticipation: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            info: {
+              type: 'object',
+              properties: {
+                nickname: { type: 'string' },
+                subname: { type: 'string' },
+                realName: { type: 'string' },
+                organization: { type: 'string' },
+                company: { type: 'string' },
+                school: { type: 'string' },
+                college: { type: 'string' },
+                major: { type: 'string' },
+                class: { type: 'string' },
+                slogan: { type: 'string' },
+              },
+              additionalProperties: false,
+              required: ['nickname'],
+            },
+          },
+          additionalProperties: false,
+          required: [
+            'competitionId',
+            'userId',
+            'role',
+            'status',
+            'info',
+            'fieldShortName',
+            'seatNo',
+            'banned',
+            'unofficialParticipation',
+            'createdAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  getPublicCompetitionParticipantDetailReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'userId'],
+  } as defContract.ContractSchema,
+
+  getPublicCompetitionParticipantDetailResp: {
+    properties: {
+      competitionId: { type: 'number' },
+      userId: { type: 'number' },
+      role: { type: 'number' },
+      status: { type: 'number' },
+      fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+      banned: { type: 'boolean' },
+      unofficialParticipation: { type: 'boolean' },
+      createdAt: { type: 'string', format: 'date-time' },
+      info: {
+        type: 'object',
+        properties: {
+          nickname: { type: 'string' },
+          subname: { type: 'string' },
+          realName: { type: 'string' },
+          organization: { type: 'string' },
+          company: { type: 'string' },
+          school: { type: 'string' },
+          college: { type: 'string' },
+          major: { type: 'string' },
+          class: { type: 'string' },
+          slogan: { type: 'string' },
+        },
+        additionalProperties: false,
+        required: ['nickname'],
+      },
+    },
+    additionalProperties: false,
+    required: [
+      'competitionId',
+      'userId',
+      'role',
+      'status',
+      'info',
+      'fieldShortName',
+      'seatNo',
+      'banned',
+      'unofficialParticipation',
+      'createdAt',
+    ],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

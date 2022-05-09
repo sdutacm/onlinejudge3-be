@@ -33,8 +33,9 @@ import {
   ILoginCompetitionResp,
   IGetCompetitionUsersReq,
   IGetCompetitionUserDetailReq,
+  IGetPublicCompetitionParticipantDetailReq,
 } from '@/common/contracts/competition';
-import { ECompetitionUserStatus } from '@/common/enums';
+import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 
 @provide()
 @controller('/')
@@ -185,5 +186,64 @@ export default class CompetitionController {
     //   throw new ReqError(Codes.GENERAL_NO_PERMISSION);
     // }
     return detail;
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getPublicCompetitionParticipants.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const list = await this.service.getCompetitionUsers(competitionId, {
+      role: ECompetitionUserRole.participant,
+    });
+    const filtered = list.rows.filter((user) =>
+      [
+        ECompetitionUserStatus.available,
+        ECompetitionUserStatus.entered,
+        ECompetitionUserStatus.quitted,
+      ].includes(user.status),
+    );
+    return {
+      count: filtered.length,
+      rows: filtered.map((user) => {
+        const u = { ...user };
+        if (u.info) {
+          delete u.info.schoolNo;
+          delete u.info.tel;
+          delete u.info.qq;
+          delete u.info.weChat;
+          delete u.info.clothing;
+          delete u.info.birthDate;
+        }
+        return u;
+      }),
+    };
+  }
+
+  @route()
+  async [routesBe.getPublicCompetitionParticipantDetail.i](ctx: Context) {
+    const { competitionId, userId } = ctx.request.body as IGetPublicCompetitionParticipantDetailReq;
+    const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (
+      !detail ||
+      detail.role !== ECompetitionUserRole.participant ||
+      ![
+        ECompetitionUserStatus.available,
+        ECompetitionUserStatus.entered,
+        ECompetitionUserStatus.quitted,
+      ].includes(detail.status)
+    ) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    const u = { ...detail };
+    if (u.info) {
+      delete u.info.schoolNo;
+      delete u.info.tel;
+      delete u.info.qq;
+      delete u.info.weChat;
+      delete u.info.clothing;
+      delete u.info.birthDate;
+    }
+    return u;
   }
 }
