@@ -205,7 +205,6 @@ const competitionContract = {
             userId: { type: 'number' },
             role: { type: 'number' },
             status: { type: 'number' },
-            password: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
             banned: { type: 'boolean' },

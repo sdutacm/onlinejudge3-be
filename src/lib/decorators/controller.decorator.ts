@@ -18,6 +18,7 @@ import { isPrivate as isPrivateIp } from 'ip';
 import { EPerm } from '@/common/configs/perm.config';
 import { CAuthService } from '@/app/auth/auth.service';
 import { camelCase, upperFirst } from 'lodash';
+import { ECompetitionUserRole } from '@/common/enums';
 
 /**
  * 获取 meta。
@@ -606,6 +607,21 @@ function requireContestSessionImpl(ctx: Context, selectContestId?: (ctx: Context
 }
 
 /**
+ * authCompetitionRole 权限逻辑实现。
+ * @param ctx
+ * @param roleExpr
+ * @param selectCompetitionId
+ */
+function authCompetitionRoleImpl(
+  ctx: Context,
+  roleExpr: ECompetitionUserRole[],
+  selectCompetitionId?: (ctx: Context) => number,
+) {
+  const competitionId = selectCompetitionId?.(ctx) || ctx.request.body.competitionId;
+  return ctx.helper.checkCompetitionRole(competitionId, roleExpr);
+}
+
+/**
  * 鉴权。
  * @param perm 要求的最低权限
  * @deprecated
@@ -786,6 +802,32 @@ export function authPermOrRequireContestSession(
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authPermsImpl(ctx, permExpr) && !requireContestSessionImpl(ctx, selectContestId)) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 校验比赛角色。
+ *
+ * 用做校验的 competitionId 会按照如下顺序尝试获取：
+ * - selectCompetitionIdId(ctx)
+ * - ctx.request.body.competitionId
+ */
+export function authCompetitionRole(
+  roleExpr: ECompetitionUserRole[],
+  selectCompetitionId?: (ctx: Context) => number,
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!authCompetitionRoleImpl(ctx, roleExpr, selectCompetitionId)) {
         ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;

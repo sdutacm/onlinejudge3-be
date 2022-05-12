@@ -3,8 +3,9 @@ import util from 'util';
 import { Context } from 'midway';
 import { Application } from 'egg';
 import { consoleColors, getString } from '@/utils/format';
-import { EUserPermission } from '@/common/enums';
+import { EUserPermission, ECompetitionUserRole } from '@/common/enums';
 import { EPerm, checkPermExpr } from '@/common/configs/perm.config';
+import checkCompetitionUserRole from '@/common/utils/competition';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -519,7 +520,7 @@ export default {
    */
   getCompetitionSession(competitionId: number) {
     const { ctx } = getThis.call(this);
-    return ctx.session.competitions?.[competitionId] ?? null;
+    return ctx.session?.competitions?.[competitionId] ?? null;
   },
 
   /**
@@ -528,6 +529,20 @@ export default {
    */
   isCompetitionLoggedIn(competitionId: number) {
     const { ctx } = getThis.call(this);
-    return !!ctx.session.competitions?.[competitionId];
+    return !!ctx.session?.competitions?.[competitionId];
+  },
+
+  /**
+   * 判断当前比赛用户是否符合指定的角色表达式。
+   * @param competitionId competitionId
+   * @param roleExpr 要检查的角色表达式
+   */
+  checkCompetitionRole(competitionId: number, roleExpr: ECompetitionUserRole[]) {
+    const { ctx } = getThis.call(this);
+    const role = ctx.session?.competitions?.[competitionId]?.role;
+    if (typeof role !== 'number') {
+      return false;
+    }
+    return checkCompetitionUserRole(roleExpr, role);
   },
 };

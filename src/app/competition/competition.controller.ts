@@ -7,6 +7,7 @@ import {
   id,
   getDetail,
   respDetail,
+  authCompetitionRole,
 } from '@/lib/decorators/controller.decorator';
 import { CCompetitionMeta } from './competition.meta';
 import { routesBe } from '@/common/routes';
@@ -79,18 +80,50 @@ export default class CompetitionController {
 
   @route()
   @id()
-  @getDetail(null)
+  // @getDetail(null)
   async [routesBe.getCompetitionSession.i](ctx: Context): Promise<IGetCompetitionSessionResp> {
     const competitionId = ctx.id!;
     if (ctx.helper.isCompetitionLoggedIn(competitionId)) {
       return ctx.helper.getCompetitionSession(competitionId)!;
+    }
+    // 可以靠 OJ 登录态直接换取比赛登录态的情形
+    if (ctx.helper.isGlobalLoggedIn()) {
+      const competitionUser = await this.service.getCompetitionUserDetail(
+        competitionId,
+        ctx.session.userId,
+      );
+      if (!competitionUser) {
+        return null;
+      }
+      // 允许管理员、审核员凭借 OJ 登录态免密登录
+      if (
+        [ECompetitionUserRole.admin, ECompetitionUserRole.auditor].includes(competitionUser.role)
+      ) {
+        const session = {
+          userId: competitionUser.userId,
+          nickname: competitionUser.info?.nickname || '',
+          subname: competitionUser.info?.subname || '',
+          role: competitionUser.role,
+        };
+        if (ctx.session?.competitions) {
+          ctx.session.competitions[competitionId] = session;
+        } else {
+          // @ts-ignore
+          ctx.session = {
+            competitions: {
+              [competitionId]: session,
+            },
+          };
+        }
+        return session;
+      }
     }
     return null;
   }
 
   @route()
   @id()
-  @getDetail(null)
+  // @getDetail(null)
   async [routesBe.loginCompetition.i](ctx: Context): Promise<ILoginCompetitionResp> {
     const competitionId = ctx.id!;
     const { userId, password } = ctx.request.body as ILoginCompetitionReq;
@@ -174,28 +207,53 @@ export default class CompetitionController {
   @route()
   @id()
   @getDetail(null)
-  // TODO 删除 password
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.auditor,
+  ])
   async [routesBe.getCompetitionUsers.i](ctx: Context) {
     const competitionId = ctx.id!;
     const req = ctx.request.body as IGetCompetitionUsersReq;
-    const list = await this.service.getCompetitionUsers(competitionId, req);
-    return list;
+    const list = await this.service.getCompetitionUsers(competitionId);
+    return {
+      ...list,
+      rows: list.rows.filter((user) => {
+        if (req.role !== undefined && user.role !== req.role) {
+          return false;
+        }
+        if (req.status !== undefined && user.status !== req.status) {
+          return false;
+        }
+        if (req.fieldShortName !== undefined && user.fieldShortName !== req.fieldShortName) {
+          return false;
+        }
+        if (req.seatNo !== undefined && user.seatNo !== req.seatNo) {
+          return false;
+        }
+        if (req.banned !== undefined && user.banned !== req.banned) {
+          return false;
+        }
+        return true;
+      }),
+    };
   }
 
   @route()
-  // TODO 删除 password
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.auditor,
+  ])
   async [routesBe.getCompetitionUserDetail.i](ctx: Context) {
     const { competitionId, userId } = ctx.request.body as IGetCompetitionUserDetailReq;
     const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
     if (!detail) {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
     }
-    // if (
-    //   !ctx.helper.checkPerms(EPerm.ReadCompetitionUser) &&
-    //   ctx.session.username !== detail.username
-    // ) {
-    //   throw new ReqError(Codes.GENERAL_NO_PERMISSION);
-    // }
+    if (!ctx.helper.checkCompetitionRole(competitionId, [ECompetitionUserRole.admin])) {
+      delete detail.password;
+    }
     return detail;
   }
 
@@ -204,21 +262,20 @@ export default class CompetitionController {
   @getDetail(null)
   async [routesBe.getPublicCompetitionParticipants.i](ctx: Context) {
     const competitionId = ctx.id!;
-    const list = await this.service.getCompetitionUsers(competitionId, {
-      role: ECompetitionUserRole.participant,
-    });
-    const filtered = list.rows.filter((user) =>
-      [
-        ECompetitionUserStatus.available,
-        ECompetitionUserStatus.entered,
-        ECompetitionUserStatus.quitted,
-      ].includes(user.status),
+    const list = await this.service.getCompetitionUsers(competitionId);
+    const filtered = list.rows.filter(
+      (user) =>
+        user.role === ECompetitionUserRole.participant &&
+        [
+          ECompetitionUserStatus.available,
+          ECompetitionUserStatus.entered,
+          ECompetitionUserStatus.quitted,
+        ].includes(user.status),
     );
     return {
       count: filtered.length,
       rows: filtered.map((user) => {
         const u = { ...user };
-        delete u.password;
         if (u.info) {
           delete u.info.schoolNo;
           delete u.info.tel;

@@ -111,7 +111,6 @@ export type TMCompetitionUserLiteFields = Extract<
   | 'role'
   | 'status'
   | 'info'
-  | 'password'
   | 'fieldShortName'
   | 'seatNo'
   | 'banned'
@@ -344,16 +343,16 @@ export type IMCompetitionServiceGetCompetitionUserListRes = defModel.ListModelRe
 //#endregion
 
 //#region service.getCompetitionUsers
-export interface IMCompetitionServiceGetCompetitionUsersOpt {
-  role?: ICompetitionUserModel['role'];
-  status?: ICompetitionUserModel['status'];
-  banned?: ICompetitionUserModel['banned'];
-  fieldShortName?: ICompetitionUserModel['fieldShortName'];
-  seatNo?: ICompetitionUserModel['seatNo'];
-}
+// export interface IMCompetitionServiceGetCompetitionUsersOpt {
+//   role?: ICompetitionUserModel['role'];
+//   status?: ICompetitionUserModel['status'];
+//   banned?: ICompetitionUserModel['banned'];
+//   fieldShortName?: ICompetitionUserModel['fieldShortName'];
+//   seatNo?: ICompetitionUserModel['seatNo'];
+// }
 
 export type IMCompetitionServiceGetCompetitionUsersRes = defModel.ListModelRes<
-  IMCompetitionUserDetail
+  IMCompetitionUserLite
 >;
 //#endregion
 
@@ -363,12 +362,12 @@ export type IMCompetitionServiceGetCompetitionUserDetailRes = defModel.DetailMod
 >;
 //#endregion
 
-// //#region service.getRelativeCompetitionUser
-// export type IMCompetitionServiceGetRelativeCompetitionUserRes = Record<
-//   ICompetitionUserModel['competitionUserId'],
-//   IMCompetitionUserDetail
-// >;
-// //#endregion
+//#region service.getRelativeCompetitionUser
+export type IMCompetitionServiceGetRelativeCompetitionUserRes = Record<
+  /** competitionId_userId */ string,
+  IMCompetitionUserDetail
+>;
+//#endregion
 
 //#region service.findOneCompetitionUser
 export type IMCompetitionServiceFindOneCompetitionUserOpt = Partial<ICompetitionUserModel>;
@@ -381,30 +380,21 @@ export type IMCompetitionServiceFindOneCompetitionUserRes = defModel.DetailModel
 export type IMCompetitionServiceIsCompetitionUserExistsOpt = Partial<ICompetitionUserModel>;
 //#endregion
 
-// //#region service.createCompetitionUser
-// export interface IMCompetitionServiceCreateCompetitionUserOpt {
-//   username: ICompetitionUserModel['username'];
-//   nickname: ICompetitionUserModel['nickname'];
-//   subname?: ICompetitionUserModel['subname'];
-//   status?: ICompetitionUserModel['status'];
-//   sitNo?: ICompetitionUserModel['sitNo'];
-//   unofficial: ICompetitionUserModel['unofficial'];
-//   password: ICompetitionUserModel['password'];
-//   members: Array<{
-//     schoolNo: string;
-//     name: string;
-//     school: string;
-//     college: string;
-//     major: string;
-//     class: string;
-//     tel: string;
-//     email: string;
-//     clothing: string;
-//   }>;
-// }
+//#region service.createCompetitionUser
+export interface IMCompetitionServiceCreateCompetitionUserOpt {
+  userId: ICompetitionUserModel['userId'];
+  role: ICompetitionUserModel['role'];
+  status: ICompetitionUserModel['status'];
+  info: ICompetitionUserModel['info'];
+  password?: ICompetitionUserModel['password'];
+  fieldShortName?: ICompetitionUserModel['fieldShortName'];
+  seatNo?: ICompetitionUserModel['seatNo'];
+  banned?: ICompetitionUserModel['banned'];
+  unofficialParticipation?: ICompetitionUserModel['unofficialParticipation'];
+}
 
-// export type IMCompetitionServiceCreateCompetitionUserRes = ICompetitionUserModel['competitionUserId'];
-// //#endregion
+export type IMCompetitionServiceCreateCompetitionUserRes = void;
+//#endregion
 
 //#region service.updateCompetitionUser
 export interface IMCompetitionServiceUpdateCompetitionUserOpt {

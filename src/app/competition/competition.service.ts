@@ -41,29 +41,25 @@ import {
   // IMCompetitionServiceFindOneCompetitionUserOpt,
   // IMCompetitionServiceFindOneCompetitionUserRes,
   // IMCompetitionServiceIsCompetitionUserExistsOpt,
-  // IMCompetitionServiceCreateCompetitionUserOpt,
-  // IMCompetitionServiceCreateCompetitionUserRes,
-  // IMCompetitionServiceUpdateCompetitionUserOpt,
-  // IMCompetitionServiceUpdateCompetitionUserRes,
-  // IMCompetitionServiceGetRelativeCompetitionUserRes,
+  IMCompetitionServiceCreateCompetitionUserOpt,
+  IMCompetitionServiceCreateCompetitionUserRes,
+  IMCompetitionServiceUpdateCompetitionUserOpt,
+  IMCompetitionServiceUpdateCompetitionUserRes,
+  IMCompetitionServiceGetRelativeCompetitionUserRes,
   // IMCompetitionServiceGetCompetitionUsersOpt,
   // IMCompetitionServiceGetCompetitionUsersRes,
   IMCompetitionServiceGetCompetitionProblemConfigRes,
   IMCompetitionServiceGetCompetitionUserListOpt,
   IMCompetitionServiceGetCompetitionUserListRes,
-  IMCompetitionServiceGetCompetitionUsersOpt,
   IMCompetitionServiceGetCompetitionUsersRes,
   IMCompetitionServiceGetCompetitionUserDetailRes,
   IMCompetitionServiceFindOneCompetitionUserOpt,
   IMCompetitionServiceFindOneCompetitionUserRes,
   IMCompetitionServiceIsCompetitionUserExistsOpt,
-  IMCompetitionServiceUpdateCompetitionUserOpt,
-  IMCompetitionServiceUpdateCompetitionUserRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { TUserModel } from '@/lib/models/user.model';
-import { IUserModel } from '../user/user.interface';
 import { TCompetitionProblemModel } from '@/lib/models/competitionProblem.model';
 import { CProblemService } from '../problem/problem.service';
 import { IProblemModel } from '../problem/problem.interface';
@@ -108,7 +104,6 @@ const competitionUserLiteFields: Array<TMCompetitionUserLiteFields> = [
   'role',
   'status',
   'info',
-  'password',
   'fieldShortName',
   'seatNo',
   'banned',
@@ -247,6 +242,35 @@ export default class CompetitionService {
   }
 
   /**
+   * 获取全部比赛用户列表缓存。
+   * @param competitionId competitionId
+   */
+  private async _getCompetitionUsersCache(
+    competitionId: ICompetitionUserModel['competitionId'],
+  ): Promise<IMCompetitionUserLite[] | null | ''> {
+    return this.ctx.helper.redisGet<IMCompetitionUserLite[]>(this.redisKey.competitionUsers, [
+      competitionId,
+    ]);
+  }
+
+  /**
+   * 设置全部比赛用户列表缓存。
+   * @param competitionId competitionId
+   * @param data
+   */
+  private async _setCompetitionUsersCache(
+    competitionId: ICompetitionUserModel['competitionId'],
+    data: IMCompetitionUserLite[] | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.competitionUsers,
+      [competitionId],
+      data,
+      data ? this.durations.cacheFullList : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
    * 获取比赛用户详情缓存。
    * @param competitionId competitionId
    * @param userId userId
@@ -286,6 +310,7 @@ export default class CompetitionService {
       isTeam: opts.isTeam,
       createdBy: opts.createdBy,
       // hidden: opts.hidden,
+      deleted: false,
     });
     if (opts.title) {
       where.title = {
@@ -395,6 +420,7 @@ export default class CompetitionService {
           attributes: competitionDetailFields,
           where: {
             competitionId,
+            deleted: false,
           },
         })
         .then((d) => d && (d.get({ plain: true }) as IMCompetitionDetail));
@@ -691,31 +717,32 @@ export default class CompetitionService {
    */
   async getCompetitionUsers(
     competitionId: ICompetitionModel['competitionId'],
-    options: IMCompetitionServiceGetCompetitionUsersOpt,
   ): Promise<IMCompetitionServiceGetCompetitionUsersRes> {
-    // TODO 缓存
-    const res = await this.competitionUserModel
-      .findAll({
-        attributes: competitionUserDetailFields,
-        where: this.utils.misc.ignoreUndefined({
-          competitionId,
-          role: options.role,
-          status: options.status,
-          banned: options.banned,
-          fieldShortName: options.fieldShortName,
-          seatNo: options.seatNo,
-        }),
-        order: [['createdAt', 'ASC']],
-      })
-      .then((r) =>
-        r.map((d) => {
-          const plain = d.get({ plain: true });
-          return this._parseCompetitionUser<IMCompetitionUserDetailPlain>(plain);
-        }),
-      );
+    let res: IMCompetitionServiceGetCompetitionUsersRes['rows'] | null = null;
+    const cached = await this._getCompetitionUsersCache(competitionId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.competitionUserModel
+        .findAll({
+          attributes: competitionUserLiteFields,
+          where: this.utils.misc.ignoreUndefined({
+            competitionId,
+          }),
+          order: [['createdAt', 'ASC']],
+        })
+        .then((r) =>
+          r.map((d) => {
+            const plain = d.get({ plain: true });
+            return this._parseCompetitionUser<IMCompetitionUserDetailPlain>(plain);
+          }),
+        );
+      await this._setCompetitionUsersCache(competitionId, res);
+    }
+    // res = await this._handleRelativeCompetitionUserData(res) || [],
+    res = res || [];
     return {
       count: res.length,
-      // rows: await this._handleRelativeCompetitionUserData(res),
       rows: res,
     };
   }
@@ -756,55 +783,28 @@ export default class CompetitionService {
     return res;
   }
 
-  // /**
-  //  * 按 pk 关联查询比赛用户详情。
-  //  * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
-  //  * @param keys 要关联查询的 pk 列表
-  //  */
-  // async getRelativeCompetitionUser(
-  //   keys: ICompetitionUserModel['competitionUserId'][],
-  // ): Promise<IMCompetitionServiceGetRelativeCompetitionUserRes> {
-  //   const ks = this.lodash.uniq(keys);
-  //   const res: IMCompetitionServiceGetRelativeCompetitionUserRes = {};
-  //   let uncached: typeof keys = [];
-  //   for (const k of ks) {
-  //     const cached = await this._getCompetitionUserDetailCache(k);
-  //     if (cached) {
-  //       res[k] = cached;
-  //     } else if (cached === null) {
-  //       uncached.push(k);
-  //     }
-  //   }
-  //   if (uncached.length) {
-  //     const dbRes = await this.competitionUserModel
-  //       .findAll({
-  //         attributes: competitionUserDetailFields,
-  //         where: {
-  //           competitionUserId: {
-  //             [Op.in]: uncached,
-  //           },
-  //         },
-  //       })
-  //       .then((r) =>
-  //         r.map((d) =>
-  //           this._parseCompetitionUser<IMCompetitionUserDetailPlain>(d.get({ plain: true })),
-  //         ),
-  //       );
-  //     for (const d of dbRes) {
-  //       res[d.competitionUserId] = d;
-  //       await this._setCompetitionUserDetailCache(d.competitionUserId, d);
-  //     }
-  //     for (const k of ks) {
-  //       !res[k] && (await this._setCompetitionUserDetailCache(k, null));
-  //     }
-  //   }
-  //   const resIds = Object.keys(res).map((id) => +id);
-  //   const handled = await this._handleRelativeCompetitionUserData(resIds.map((id) => res[id]));
-  //   resIds.forEach((id, index) => {
-  //     res[id] = handled[index];
-  //   });
-  //   return res;
-  // }
+  /**
+   * 按 pk 关联查询比赛用户详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表
+   */
+  async getRelativeCompetitionUser(
+    keys: string[],
+  ): Promise<IMCompetitionServiceGetRelativeCompetitionUserRes> {
+    const ks = this.lodash.uniq(keys);
+    const res: IMCompetitionServiceGetRelativeCompetitionUserRes = {};
+    await Promise.all(
+      ks.map((k) => {
+        const [competitionId, userId] = k.split('_').map((id) => +id);
+        return this.getCompetitionUserDetail(competitionId, userId)
+          .then((d) => {
+            d && (res[k] = d);
+          })
+          .catch(console.error);
+      }),
+    );
+    return res;
+  }
 
   /**
    * 按条件查询比赛用户详情。
@@ -854,22 +854,20 @@ export default class CompetitionService {
     return !!res;
   }
 
-  // /**
-  //  * 创建比赛用户。
-  //  * @param competitionId competitionId
-  //  * @param data 创建数据
-  //  * @returns 创建成功的 competitionUserId
-  //  */
-  // async createCompetitionUser(
-  //   competitionId: ICompetitionModel['competitionId'],
-  //   data: IMCompetitionServiceCreateCompetitionUserOpt,
-  // ): Promise<IMCompetitionServiceCreateCompetitionUserRes> {
-  //   const res = await this.competitionUserModel.create({
-  //     ...this._formatCompetitionUser(data),
-  //     competitionId,
-  //   });
-  //   return res.competitionUserId;
-  // }
+  /**
+   * 创建比赛用户。
+   * @param competitionId competitionId
+   * @param data 创建数据
+   */
+  async createCompetitionUser(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionServiceCreateCompetitionUserOpt,
+  ): Promise<IMCompetitionServiceCreateCompetitionUserRes> {
+    await this.competitionUserModel.create({
+      ...data,
+      competitionId,
+    });
+  }
 
   /**
    * 更新比赛用户（部分更新）。
@@ -889,6 +887,16 @@ export default class CompetitionService {
       },
     });
     return res[0] > 0;
+  }
+
+  /**
+   * 清除全部比赛用户列表缓存。
+   * @param competitionId competitionId
+   */
+  async clearCompetitionUsersCache(
+    competitionId: ICompetitionUserModel['competitionId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionUsers, [competitionId]);
   }
 
   /**
