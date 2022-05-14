@@ -857,15 +857,18 @@ export default class CompetitionService {
   /**
    * 创建比赛用户。
    * @param competitionId competitionId
+   * @param userId userId
    * @param data 创建数据
    */
   async createCompetitionUser(
     competitionId: ICompetitionModel['competitionId'],
+    userId: ICompetitionUserModel['userId'],
     data: IMCompetitionServiceCreateCompetitionUserOpt,
   ): Promise<IMCompetitionServiceCreateCompetitionUserRes> {
     await this.competitionUserModel.create({
       ...data,
       competitionId,
+      userId,
     });
   }
 

@@ -2,6 +2,7 @@ import { IUserModel, IUserModelRatingHistory } from '../user/user.interface';
 import { IMProblemDetail } from '../problem/problem.interface';
 import { ECompetitionUserRole, ECompetitionUserStatus, EContestRatingStatus } from '@/common/enums';
 import { ICompetitionUserInfo } from '@/common/interfaces/competition';
+import { ECompetitionLogAction } from './competition.enum';
 
 //#region competition model
 export interface ICompetitionModel {
@@ -202,6 +203,22 @@ export type IMCompetitionRatingCompetitionDetail = Pick<
 >;
 //#endregion
 
+//#region competition model
+export interface ICompetitionLogModel {
+  competitionLogId: number;
+  competitionId: number;
+  action: ECompetitionLogAction;
+  opUserId: number | null;
+  userId: number | null;
+  problemId: number | null;
+  solutionId: number | null;
+  detail: any;
+  ip: string;
+  userAgent: string;
+  createdAt: Date;
+}
+//#endregion
+
 //#region ranklist
 export interface IMCompetitionRanklistProblemResultStat {
   result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
@@ -382,7 +399,6 @@ export type IMCompetitionServiceIsCompetitionUserExistsOpt = Partial<ICompetitio
 
 //#region service.createCompetitionUser
 export interface IMCompetitionServiceCreateCompetitionUserOpt {
-  userId: ICompetitionUserModel['userId'];
   role: ICompetitionUserModel['role'];
   status: ICompetitionUserModel['status'];
   info: ICompetitionUserModel['info'];

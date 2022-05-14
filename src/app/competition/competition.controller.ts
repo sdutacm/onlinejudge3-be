@@ -8,6 +8,7 @@ import {
   getDetail,
   respDetail,
   authCompetitionRole,
+  login,
 } from '@/lib/decorators/controller.decorator';
 import { CCompetitionMeta } from './competition.meta';
 import { routesBe } from '@/common/routes';
@@ -35,8 +36,11 @@ import {
   IGetCompetitionUsersReq,
   IGetCompetitionUserDetailReq,
   IGetPublicCompetitionParticipantDetailReq,
+  ISignUpCompetitionParticipantReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
+import { CCompetitionLogService } from './competitionLog.service';
+import { ECompetitionLogAction } from './competition.enum';
 
 @provide()
 @controller('/')
@@ -58,6 +62,9 @@ export default class CompetitionController {
 
   @inject()
   problemService: CProblemService;
+
+  @inject()
+  competitionLogService: CCompetitionLogService;
 
   @inject()
   utils: IUtils;
@@ -164,6 +171,7 @@ export default class CompetitionController {
         },
       };
     }
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.Login);
     return session;
   }
 
@@ -171,6 +179,7 @@ export default class CompetitionController {
   @id()
   async [routesBe.logoutCompetition.i](ctx: Context) {
     const competitionId = ctx.id!;
+    await this.competitionLogService.log(competitionId, ECompetitionLogAction.Logout);
     delete ctx.session.competitions?.[competitionId];
   }
 
@@ -282,7 +291,6 @@ export default class CompetitionController {
           delete u.info.qq;
           delete u.info.weChat;
           delete u.info.clothing;
-          delete u.info.birthDate;
         }
         return u;
       }),
@@ -312,7 +320,6 @@ export default class CompetitionController {
       delete u.info.qq;
       delete u.info.weChat;
       delete u.info.clothing;
-      delete u.info.birthDate;
     }
     return u;
   }
@@ -349,5 +356,106 @@ export default class CompetitionController {
     return {
       password,
     };
+  }
+
+  @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.getSignedUpCompetitionParticipant.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const userId = ctx.session.userId;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!user) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (user.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.COMPETITION_ALREADY_BEEN_A_USER);
+    }
+    return {
+      competitionId,
+      userId,
+      status: user.status,
+      unofficialParticipation: user.unofficialParticipation,
+      info: user.info,
+      createdAt: user.createdAt,
+    };
+  }
+
+  @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.signUpCompetitionParticipant.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    const now = new Date();
+    if (
+      !detail.registerStartAt ||
+      !detail.registerEndAt ||
+      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+    ) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
+    }
+    const userId = ctx.session.userId;
+    const { unofficialParticipation, info } = ctx.request.body as ISignUpCompetitionParticipantReq;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (user) {
+      if (user.role === ECompetitionUserRole.participant) {
+        throw new ReqError(Codes.COMPETITION_ALREADY_SIGNED_UP_AS_A_PARTICIPANT);
+      } else {
+        throw new ReqError(Codes.COMPETITION_ALREADY_BEEN_A_USER);
+      }
+    }
+    await this.service.createCompetitionUser(competitionId, userId, {
+      role: ECompetitionUserRole.participant,
+      status: ECompetitionUserStatus.auditing,
+      info,
+      unofficialParticipation,
+    });
+  }
+
+  @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.modifySignedUpCompetitionParticipant.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    const now = new Date();
+    if (
+      !detail.registerStartAt ||
+      !detail.registerEndAt ||
+      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+    ) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
+    }
+    const userId = ctx.session.userId;
+    const { unofficialParticipation, info } = ctx.request.body as ISignUpCompetitionParticipantReq;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!user) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (user.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.COMPETITION_ALREADY_BEEN_A_USER);
+    }
+    if (
+      [
+        ECompetitionUserStatus.rejected,
+        ECompetitionUserStatus.entered,
+        ECompetitionUserStatus.quitted,
+      ].includes(user.status)
+    ) {
+      throw new ReqError(Codes.COMPETITION_CANNOT_MODIFY_SELF_PARTICIPANT);
+    }
+    await this.service.updateCompetitionUser(competitionId, userId, {
+      status: ECompetitionUserStatus.auditing,
+      info,
+      unofficialParticipation,
+    });
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
   }
 }
