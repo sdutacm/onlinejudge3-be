@@ -367,7 +367,7 @@ export default class CompetitionController {
     const userId = ctx.session.userId;
     const user = await this.service.getCompetitionUserDetail(competitionId, userId);
     if (!user) {
-      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+      return null;
     }
     if (user.role !== ECompetitionUserRole.participant) {
       throw new ReqError(Codes.COMPETITION_ALREADY_BEEN_A_USER);
