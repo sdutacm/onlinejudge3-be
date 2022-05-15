@@ -413,6 +413,10 @@ export default class CompetitionController {
       info,
       unofficialParticipation,
     });
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
   }
 
   @route()
