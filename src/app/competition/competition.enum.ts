@@ -1,5 +1,6 @@
 export enum ECompetitionLogAction {
-  SignUp = 'SignUp',
   Login = 'Login',
   Logout = 'Logout',
+  SignUp = 'SignUp',
+  ModifySelfParticipantInfo = 'ModifySelfParticipantInfo',
 }

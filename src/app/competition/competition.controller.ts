@@ -417,6 +417,9 @@ export default class CompetitionController {
       this.service.clearCompetitionUserDetailCache(competitionId, userId),
       this.service.clearCompetitionUsersCache(competitionId),
     ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.SignUp, {
+      userId,
+    });
   }
 
   @route()
@@ -461,5 +464,8 @@ export default class CompetitionController {
       this.service.clearCompetitionUserDetailCache(competitionId, userId),
       this.service.clearCompetitionUsersCache(competitionId),
     ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.ModifySelfParticipantInfo, {
+      userId,
+    });
   }
 }
