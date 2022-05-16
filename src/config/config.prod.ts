@@ -3,6 +3,15 @@ import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
 import judgerConfig from './judger.config';
 import path from 'path';
+import { routesBe, IRouteBeConfig } from '@/common/routes';
+
+const csrfRoutes = Object.keys(routesBe)
+  .map(
+    (k) =>
+      // @ts-ignore
+      routesBe[k] as IRouteBeConfig,
+  )
+  .filter((route) => route.csrf);
 
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
@@ -14,6 +23,7 @@ export default (appInfo: EggAppInfo) => {
     csrf: {
       enable: true,
       headerName: 'x-csrf-token',
+      match: csrfRoutes.map((r) => r.url),
     },
   };
 
