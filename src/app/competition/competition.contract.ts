@@ -563,6 +563,17 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionId', 'unofficialParticipation', 'info'],
   } as defContract.ContractSchema,
+
+  auditCompetitionParticipantReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      userId: { type: 'number', minimum: 1 },
+      status: { type: 'number' },
+      reason: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'userId', 'status'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

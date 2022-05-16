@@ -37,6 +37,7 @@ import {
   IGetCompetitionUserDetailReq,
   IGetPublicCompetitionParticipantDetailReq,
   ISignUpCompetitionParticipantReq,
+  IAuditCompetitionParticipantReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -74,6 +75,9 @@ export default class CompetitionController {
 
   @inject()
   mailSender: CMailSender;
+
+  @config()
+  siteTeam: string;
 
   @route()
   @pagination()
@@ -325,6 +329,7 @@ export default class CompetitionController {
   }
 
   @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.fieldAssistantant])
   async [routesBe.requestCompetitionParticipantPassword.i](ctx: Context) {
     const { competitionId, userId } = ctx.request.body as IGetPublicCompetitionParticipantDetailReq;
     const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
@@ -466,6 +471,78 @@ export default class CompetitionController {
     ]);
     this.competitionLogService.log(competitionId, ECompetitionLogAction.ModifySelfParticipantInfo, {
       userId,
+    });
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.auditor])
+  @id()
+  @getDetail(null)
+  async [routesBe.auditCompetitionParticipant.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    if (!ctx.helper.isContestPending(detail)) {
+      throw new ReqError(Codes.COMPETITION_RUNNING_OR_ENDED);
+    }
+    const { userId, status, reason } = ctx.request.body as IAuditCompetitionParticipantReq;
+    if (
+      ![
+        ECompetitionUserStatus.available,
+        ECompetitionUserStatus.modificationRequired,
+        ECompetitionUserStatus.rejected,
+      ].includes(status)
+    ) {
+      throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
+    }
+    const competitionUser = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!competitionUser) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (competitionUser.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    await this.service.updateCompetitionUser(competitionId, userId, {
+      status,
+    });
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
+
+    let auditMessage = '';
+    switch (status) {
+      case ECompetitionUserStatus.available:
+        auditMessage = '<strong>accepted</strong>';
+        break;
+      case ECompetitionUserStatus.modificationRequired:
+        auditMessage = '<strong>waiting for further modification</strong>';
+        break;
+      case ECompetitionUserStatus.rejected:
+        auditMessage = '<strong>rejected</strong>';
+        break;
+      default:
+        auditMessage = '?';
+    }
+    if (reason) {
+      auditMessage += ` with reason "${reason}"`;
+    }
+    const subject = 'Your Competition Auditing Result';
+    const content = `<p>Dear User:</p>
+<p>Thanks for signing up competition "${detail.title}". Your information is ${auditMessage}.</p>
+<p>You can review or update your information in competition page.</p>
+<p><br/></p>
+<p>${this.siteTeam}</p>`;
+    const user = await this.userService.findOne({ userId });
+    // 发送邮件通知
+    user?.email && this.mailSender.singleSend(user.email, subject, content);
+    // 发送站内信
+    this.messageService.sendSystemMessage(userId, subject, content);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.AuditParticipant, {
+      userId,
+      detail: {
+        status,
+        reason,
+      },
     });
   }
 }
