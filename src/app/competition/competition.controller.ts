@@ -290,7 +290,7 @@ export default class CompetitionController {
       rows: filtered.map((user) => {
         const u = { ...user };
         if (u.info) {
-          delete u.info.schoolNo;
+          delete u.info.studentNo;
           delete u.info.tel;
           delete u.info.qq;
           delete u.info.weChat;
@@ -319,7 +319,7 @@ export default class CompetitionController {
     const u = { ...detail };
     delete u.password;
     if (u.info) {
-      delete u.info.schoolNo;
+      delete u.info.studentNo;
       delete u.info.tel;
       delete u.info.qq;
       delete u.info.weChat;
