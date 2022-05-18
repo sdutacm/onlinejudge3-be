@@ -96,7 +96,11 @@ const competitionDetailFields: Array<TMCompetitionDetailFields> = [
   'hidden',
 ];
 
-const competitionProblemDetailFields: Array<TMCompetitionProblemDetailFields> = ['problemId'];
+const competitionProblemDetailFields: Array<TMCompetitionProblemDetailFields> = [
+  'problemId',
+  'balloonAlias',
+  'balloonColor',
+];
 
 const competitionUserLiteFields: Array<TMCompetitionUserLiteFields> = [
   'competitionId',
@@ -647,6 +651,8 @@ export default class CompetitionService {
         competitionId,
         problemId: problem.problemId,
         index,
+        balloonAlias: problem.balloonAlias || '',
+        balloonColor: problem.balloonColor || '',
       })),
     );
   }

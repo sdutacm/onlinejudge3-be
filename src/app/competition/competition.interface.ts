@@ -67,13 +67,15 @@ export interface ICompetitionProblemModel {
   competitionId: number;
   problemId: number;
   index: number;
+  balloonAlias: string;
+  balloonColor: string;
 }
 
 export type TCompetitionProblemModelFields = keyof ICompetitionProblemModel;
 
 export type TMCompetitionProblemDetailFields = Extract<
   TCompetitionProblemModelFields,
-  'problemId' | 'title'
+  'problemId' | 'title' | 'balloonAlias' | 'balloonColor'
 >;
 
 export type IMCompetitionProblemLite = Pick<
@@ -203,7 +205,7 @@ export type IMCompetitionRatingCompetitionDetail = Pick<
 >;
 //#endregion
 
-//#region competition model
+//#region competition log model
 export interface ICompetitionLogModel {
   competitionLogId: number;
   competitionId: number;
@@ -216,6 +218,17 @@ export interface ICompetitionLogModel {
   ip: string;
   userAgent: string;
   createdAt: Date;
+}
+//#endregion
+
+//#region competition setting model
+export interface ICompetitionSettingModel {
+  competitionId: number;
+  frozenLength: number;
+  allowedAuthMethods: string[];
+  allowedSolutionLanguages: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 //#endregion
 
@@ -341,6 +354,8 @@ export type IMCompetitionServiceGetCompetitionProblemConfigRes = defModel.FullLi
 //#region service.setCompetitionProblems
 export type IMCompetitionServiceSetCompetitionProblemsOpt = Array<{
   problemId: ICompetitionProblemModel['problemId'];
+  balloonAlias?: ICompetitionProblemModel['balloonAlias'];
+  balloonColor?: ICompetitionProblemModel['balloonColor'];
 }>;
 //#endregion
 

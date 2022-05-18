@@ -49,6 +49,22 @@ export default class CompetitionProblemModel extends Model<CompetitionProblemMod
     type: DataType.TINYINT,
   })
   index: number;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'balloon_alias',
+    type: DataType.STRING(16),
+  })
+  balloonAlias: string;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'balloon_color',
+    type: DataType.STRING(32),
+  })
+  balloonColor: string;
 }
 
 export type TCompetitionProblemModel = typeof CompetitionProblemModel;
