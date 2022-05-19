@@ -22,6 +22,7 @@ import miscContract from '../src/app/misc/misc.contract';
 import statContract from '../src/app/stat/stat.contract';
 import fieldContract from '../src/app/field/field.contract';
 import competitionContract from '../src/app/competition/competition.contract';
+import balloonContract from '../src/app/balloon/balloon.contract';
 
 // 新增 contract 配置在这里
 // [contractObject, filename]
@@ -45,6 +46,7 @@ const contracts = [
   [statContract, 'stat'],
   [fieldContract, 'field'],
   [competitionContract, 'competition'],
+  [balloonContract, 'balloon'],
 ];
 
 const banner = `/**
