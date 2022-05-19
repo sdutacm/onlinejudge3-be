@@ -10,6 +10,7 @@ export interface IBalloonModel {
   balloonAlias: string;
   balloonColor: string;
   nickname: string;
+  subname: string;
   fieldShortName: string;
   seatNo: number;
   type: EBalloonType;

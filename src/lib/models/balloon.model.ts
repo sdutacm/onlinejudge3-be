@@ -92,10 +92,18 @@ export default class BalloonModel extends Model<BalloonModel> implements IBalloo
   balloonColor: string;
 
   @AllowNull(false)
+  @Default('')
   @Column({
     type: DataType.STRING(64),
   })
   nickname: string;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    type: DataType.STRING(64),
+  })
+  subname: string;
 
   @AllowNull(true)
   @Column({

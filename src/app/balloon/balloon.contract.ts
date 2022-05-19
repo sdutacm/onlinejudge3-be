@@ -37,6 +37,7 @@ const balloonContract = {
             balloonAlias: { type: 'string' },
             balloonColor: { type: 'string' },
             nickname: { type: 'string' },
+            subname: { type: 'string' },
             fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
             seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
             type: { type: 'number' },
