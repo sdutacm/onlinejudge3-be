@@ -9,6 +9,8 @@ import {
   respDetail,
   authCompetitionRole,
   login,
+  authPerm,
+  authCompetitionRoleOrAuthPerm,
 } from '@/lib/decorators/controller.decorator';
 import { CCompetitionMeta } from './competition.meta';
 import { routesBe } from '@/common/routes';
@@ -33,11 +35,16 @@ import {
   IGetCompetitionSessionResp,
   ILoginCompetitionReq,
   ILoginCompetitionResp,
+  ICreateCompetitionReq,
+  ICreateCompetitionResp,
+  IGetCompetitionProblemConfigResp,
+  ISetCompetitionProblemConfigReq,
   IGetCompetitionUsersReq,
   IGetCompetitionUserDetailReq,
   IGetPublicCompetitionParticipantDetailReq,
   ISignUpCompetitionParticipantReq,
   IAuditCompetitionParticipantReq,
+  IUpdateCompetitionDetailReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -195,27 +202,89 @@ export default class CompetitionController {
   @respDetail()
   async [routesBe.getCompetitionDetail.i](_ctx: Context) {}
 
-  // @route()
-  // @authPerm(EPerm.WriteCompetition)
-  // async [routesBe.createCompetition.i](ctx: Context): Promise<ICreateCompetitionResp> {
-  //   const data = ctx.request.body as ICreateCompetitionReq;
-  //   const newId = await this.service.create({
-  //     ...data,
-  //     author: ctx.session.userId,
-  //   });
-  //   return { competitionId: newId };
-  // }
+  @route()
+  @authPerm(EPerm.WriteContest)
+  async [routesBe.createCompetition.i](ctx: Context): Promise<ICreateCompetitionResp> {
+    const data = ctx.request.body as ICreateCompetitionReq;
+    const competitionId = await this.service.create({
+      ...data,
+      createdBy: ctx.session.userId,
+    });
+    await this.service.createCompetitionUser(competitionId, ctx.session.userId, {
+      role: ECompetitionUserRole.admin,
+      status: ECompetitionUserStatus.available,
+      info: {
+        nickname: 'Admin',
+      },
+    });
+    return { competitionId };
+  }
 
-  // @route()
-  // @authPerm(EPerm.WriteCompetition)
-  // @id()
-  // @getDetail(null)
-  // async [routesBe.updateCompetitionDetail.i](ctx: Context): Promise<void> {
-  //   const competitionId = ctx.id!;
-  //   const data = this.lodash.omit(ctx.request.body as IUpdateCompetitionDetailReq, ['competitionId']);
-  //   await this.service.update(competitionId, data);
-  //   await this.service.clearDetailCache(competitionId);
-  // }
+  @route()
+  @id()
+  @getDetail(null)
+  @authCompetitionRoleOrAuthPerm(
+    [ECompetitionUserRole.admin, ECompetitionUserRole.principal],
+    undefined,
+    EPerm.WriteContest,
+  )
+  async [routesBe.updateCompetitionDetail.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const data = this.lodash.omit(ctx.request.body as IUpdateCompetitionDetailReq, [
+      'competitionId',
+    ]);
+    await this.service.update(competitionId, data);
+    await this.service.clearDetailCache(competitionId);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionProblems.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    if (
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+      ]) &&
+      ctx.helper.isContestPending(detail)
+    ) {
+      throw new ReqError(Codes.COMPETITION_PENDING);
+    }
+    return this.service.getCompetitionProblems(competitionId);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  async [routesBe.getCompetitionProblemConfig.i](
+    ctx: Context,
+  ): Promise<IGetCompetitionProblemConfigResp> {
+    const competitionId = ctx.id!;
+    const list = await this.service.getCompetitionProblemConfig(competitionId);
+    const problemIds = list.rows.map((d) => d.problemId);
+    const relativeProblems = await this.problemService.getRelative(problemIds, null);
+    return {
+      count: list.count,
+      rows: list.rows.map((d) => ({
+        ...d,
+        title: relativeProblems[d.problemId]?.title,
+      })),
+    };
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  async [routesBe.setCompetitionProblemConfig.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const { problems } = ctx.request.body as ISetCompetitionProblemConfigReq;
+    await this.service.setCompetitionProblems(competitionId, problems);
+    await this.service.clearCompetitionProblemsCache(competitionId);
+  }
 
   @route()
   @id()
@@ -481,7 +550,7 @@ export default class CompetitionController {
   async [routesBe.auditCompetitionParticipant.i](ctx: Context): Promise<void> {
     const competitionId = ctx.id!;
     const detail = ctx.detail! as IMCompetitionDetail;
-    if (!ctx.helper.isContestPending(detail)) {
+    if (!ctx.helper.isCompetitionPending(detail)) {
       throw new ReqError(Codes.COMPETITION_RUNNING_OR_ENDED);
     }
     const { userId, status, reason } = ctx.request.body as IAuditCompetitionParticipantReq;

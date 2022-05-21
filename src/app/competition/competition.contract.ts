@@ -180,6 +180,182 @@ const competitionContract = {
     ],
   } as defContract.ContractSchema,
 
+  createCompetitionReq: {
+    properties: {
+      title: { type: 'string' },
+      introduction: { type: 'string' },
+      startAt: { type: 'string', format: 'date-time' },
+      endAt: { type: 'string', format: 'date-time' },
+      registerStartAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      registerEndAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      isTeam: { type: 'boolean' },
+      hidden: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: [
+      'title',
+      'introduction',
+      'startAt',
+      'endAt',
+      'registerStartAt',
+      'registerEndAt',
+      'isTeam',
+      'hidden',
+    ],
+  } as defContract.ContractSchema,
+
+  createCompetitionResp: {
+    properties: {
+      competitionId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  updateCompetitionDetailReq: {
+    properties: {
+      competitionId: { type: 'number' },
+      title: { type: 'string' },
+      introduction: { type: 'string' },
+      startAt: { type: 'string', format: 'date-time' },
+      endAt: { type: 'string', format: 'date-time' },
+      registerStartAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      registerEndAt: {
+        anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+      },
+      isTeam: { type: 'boolean' },
+      hidden: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            input: { type: 'string' },
+            output: { type: 'string' },
+            sampleInput: { type: 'string' },
+            sampleOutput: { type: 'string' },
+            hint: { type: 'string' },
+            source: { type: 'string' },
+            author: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+            timeLimit: { type: 'number' },
+            memoryLimit: { type: 'number' },
+            difficulty: { type: 'number' },
+            accepted: { type: 'number' },
+            submitted: { type: 'number' },
+            spj: { type: 'boolean' },
+            display: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+            balloonAlias: { type: 'string' },
+            balloonColor: { type: 'string' },
+          },
+          additionalProperties: false,
+          required: [
+            'problemId',
+            'title',
+            'description',
+            'input',
+            'output',
+            'sampleInput',
+            'sampleOutput',
+            'hint',
+            'source',
+            'author',
+            'timeLimit',
+            'memoryLimit',
+            'difficulty',
+            'accepted',
+            'submitted',
+            'spj',
+            'display',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemConfigReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemConfigResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number', minimum: 1 },
+            title: { type: 'string' },
+            balloonAlias: { type: 'string' },
+            balloonColor: { type: 'string' },
+          },
+          additionalProperties: false,
+          required: ['problemId', 'title', 'balloonAlias', 'balloonColor'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  setCompetitionProblemConfigReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      problems: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            problemId: { type: 'number', minimum: 1 },
+            balloonAlias: { type: 'string' },
+            balloonColor: { type: 'string' },
+          },
+          additionalProperties: false,
+          required: ['problemId', 'balloonAlias', 'balloonColor'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'problems'],
+  } as defContract.ContractSchema,
+
   getCompetitionUsersReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },

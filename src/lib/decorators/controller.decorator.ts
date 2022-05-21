@@ -643,7 +643,7 @@ export function auth(perm: 'perm' | 'admin'): MethodDecorator {
 
 /**
  * 按权限鉴权。
- * @param ...perms 要求的权限列表
+ * @param ...permExpr 要求的权限列表
  */
 export function authPerm(...permExpr: (EPerm | EPerm[])[]): MethodDecorator {
   return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
@@ -716,7 +716,7 @@ export function authOrRequireSelf(
  * 鉴权或校验要操作的实体的所有者是否是当前登录用户。
  * （先尝试鉴权，如果没有权限则校验实体所有者）
  * @param selectUserId 自定义如何取得实体所有者的 userId（参数同 `@requireSelf()`）
- * @param perms 要求的权限列表（参数同 `@authPerm()`）
+ * @param ...permExpr 要求的权限列表（参数同 `@authPerm()`）
  */
 export function authPermOrRequireSelf(
   selectUserId?: (ctx: Context) => number,
@@ -791,7 +791,7 @@ export function authOrRequireContestSession(
  * 鉴权或校验是否有比赛 Session。
  * （先尝试鉴权，如果没有权限则校验比赛 Session）
  * @param selectContestId 自定义如何取得 contestId（参数同 `@requireContestSession()`）
- * @param perms 要求的权限列表（参数同 `@authPerm()`）
+ * @param ...permExpr 要求的权限列表（参数同 `@authPerm()`）
  */
 export function authPermOrRequireContestSession(
   selectContestId?: (ctx: Context) => number,
@@ -828,6 +828,36 @@ export function authCompetitionRole(
 
     descriptor.value = async function (ctx: Context, ...rest: any[]) {
       if (!authCompetitionRoleImpl(ctx, roleExpr, selectCompetitionId)) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
+ * 校验比赛角色或鉴权。
+ * （先尝试校验比赛角色，如果没有则尝试鉴权）
+ * @param roleExpr 比赛角色表达式（参数同 `@authCompetitionRole()`）
+ * @param selectCompetitionId 自定义如何取得比赛 ID（参数同 `@authCompetitionRole()`）
+ * @param ...permExpr 要求的权限列表（参数同 `@authPerm()`）
+ */
+export function authCompetitionRoleOrAuthPerm(
+  roleExpr: ECompetitionUserRole[],
+  selectCompetitionId?: (ctx: Context) => number,
+  ...permExpr: (EPerm | EPerm[])[]
+): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (
+        !authCompetitionRoleImpl(ctx, roleExpr, selectCompetitionId) &&
+        !authPermsImpl(ctx, permExpr)
+      ) {
         ctx.status = 403;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
         return;

@@ -311,6 +311,7 @@ export interface IMCompetitionServiceCreateOpt {
   registerStartAt?: ICompetitionModel['registerStartAt'] | string;
   registerEndAt?: ICompetitionModel['registerEndAt'] | string;
   hidden?: ICompetitionModel['hidden'];
+  createdBy?: ICompetitionModel['createdBy'];
 }
 
 export type IMCompetitionServiceCreateRes = ICompetitionModel['competitionId'];

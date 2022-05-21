@@ -29,6 +29,7 @@ const redisKey = {
   solutionJudgeInfo: 'cache:solution_judge_info:%d',
   userPermissions: 'cache:user_permissions:%d',
   fieldDetail: 'cache:field_detail:%d',
+  balloonDetail: 'cache:balloon_detail:%d',
   verificationCode: 'verification:code:%s',
   recordUserUpload: 'record:user_upload:%d',
   recordUserCreateGroup: 'record:user_create_group:%d',
