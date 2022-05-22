@@ -45,6 +45,7 @@ import {
   ISignUpCompetitionParticipantReq,
   IAuditCompetitionParticipantReq,
   IUpdateCompetitionDetailReq,
+  IGetCompetitionProblemSolutionStatsResp,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -613,5 +614,79 @@ export default class CompetitionController {
         reason,
       },
     });
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.participant])
+  @id()
+  @getDetail(null)
+  async [routesBe.confirmEnterCompetition.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    if (ctx.helper.isContestEnded(detail)) {
+      throw new ReqError(Codes.COMPETITION_ENDED);
+    }
+    const { userId } = ctx.helper.getCompetitionSession(competitionId)!;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!user || user.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (user.status === ECompetitionUserStatus.quitted) {
+      throw new ReqError(Codes.COMPETITION_USER_QUITTED);
+    }
+    if (![ECompetitionUserStatus.available, ECompetitionUserStatus.entered].includes(user.status)) {
+      throw new ReqError(Codes.COMPETITION_CURRENT_USER_INVALID_STATUS_TO_OPERATE);
+    }
+    await this.service.updateCompetitionUser(competitionId, userId, {
+      status: ECompetitionUserStatus.entered,
+    });
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.ConfirmEnter);
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.participant])
+  @id()
+  @getDetail(null)
+  async [routesBe.confirmQuitCompetition.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    if (!ctx.helper.isContestRunning(detail)) {
+      throw new ReqError(Codes.COMPETITION_NOT_RUNNING);
+    }
+    const { userId } = ctx.helper.getCompetitionSession(competitionId)!;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!user || user.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (user.status === ECompetitionUserStatus.quitted) {
+      throw new ReqError(Codes.COMPETITION_USER_QUITTED);
+    }
+    if (user.status !== ECompetitionUserStatus.entered) {
+      throw new ReqError(Codes.COMPETITION_CURRENT_USER_INVALID_STATUS_TO_OPERATE);
+    }
+    await this.service.updateCompetitionUser(competitionId, userId, {
+      status: ECompetitionUserStatus.quitted,
+    });
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.ConfirmQuit);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionProblemSolutionStats.i](
+    ctx: Context,
+  ): Promise<IGetCompetitionProblemSolutionStatsResp> {
+    const competitionId = ctx.id!;
+    const problems = await this.service.getCompetitionProblems(competitionId);
+    const problemIds = problems.rows.map((problem) => problem.problemId);
+    return this.solutionService.getCompetitionProblemSolutionStats(competitionId, problemIds);
   }
 }

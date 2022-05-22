@@ -131,6 +131,13 @@ export default class SolutionModel extends Model<SolutionModel> implements ISolu
   })
   contestId: number;
 
+  @AllowNull(true)
+  @Column({
+    field: 'competition_id',
+    type: DataType.INTEGER,
+  })
+  competitionId: number | null;
+
   @AllowNull(false)
   @Default(0)
   @Column({

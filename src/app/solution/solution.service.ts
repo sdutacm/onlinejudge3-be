@@ -40,6 +40,7 @@ import {
   IMSolutionServiceGetRelativeJudgeInfoRes,
   TMJudgeInfoFields,
   IMSolutionJudgeInfoFull,
+  IMSolutionServiceGetCompetitionProblemSolutionStatsRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -58,6 +59,7 @@ import { TJudgeInfoModel } from '@/lib/models/judgeInfo.model';
 import Axios from 'axios';
 import http from 'http';
 import { IJudgerConfig } from '@/config/judger.config';
+import { CCompetitionService } from '../competition/competition.service';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -72,6 +74,7 @@ const solutionLiteFields: Array<TMSolutionLiteFields> = [
   'problemId',
   'userId',
   'contestId',
+  'competitionId',
   'result',
   'time',
   'memory',
@@ -87,6 +90,7 @@ const solutionDetailFields: Array<TMSolutionDetailFields> = [
   'problemId',
   'userId',
   'contestId',
+  'competitionId',
   'result',
   'time',
   'memory',
@@ -130,6 +134,9 @@ export default class SolutionService {
 
   @inject()
   contestService: CContestService;
+
+  @inject()
+  competitionService: CCompetitionService;
 
   @inject()
   utils: IUtils;
@@ -246,6 +253,37 @@ export default class SolutionService {
   }
 
   /**
+   * 获取比赛题目提交统计缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param competitionId competitionId
+   */
+  private async _getCompetitionProblemSolutionStatsCache(
+    competitionId: ISolutionModel['competitionId'],
+  ): Promise<IMSolutionContestProblemSolutionStats | null> {
+    return this.ctx.helper.redisGet<IMSolutionContestProblemSolutionStats>(
+      this.redisKey.competitionProblemResultStats,
+      [competitionId],
+    );
+  }
+
+  /**
+   * 设置比赛题目提交统计缓存。
+   * @param competitionId competitionId
+   * @param data 数据
+   */
+  private async _setCompetitionProblemSolutionStatsCache(
+    competitionId: ISolutionModel['competitionId'],
+    data: IMSolutionContestProblemSolutionStats,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.competitionProblemResultStats,
+      [competitionId],
+      data,
+      this.durations.cacheDetailMedium,
+    );
+  }
+
+  /**
    * 获取用户提交日历图统计缓存。
    * 如果未找到缓存，则返回 `null`
    * @param userId userId
@@ -316,6 +354,7 @@ export default class SolutionService {
       problemId: opts.problemId,
       userId: opts.userId,
       contestId: opts.contestId,
+      competitionId: opts.competitionId,
       result: opts.result,
       language: opts.language,
     });
@@ -333,7 +372,7 @@ export default class SolutionService {
     data: T[],
   ): Promise<
     Array<
-      Omit<T, 'problemId' | 'userId' | 'contestId'> & {
+      Omit<T, 'problemId' | 'userId' | 'contestId' | 'competitionId'> & {
         problem: IMSolutionRelativeProblem;
       } & {
         user: IMSolutionRelativeUser;
@@ -346,23 +385,36 @@ export default class SolutionService {
     const userIds = data.filter((d) => !d.isContestUser).map((d) => d.userId);
     const contestUserIds = data.filter((d) => d.isContestUser).map((d) => d.userId);
     const contestIds = data.filter((d) => d.contestId > 0).map((d) => d.contestId);
+    const competitionUserKeys = data
+      .filter((d) => d.competitionId)
+      .map((d) => `${d.competitionId}_${d.userId}`);
+    const competitionIds = data
+      .filter((d) => d.competitionId)
+      .map((d) => d.competitionId) as number[];
     const solutionIds = data.map((d) => d.solutionId);
     const [
       relativeProblems,
       relativeUsers,
       relativeContestUsers,
       relativeContests,
+      relativeCompetitionUsers,
+      relativeCompetitions,
       relativeJudgeInfos,
     ] = await Promise.all([
       this.problemService.getRelative(problemIds, null),
       this.userService.getRelative(userIds, null),
       this.contestService.getRelativeContestUser(contestUserIds),
       this.contestService.getRelative(contestIds, null),
+      this.competitionService.getRelativeCompetitionUser(competitionUserKeys),
+      this.competitionService.getRelative(competitionIds, null),
       this.getRelativeJudgeInfo(solutionIds),
     ]);
     return data.map((d) => {
       const relativeProblem = relativeProblems[d.problemId];
       const relativeContest = relativeContests[d.contestId];
+      const relativeCompetition = d.competitionId
+        ? relativeCompetitions[d.competitionId]
+        : undefined;
       const relativeJudgeInfo = relativeJudgeInfos[d.solutionId];
       let user: IMSolutionRelativeUser;
       if (d.isContestUser) {
@@ -375,6 +427,16 @@ export default class SolutionService {
           bannerImage: '',
           rating: relativeUser?.rating || 0,
         };
+      } else if (d.competitionId) {
+        const relativeCompetitionUser = relativeCompetitionUsers[`${d.competitionId}_${d.userId}`];
+        user = {
+          userId: d.userId,
+          username: '',
+          nickname: relativeCompetitionUser?.info?.nickname || '',
+          avatar: '',
+          bannerImage: '',
+          rating: 0,
+        };
       } else {
         const relativeUser = relativeUsers[d.userId];
         user = {
@@ -386,8 +448,9 @@ export default class SolutionService {
           rating: relativeUser?.rating,
         };
       }
+
       const ret = this.utils.misc.ignoreUndefined({
-        ...this.lodash.omit(d, ['problemId', 'userId', 'contestId']),
+        ...this.lodash.omit(d, ['problemId', 'userId', 'contestId', 'competitionId']),
         problem: {
           problemId: relativeProblem?.problemId,
           title: relativeProblem?.title,
@@ -403,6 +466,15 @@ export default class SolutionService {
               type: relativeContest.type,
               startAt: relativeContest.startAt,
               endAt: relativeContest.endAt,
+            }
+          : undefined,
+        competition: relativeCompetition
+          ? {
+              competitionId: relativeCompetition.competitionId,
+              title: relativeCompetition.title,
+              isTeam: relativeCompetition.isTeam,
+              startAt: relativeCompetition.startAt,
+              endAt: relativeCompetition.endAt,
             }
           : undefined,
         judgeInfo: relativeJudgeInfo,
@@ -784,6 +856,8 @@ export default class SolutionService {
                 { [Op.ne]: ESolutionResult.AC },
                 { [Op.ne]: ESolutionResult.WT },
                 { [Op.ne]: ESolutionResult.JG },
+                { [Op.ne]: ESolutionResult.CE },
+                { [Op.ne]: ESolutionResult.SE },
               ],
             },
           },
@@ -794,6 +868,55 @@ export default class SolutionService {
         };
       }
       await this._setContestProblemSolutionStatsCache(contestId, res);
+    }
+    return res;
+  }
+
+  /**
+   * 获取比赛内的题目提交统计（accepted/submitted）。
+   * @param competitionId competitionId
+   * @param problemIds 比赛 problemId 列表
+   */
+  async getCompetitionProblemSolutionStats(
+    competitionId: ISolutionModel['competitionId'],
+    problemIds: ISolutionModel['problemId'][],
+  ): Promise<IMSolutionServiceGetCompetitionProblemSolutionStatsRes> {
+    let res: IMSolutionContestProblemSolutionStats | null = null;
+    const cached = await this._getCompetitionProblemSolutionStatsCache(competitionId);
+    cached && (res = cached);
+    if (!res) {
+      res = {};
+      for (const problemId of problemIds) {
+        const accepted = await this.model.count({
+          where: {
+            competitionId,
+            problemId,
+            result: ESolutionResult.AC,
+          },
+          distinct: true,
+          col: 'userId',
+        });
+        const unaccepted = await this.model.count({
+          where: {
+            competitionId,
+            problemId,
+            result: {
+              [Op.and]: [
+                { [Op.ne]: ESolutionResult.AC },
+                { [Op.ne]: ESolutionResult.WT },
+                { [Op.ne]: ESolutionResult.JG },
+                { [Op.ne]: ESolutionResult.CE },
+                { [Op.ne]: ESolutionResult.SE },
+              ],
+            },
+          },
+        });
+        res[problemId] = {
+          accepted,
+          submitted: accepted + unaccepted,
+        };
+      }
+      await this._setCompetitionProblemSolutionStatsCache(competitionId, res);
     }
     return res;
   }

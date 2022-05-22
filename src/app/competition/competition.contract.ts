@@ -750,6 +750,43 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionId', 'userId', 'status'],
   } as defContract.ContractSchema,
+
+  confirmEnterCompetitionReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  confirmQuitCompetitionReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemSolutionStatsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionProblemSolutionStatsResp: {
+    type: 'object',
+    additionalProperties: {
+      type: 'object',
+      properties: {
+        accepted: { type: 'number' },
+        submitted: { type: 'number' },
+      },
+      additionalProperties: false,
+      required: ['accepted', 'submitted'],
+    },
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

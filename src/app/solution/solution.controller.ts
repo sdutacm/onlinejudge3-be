@@ -24,10 +24,17 @@ import {
 import { IMSolutionDetail, IMSolutionServiceCreateOpt, ISolutionModel } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
-import { EContestType, EContestUserStatus, ESolutionResult } from '@/common/enums';
+import {
+  EContestType,
+  EContestUserStatus,
+  ESolutionResult,
+  ECompetitionUserRole,
+  ECompetitionUserStatus,
+} from '@/common/enums';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CJudgerService } from '../judger/judger.service';
 import { EPerm } from '@/common/configs/perm.config';
+import { CCompetitionService } from '../competition/competition.service';
 
 @provide()
 @controller('/')
@@ -43,6 +50,9 @@ export default class SolutionController {
 
   @inject()
   contestService: CContestService;
+
+  @inject()
+  competitionService: CCompetitionService;
 
   @inject()
   judgerService: CJudgerService;
@@ -77,6 +87,7 @@ export default class SolutionController {
       limit,
       order,
     });
+    // TODO competition
     list.forEach((d) => {
       if (
         d.contest &&
@@ -104,6 +115,7 @@ export default class SolutionController {
     const detail = ctx.detail as IMSolutionDetail;
     const isSelf = this.service.isSolutionSelf(ctx, detail);
     let canSharedView = ctx.loggedIn && detail.shared;
+    // TODO competition
     if (detail.contest) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
     }
@@ -133,6 +145,7 @@ export default class SolutionController {
       if (detail) {
         const isSelf = this.service.isSolutionSelf(ctx, detail);
         let canSharedView = ctx.loggedIn && detail.shared;
+        // TODO competition
         if (detail.contest) {
           canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
         }
@@ -175,7 +188,8 @@ export default class SolutionController {
   @route()
   @rateLimitUser(60, 12)
   async [routesBe.submitSolution.i](ctx: Context): Promise<ISubmitSolutionResp> {
-    const { problemId, language, codeFormat = 'raw' } = ctx.request.body as ISubmitSolutionReq;
+    const { problemId, language, codeFormat = 'raw', competitionId } = ctx.request
+      .body as ISubmitSolutionReq;
     let { code } = ctx.request.body as ISubmitSolutionReq;
     if (codeFormat === 'base64') {
       try {
@@ -191,18 +205,41 @@ export default class SolutionController {
       throw new ReqError(Codes.SOLUTION_INVALID_LANGUAGE);
     }
     let { contestId } = ctx.request.body as ISubmitSolutionReq;
-    if (!contestId) {
+    if (!contestId && !competitionId) {
       if (!ctx.loggedIn) {
         throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
       }
-    } else {
+    } else if (contestId) {
       if (!ctx.helper.isContestLoggedIn(contestId)) {
         throw new ReqError(Codes.CONTEST_NOT_LOGGED_IN);
+      }
+    } else if (competitionId) {
+      if (!ctx.helper.isCompetitionLoggedIn(competitionId)) {
+        throw new ReqError(Codes.COMPETITION_NOT_LOGGED_IN);
       }
     }
     const problem = await this.problemService.getDetail(problemId, null);
     const contest = contestId ? await this.contestService.getDetail(contestId, null) : null;
-    let sess = ctx.helper.getGlobalSession();
+    const competition = competitionId
+      ? await this.competitionService.getDetail(competitionId, null)
+      : null;
+    let sess:
+      | {
+          userId: number;
+          username: string;
+          nickname: string;
+          permission: number;
+          avatar: string | null;
+        }
+      | {
+          // global OJ account info
+          userId: number;
+          // competition user info
+          nickname: string;
+          subname: string;
+          role: ECompetitionUserRole;
+        }
+      | null = ctx.helper.getGlobalSession();
     if (!problem) {
       throw new ReqError(Codes.SOLUTION_PROBLEM_NOT_EXIST);
     }
@@ -230,18 +267,54 @@ export default class SolutionController {
     } else {
       contestId = -1;
     }
+    // 新比赛提交
+    if (competitionId) {
+      if (!competition) {
+        throw new ReqError(Codes.SOLUTION_CONTEST_NOT_EXIST);
+      }
+      if (ctx.helper.isContestPending(competition) || ctx.helper.isContestEnded(competition)) {
+        throw new ReqError(Codes.SOLUTION_CONTEST_NOT_IN_PROGRESS);
+      }
+      if (!ctx.helper.isCompetitionLoggedIn(competitionId)) {
+        throw new ReqError(Codes.SOLUTION_CONTEST_NO_PERMISSION);
+      }
+      sess = ctx.helper.getCompetitionSession(competitionId)!;
+      const competitionUser = await this.competitionService.getCompetitionUserDetail(
+        competitionId,
+        sess.userId,
+      );
+      if (!competitionUser || competitionUser.role !== ECompetitionUserRole.participant) {
+        throw new ReqError(Codes.SOLUTION_CONTEST_NO_PERMISSION);
+      }
+      if (competitionUser.status === ECompetitionUserStatus.quitted) {
+        throw new ReqError(Codes.COMPETITION_USER_QUITTED);
+      }
+      if (
+        ![ECompetitionUserStatus.available, ECompetitionUserStatus.entered].includes(
+          competitionUser.status,
+        )
+      ) {
+        throw new ReqError(Codes.SOLUTION_CONTEST_NO_PERMISSION);
+      }
+      if (!(await this.competitionService.isProblemInCompetition(problemId, competitionId))) {
+        throw new ReqError(Codes.SOLUTION_PROBLEM_NOT_EXIST);
+      }
+    }
+
     // 没有 OJ 或比赛 Session，无法提交
     if (!sess) {
       throw new ReqError(Codes.GENERAL_NOT_LOGGED_IN);
     }
-    if (!problem.display && contestId <= 0) {
+    if (!problem.display && contestId <= 0 && !competitionId) {
       throw new ReqError(Codes.SOLUTION_PROBLEM_NO_PERMISSION);
     }
     const data: IMSolutionServiceCreateOpt = {
       userId: sess.userId,
-      username: sess.username,
+      // @ts-ignore
+      username: sess.username || '',
       problemId,
       contestId,
+      competitionId,
       result: ESolutionResult.RPD,
       language,
       codeLength: code.length,
@@ -278,6 +351,7 @@ export default class SolutionController {
   async [routesBe.rejudgeSolution.i](ctx: Context) {
     const data = ctx.request.body as IRejudgeSolutionReq;
     const solutionIds = await this.service.findAllSolutionIds(data);
+    // TODO competition
     const pq = new this.PromiseQueue(5, Infinity);
     const queueTasks = solutionIds.map((solutionId) =>
       pq.add(async () => {

@@ -1,12 +1,14 @@
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { IContestModel } from '../contest/contest.interface';
+import { ICompetitionModel } from '../competition/competition.interface';
 
 export interface ISolutionModel {
   solutionId: number;
   problemId: number;
   userId: number;
   contestId: number;
+  competitionId: number | null;
   result: number;
   time: number;
   memory: number;
@@ -49,6 +51,7 @@ export type TMSolutionLiteFields = Extract<
   | 'problemId'
   | 'userId'
   | 'contestId'
+  | 'competitionId'
   | 'result'
   | 'time'
   | 'memory'
@@ -65,6 +68,7 @@ export type TMSolutionDetailFields = Extract<
   | 'problemId'
   | 'userId'
   | 'contestId'
+  | 'competitionId'
   | 'result'
   | 'time'
   | 'memory'
@@ -102,17 +106,23 @@ export type IMSolutionRelativeContest = Pick<
   IContestModel,
   'contestId' | 'title' | 'type' | 'startAt' | 'endAt'
 >;
+export type IMSolutionRelativeCompetition = Pick<
+  ICompetitionModel,
+  'competitionId' | 'title' | 'isTeam' | 'startAt' | 'endAt'
+>;
 
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
 export type IMSolutionLite = Omit<
   Pick<ISolutionModel, TMSolutionLiteFields>,
-  'problemId' | 'userId' | 'contestId'
+  'problemId' | 'userId' | 'contestId' | 'competitionId'
 > & {
   problem: IMSolutionRelativeProblem;
 } & {
   user: IMSolutionRelativeUser;
 } & {
   contest?: IMSolutionRelativeContest;
+} & {
+  competition?: IMSolutionRelativeCompetition;
 } & {
   judgeInfo?: IMSolutionJudgeInfo;
 };
@@ -123,13 +133,15 @@ export type IMSolutionDetailPlainFull = Pick<ISolutionModel, TMSolutionDetailFie
 };
 export type IMSolutionDetail = Omit<
   Pick<ISolutionModel, TMSolutionDetailFields>,
-  'problemId' | 'userId' | 'contestId'
+  'problemId' | 'userId' | 'contestId' | 'competitionId'
 > & {
   problem: IMSolutionRelativeProblem;
 } & {
   user: IMSolutionRelativeUser;
 } & {
   contest?: IMSolutionRelativeContest;
+} & {
+  competition?: IMSolutionRelativeCompetition;
 } & {
   judgeInfo?: IMSolutionJudgeInfo;
 } & {
@@ -175,6 +187,7 @@ export interface IMSolutionServiceGetListOpt {
   problemId?: ISolutionModel['problemId'];
   userId?: ISolutionModel['userId'];
   contestId?: ISolutionModel['contestId'];
+  competitionId?: ISolutionModel['competitionId'];
   result?: ISolutionModel['result'];
   language?: ISolutionModel['language'];
 }
@@ -205,6 +218,7 @@ export interface IMSolutionServiceCreateOpt {
   problemId: ISolutionModel['problemId'];
   userId: ISolutionModel['userId'];
   contestId?: ISolutionModel['contestId'];
+  competitionId?: ISolutionModel['competitionId'];
   result?: ISolutionModel['result'];
   time?: ISolutionModel['time'];
   memory?: ISolutionModel['time'];
@@ -236,6 +250,10 @@ export type IMSolutionServiceUpdateRes = boolean;
 export type IMSolutionServiceGetContestProblemSolutionStatsRes = IMSolutionContestProblemSolutionStats;
 //#endregion
 
+//#region service.getCompetitionProblemSolutionStats
+export type IMSolutionServiceGetCompetitionProblemSolutionStatsRes = IMSolutionContestProblemSolutionStats;
+//#endregion
+
 //#region service.getUserSolutionCalendar
 export type IMSolutionServiceGetUserSolutionCalendarRes = IMSolutionCalendar;
 //#endregion
@@ -250,6 +268,7 @@ export interface IMSolutionServiceFindAllSolutionIdsOpt {
   problemId?: ISolutionModel['problemId'];
   userId?: ISolutionModel['userId'];
   contestId?: ISolutionModel['contestId'];
+  competitionId?: ISolutionModel['competitionId'];
   result?: ISolutionModel['result'];
 }
 

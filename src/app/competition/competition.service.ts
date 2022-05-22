@@ -792,7 +792,7 @@ export default class CompetitionService {
   /**
    * 按 pk 关联查询比赛用户详情。
    * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
-   * @param keys 要关联查询的 pk 列表
+   * @param keys 要关联查询的 pk 列表，格式为 `${competitionId}_${userId}`
    */
   async getRelativeCompetitionUser(
     keys: string[],
