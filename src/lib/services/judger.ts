@@ -24,8 +24,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const riverDef = grpc.loadPackageDefinition(packageDefinition).river;
 
 export interface IJudgerOptions {
-  host: string;
-  port: number;
+  address: string;
 }
 
 export class Judger {
@@ -33,10 +32,11 @@ export class Judger {
 
   constructor(opts: IJudgerOptions) {
     // @ts-ignore
-    this.client = new riverDef.River(
-      `${opts.host}:${opts.port}`,
-      grpc.credentials.createInsecure(),
-    );
+    this.client = new riverDef.River(opts.address, grpc.credentials.createInsecure(), {
+      'grpc.service_config': JSON.stringify({
+        loadBalancingConfig: [{ round_robin: {} }],
+      }),
+    });
   }
 
   public getLanguageConfig(): Promise<river.ILanguageItem[]> {

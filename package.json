@@ -11,7 +11,7 @@
     "clean": "midway-bin clean",
     "cov": "cross-env DEBUG=-* midway-bin cov --ts",
     "cov-serve": "static-server coverage/lcov-report -p 7087",
-    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin debug --ts",
+    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git GRPC_NODE_TRACE=all GRPC_NODE_VERBOSITY=debug midway-bin debug --ts",
     "dev": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin dev --ts",
     "dev-w2": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git,egg-socket.io* midway-bin dev --ts --workers=2",
     "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts",
@@ -25,7 +25,7 @@
     "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.2.6",
+    "@grpc/grpc-js": "^1.6.7",
     "@grpc/proto-loader": "^0.5.6",
     "adm-zip": "^0.4.14",
     "ajv": "^6.12.0",

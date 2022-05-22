@@ -198,6 +198,10 @@ export default class JudgerService {
    * @returns wording dir 是否为空
    */
   async checkIsDataGitStatusClean() {
+    if (!this.judgerConfig.dataUsingGit) {
+      console.log('`checkIsDataGitStatusClean` is skipped due to git disabled');
+      return true;
+    }
     const res = await this.git.status();
     if (res.files.length > 0) {
       return false;
@@ -209,6 +213,10 @@ export default class JudgerService {
    * pull data repo git。
    */
   async pullDataGit() {
+    if (!this.judgerConfig.dataUsingGit) {
+      console.log('`pullDataGit` is skipped due to git disabled');
+      return;
+    }
     return this.git.pull('origin', this.judgerConfig.dataGitBranch, { '--no-rebase': null });
   }
 
@@ -216,6 +224,10 @@ export default class JudgerService {
    * checkout data repo git。
    */
   async checkoutDataGit() {
+    if (!this.judgerConfig.dataUsingGit) {
+      console.log('`checkoutDataGit` is skipped due to git disabled');
+      return;
+    }
     return this.git.checkout(this.judgerConfig.dataGitBranch);
   }
 
@@ -231,6 +243,10 @@ export default class JudgerService {
     email: string,
     commitMessage: string,
   ) {
+    if (!this.judgerConfig.dataUsingGit) {
+      console.log('`commitAndPushDataGit` is skipped due to git disabled');
+      return;
+    }
     if (await this.checkIsDataGitStatusClean()) {
       return;
     }

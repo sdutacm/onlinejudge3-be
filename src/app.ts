@@ -36,8 +36,7 @@ module.exports = (app: Application) => {
     await DB.initDB(app.config.sequelize);
 
     app.judger = new Judger({
-      host: app.config.judger.host,
-      port: app.config.judger.port,
+      address: app.config.judger.address,
     });
 
     console.log('✅ App launched');
