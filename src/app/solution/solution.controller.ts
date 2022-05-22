@@ -231,10 +231,8 @@ export default class SolutionController {
           permission: number;
           avatar: string | null;
         }
-      | {
-          // global OJ account info
+      | /** competition session */ {
           userId: number;
-          // competition user info
           nickname: string;
           subname: string;
           role: ECompetitionUserRole;

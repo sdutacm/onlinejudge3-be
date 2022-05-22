@@ -41,6 +41,7 @@ import {
   TMJudgeInfoFields,
   IMSolutionJudgeInfoFull,
   IMSolutionServiceGetCompetitionProblemSolutionStatsRes,
+  IMSolutionServiceGetAllCompetitionSolutionListRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -992,6 +993,24 @@ export default class SolutionService {
         attributes: solutionLiteFields,
         where: {
           contestId,
+        },
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
+    return res;
+  }
+
+  /**
+   * 获取比赛的所有提交。
+   * @param competitionId competitionId
+   */
+  async getAllCompetitionSolutionList(
+    competitionId: ISolutionModel['competitionId'],
+  ): Promise<IMSolutionServiceGetAllCompetitionSolutionListRes> {
+    const res = await this.model
+      .findAll({
+        attributes: solutionLiteFields,
+        where: {
+          competitionId,
         },
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));

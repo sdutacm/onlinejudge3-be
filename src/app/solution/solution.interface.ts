@@ -262,6 +262,10 @@ export type IMSolutionServiceGetUserSolutionCalendarRes = IMSolutionCalendar;
 export type IMSolutionServiceGetAllContestSolutionListRes = IMSolutionLitePlain[];
 //#endregion
 
+//#region service.getAllCompetitionSolutionList
+export type IMSolutionServiceGetAllCompetitionSolutionListRes = IMSolutionLitePlain[];
+//#endregion
+
 //#region service.findAllSolutionIds
 export interface IMSolutionServiceFindAllSolutionIdsOpt {
   solutionId?: ISolutionModel['solutionId'];
