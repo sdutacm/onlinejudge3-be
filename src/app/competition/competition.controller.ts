@@ -152,12 +152,12 @@ export default class CompetitionController {
     });
     if (!competitionUser) {
       throw new ReqError(Codes.COMPETITION_INCORRECT_PASSWORD);
-    } else if (competitionUser.status === ECompetitionUserStatus.quitted) {
-      throw new ReqError(Codes.COMPETITION_USER_QUITTED);
     } else if (
-      ![ECompetitionUserStatus.available, ECompetitionUserStatus.entered].includes(
-        competitionUser.status,
-      )
+      ![
+        ECompetitionUserStatus.available,
+        ECompetitionUserStatus.entered,
+        ECompetitionUserStatus.quitted,
+      ].includes(competitionUser.status)
     ) {
       throw new ReqError(Codes.COMPETITION_USER_STATUS_CANNOT_ACCESS);
     }
