@@ -142,18 +142,20 @@ export default class BalloonService {
     const newStr: string[] = []
     for (const elem of balloonsRes) {
       const str = `${elem.userId}-${elem.problemId}-${elem.isFb}`
+      if (!oldStr.includes(str)) {
+        oldStr.push(str)
+      }
       // 移除回撤的数据
       if (elem.type === 2) {
         const idx = oldStr.indexOf(`${elem.userId}-${elem.problemId}-true`)
         if (idx > -1) {
-          oldStr.slice(idx, 1)
+          oldStr.splice(idx, 1)
         }
         const idx1 = oldStr.indexOf(`${elem.userId}-${elem.problemId}-false`)
         if (idx1 > -1) {
-          oldStr.slice(idx1, 1)
+          oldStr.splice(idx1, 1)
         }
       }
-      oldStr.push(str)
     }
     for (const elem of balloonSolution) {
       const str = `${elem.user.userId}-${elem.problem.config.problemId}-${elem.isFb}`
@@ -188,20 +190,21 @@ export default class BalloonService {
       })
     }
 
-    // 需要回撤的更新状态
+    // 需要回撤的插入
     for (const str of needRevoke) {
       const [userIdStr, problemIdStr, _] = str.split('-')
       const userId = Number(userIdStr)
       const problemId = Number(problemIdStr)
-      this.model.update({
-        type: 2,
-        status: 1
-      }, {
+      const revokeData = await this.model.findOne({
         where: {
           userId,
           problemId
         }
-      })
+      }).then((r) => r && r.get({plain: true})) as IMBalloonLite
+      if (revokeData) {
+        delete revokeData.balloonId
+        await this.model.create({ ...revokeData, type: 2, status: 1})
+      }
     }
 
     const res = await this.getAllBalloonsByCompetitionId(competitionId)
