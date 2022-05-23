@@ -73,6 +73,17 @@ const balloonContract = {
     additionalProperties: false,
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
+
+  updateCompetitionBalloonStatusReq: {
+    properties: {
+      balloonId: { type: 'number', minimum: 1 },
+      competitionId: { type: 'number', minimum: 1 },
+      status: { type: 'number' },
+      assignedUserId: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['balloonId', 'competitionId'],
+  } as defContract.ContractSchema,
 };
 
 export type IBalloonContract = typeof balloonContract;

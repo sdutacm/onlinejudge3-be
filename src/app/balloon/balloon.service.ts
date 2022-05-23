@@ -4,18 +4,30 @@ import { IDurationsConfig } from '@/config/durations.config';
 import { TBalloonModel } from '@/lib/models/balloon.model';
 import {
   TMBalloonLiteFields,
+  IMBalloonLite,
+  IMBalloonDetail,
+  TMBalloonDetailFields,
+  BalloonProblemConfig,
+  BalloonProblemConfigMap,
+  IBalloonModel,
   IMBalloonGetBalloonsByCompetitionIdRes,
-  IMBalloonLite, BalloonProblemConfig, BalloonProblemConfigMap,
+  IMBalloonServiceUpdateOpt,
+  IMBalloonServiceUpdateRes,
+  IMBalloonServiceFindOneOpt,
+  IMBalloonServiceFindOneRes,
 } from './balloon.interface';
 import { IUtils } from '@/utils';
 import {
   ICompetitionModel,
-  IMCompetitionUserLite
+  IMCompetitionUserLite,
+  ICompetitionSettingModel,
 } from '../competition/competition.interface';
-import { CSolutionService } from "@/app/solution/solution.service";
-import { TCompetitionProblemModel } from "@/lib/models/competitionProblem.model";
-import { CCompetitionService } from "@/app/competition/competition.service";
-import { IMSolutionLitePlain } from "@/app/solution/solution.interface";
+import { CSolutionService } from '@/app/solution/solution.service';
+import { TCompetitionProblemModel } from '@/lib/models/competitionProblem.model';
+import { CCompetitionService } from '@/app/competition/competition.service';
+import { IMSolutionLitePlain } from '@/app/solution/solution.interface';
+import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
+import { ESolutionResult, EBalloonType, EBalloonStatus } from '@/common/enums';
 
 export type CBalloonService = BalloonService;
 
@@ -29,6 +41,28 @@ const balloonLiteFields: Array<TMBalloonLiteFields> = [
   'balloonAlias',
   'balloonColor',
   'nickname',
+  'subname',
+  'fieldShortName',
+  'seatNo',
+  'type',
+  'status',
+  'assignedUserId',
+  'isFb',
+  'createdAt',
+  'updatedAt',
+];
+
+const balloonDetailFields: Array<TMBalloonDetailFields> = [
+  'balloonId',
+  'solutionId',
+  'competitionId',
+  'userId',
+  'problemId',
+  'problemIndex',
+  'balloonAlias',
+  'balloonColor',
+  'nickname',
+  'subname',
   'fieldShortName',
   'seatNo',
   'type',
@@ -48,13 +82,16 @@ export default class BalloonService {
   model: TBalloonModel;
 
   @inject()
+  competitionSettingModel: TCompetitionSettingModel;
+
+  @inject()
   solutionService: CSolutionService;
 
   @inject()
   competitionProblemModel: TCompetitionProblemModel;
 
   @inject()
-  competitionService: CCompetitionService
+  competitionService: CCompetitionService;
 
   @inject()
   utils: IUtils;
@@ -72,148 +109,177 @@ export default class BalloonService {
   async getBalloonsByCompetitionId(
     competitionId: ICompetitionModel['competitionId'],
   ): Promise<IMBalloonGetBalloonsByCompetitionIdRes> {
+    const competition = await this.competitionService.getDetail(competitionId, null);
+    if (!competition || !competition.startAt || !competition.endAt) {
+      return {
+        count: 0,
+        rows: [],
+      };
+    }
+    const competitionSetting = await this.competitionSettingModel
+      .findOne({
+        where: {
+          competitionId,
+        },
+      })
+      .then((r) => r && (r.get({ plain: true }) as ICompetitionSettingModel));
+    const frozenLength = competitionSetting?.frozenLength || 0;
+    const frozenStart = new Date(competition.endAt.getTime() - frozenLength * 1000);
     // 获取当前比赛的题目配置
-    const problemConfig = await this.competitionService.getCompetitionProblemConfig(competitionId)
-    const problem: BalloonProblemConfigMap = {}
+    const problemConfig = await this.competitionService.getCompetitionProblemConfig(competitionId);
+    const problem: BalloonProblemConfigMap = {};
     const balloonSolution: {
-      solution: IMSolutionLitePlain,
-      user: IMCompetitionUserLite,
-      problem: BalloonProblemConfig,
-      isFb: boolean
-    }[] = []
+      solution: IMSolutionLitePlain;
+      user: IMCompetitionUserLite;
+      problem: BalloonProblemConfig;
+      isFb: boolean;
+    }[] = [];
     for (const [index, config] of problemConfig.rows.entries()) {
       problem[config.problemId] = {
         index,
         config,
-        solutions: []
-      }
+        solutions: [],
+      };
     }
     // 获取当前比赛的用户信息
-    const allUser = await this.competitionService.getCompetitionUsers(competitionId)
-    const userConfig: Record<number, IMCompetitionUserLite> = {}
+    const allUser = await this.competitionService.getCompetitionUsers(competitionId);
+    const userConfig: Record<number, IMCompetitionUserLite> = {};
     for (const usr of allUser.rows) {
-      userConfig[usr.userId] = usr
+      userConfig[usr.userId] = usr;
     }
 
     // 获取当前比赛的提交记录
-    const solutions = await this.solutionService.getAllCompetitionSolutionList(competitionId)
+    const solutions = await this.solutionService.getAllCompetitionSolutionList(competitionId);
     // 顺序判断提交，直到遇到没出结果的提交为止
     for (const solution of solutions) {
       if (!userConfig[solution.userId]) {
-        continue
+        continue;
       }
-      if (solution.result === 0 || solution.result > 8) {
-        break
+      if (frozenStart <= solution.createdAt) {
+        continue;
+      }
+      if ([ESolutionResult.WT, ESolutionResult.JG, ESolutionResult.SE].includes(solution.result)) {
+        break;
       }
       // AC
-      if (solution.result === 1) {
-        const problemConf = problem[solution.problemId]
+      if (solution.result === ESolutionResult.AC) {
+        const problemConf = problem[solution.problemId];
         if (!problemConf) {
-          continue
+          continue;
         }
 
         // 不重复计算同一个人的后续 ac
-        let submitted = false
+        let submitted = false;
         for (const slu of problemConf.solutions) {
           if (slu.userId === solution.userId) {
-            submitted = true
-            break
+            submitted = true;
+            break;
           }
         }
         if (submitted) {
-          continue
+          continue;
         }
 
         balloonSolution.push({
           solution,
           user: userConfig[solution.userId],
           problem: problemConf,
-          isFb: problemConf.solutions.length === 0
-        })
-        problemConf.solutions.push(solution)
+          isFb: problemConf.solutions.length === 0,
+        });
+        problemConf.solutions.push(solution);
       }
     }
 
     // 获取已有的气球数据
-    const balloonsRes = await this.getAllBalloonsByCompetitionId(competitionId)
+    const balloonsRes = await this.getAllBalloonsByCompetitionId(competitionId);
 
     // userId-problemId-isFb
-    const oldStr: string[] = []
-    const newStr: string[] = []
+    const oldStr: string[] = [];
+    const newStr: string[] = [];
     for (const elem of balloonsRes) {
-      const str = `${elem.userId}-${elem.problemId}-${elem.isFb}`
+      const str = `${elem.userId}-${elem.problemId}-${elem.isFb}`;
       if (!oldStr.includes(str)) {
-        oldStr.push(str)
+        oldStr.push(str);
       }
       // 移除回撤的数据
       if (elem.type === 2) {
-        const idx = oldStr.indexOf(`${elem.userId}-${elem.problemId}-true`)
+        const idx = oldStr.indexOf(`${elem.userId}-${elem.problemId}-true`);
         if (idx > -1) {
-          oldStr.splice(idx, 1)
+          oldStr.splice(idx, 1);
         }
-        const idx1 = oldStr.indexOf(`${elem.userId}-${elem.problemId}-false`)
+        const idx1 = oldStr.indexOf(`${elem.userId}-${elem.problemId}-false`);
         if (idx1 > -1) {
-          oldStr.splice(idx1, 1)
+          oldStr.splice(idx1, 1);
         }
       }
     }
     for (const elem of balloonSolution) {
-      const str = `${elem.user.userId}-${elem.problem.config.problemId}-${elem.isFb}`
-      newStr.push(str)
+      const str = `${elem.user.userId}-${elem.problem.config.problemId}-${elem.isFb}`;
+      newStr.push(str);
     }
     // diff
-    const needInsert = newStr.filter(elem => !oldStr.includes(elem))
-    const needRevoke = oldStr.filter(elem => !newStr.includes(elem))
+    const needInsert = newStr.filter((elem) => !oldStr.includes(elem));
+    const needRevoke = oldStr.filter((elem) => !newStr.includes(elem));
 
     // 新增的直接创建
     for (const str of needInsert) {
-      const [userIdStr, problemIdStr, isFbStr] = str.split('-')
-      const userId = Number(userIdStr)
-      const problemId = Number(problemIdStr)
-      const isFb = isFbStr === 'true'
-      const solution = solutions.find(elem => elem.userId === userId && elem.problemId === problemId)
+      const [userIdStr, problemIdStr, isFbStr] = str.split('-');
+      const userId = Number(userIdStr);
+      const problemId = Number(problemIdStr);
+      const isFb = isFbStr === 'true';
+      const solution = solutions.find(
+        (elem) => elem.userId === userId && elem.problemId === problemId,
+      );
       await this.model.create({
         competitionId,
         userId,
         problemId,
         isFb,
         problemIndex: problem[problemId].index,
-        type: 1,
-        status: 1,
+        type: EBalloonType.delivery,
+        status: EBalloonStatus.pending,
         solutionId: solution!.solutionId,
         balloonAlias: problem[problemId].config.balloonAlias,
         balloonColor: problem[problemId].config.balloonColor,
-        nickname: userConfig[userId].info.nickname,
+        nickname: userConfig[userId].info?.nickname,
         fieldShortName: userConfig[userId].fieldShortName,
         seatNo: userConfig[userId].seatNo,
-        subname: userConfig[userId].info.subname
-      })
+        subname: userConfig[userId].info?.subname,
+      });
     }
 
     // 需要回撤的插入
     for (const str of needRevoke) {
-      const [userIdStr, problemIdStr, _] = str.split('-')
-      const userId = Number(userIdStr)
-      const problemId = Number(problemIdStr)
-      const revokeData = await this.model.findOne({
-        where: {
-          userId,
-          problemId
-        }
-      }).then((r) => r && r.get({plain: true})) as IMBalloonLite
+      const [userIdStr, problemIdStr, _] = str.split('-');
+      const userId = Number(userIdStr);
+      const problemId = Number(problemIdStr);
+      const revokeData = (await this.model
+        .findOne({
+          where: {
+            competitionId,
+            userId,
+            problemId,
+          },
+        })
+        .then((r) => r && r.get({ plain: true }))) as IMBalloonLite;
       if (revokeData) {
-        delete revokeData.balloonId
-        await this.model.create({ ...revokeData, type: 2, status: 1})
+        delete revokeData.balloonId;
+        delete revokeData.createdAt;
+        delete revokeData.updatedAt;
+        await this.model.create({
+          ...revokeData,
+          type: EBalloonType.recall,
+          status: EBalloonStatus.pending,
+        });
       }
     }
 
-    const res = await this.getAllBalloonsByCompetitionId(competitionId)
+    const res = await this.getAllBalloonsByCompetitionId(competitionId);
     return {
       count: res.length,
       rows: res,
     };
   }
-
 
   /**
    * 获取指定比赛的全部气球列表。
@@ -230,6 +296,36 @@ export default class BalloonService {
         },
         order: [['balloon_id', 'ASC']],
       })
-      .then((r) => r.map((d) => d.get({plain: true}) as IMBalloonLite));
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMBalloonLite));
+  }
+
+  /**
+   * 按条件查询比赛详情。
+   * @param options 查询参数
+   */
+  async findOne(options: IMBalloonServiceFindOneOpt): Promise<IMBalloonServiceFindOneRes> {
+    return this.model
+      .findOne({
+        attributes: balloonDetailFields,
+        where: options as any,
+      })
+      .then((d) => d && (d.get({ plain: true }) as IMBalloonDetail));
+  }
+
+  /**
+   * 更新气球（部分更新）。
+   * @param balloonId balloonId
+   * @param data 更新数据
+   */
+  async update(
+    balloonId: IBalloonModel['balloonId'],
+    data: IMBalloonServiceUpdateOpt,
+  ): Promise<IMBalloonServiceUpdateRes> {
+    const res = await this.model.update(data, {
+      where: {
+        balloonId,
+      },
+    });
+    return res[0] > 0;
   }
 }

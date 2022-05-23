@@ -29,10 +29,6 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   implements ICompetitionSettingModel {
   @Column({
     field: 'competition_id',
-    type: DataType.INTEGER,
-  })
-  @Column({
-    field: 'competition_id',
     primaryKey: true,
     type: DataType.INTEGER,
   })
@@ -59,7 +55,11 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   })
   get allowedAuthMethods(): ICompetitionSettingModel['allowedAuthMethods'] {
     // @ts-ignore
-    return (this.getDataValue('allowedAuthMethods') || '').split(',');
+    const value = (this.getDataValue('allowedAuthMethods') || '') as string;
+    if (!value) {
+      return [];
+    }
+    return value.split(',');
   }
   set allowedAuthMethods(value: ICompetitionSettingModel['allowedAuthMethods']) {
     // @ts-ignore
@@ -74,7 +74,11 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   })
   get allowedSolutionLanguages(): ICompetitionSettingModel['allowedSolutionLanguages'] {
     // @ts-ignore
-    return (this.getDataValue('allowedSolutionLanguages') || '').split(',');
+    const value = (this.getDataValue('allowedSolutionLanguages') || '') as string;
+    if (!value) {
+      return [];
+    }
+    return value.split(',');
   }
   set allowedSolutionLanguages(value: ICompetitionSettingModel['allowedSolutionLanguages']) {
     // @ts-ignore
