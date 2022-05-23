@@ -1,4 +1,9 @@
 import { EBalloonType, EBalloonStatus } from '@/common/enums';
+import {
+  IMSolutionLitePlain,
+  IMSolutionServiceGetAllCompetitionSolutionListRes
+} from "@/app/solution/solution.interface";
+import {IMCompetitionProblemLite} from "@/app/competition/competition.interface";
 
 export interface IBalloonModel {
   balloonId: number;
@@ -31,3 +36,11 @@ export type IMBalloonLite = IMBalloonLitePlain;
 //#region service.getBalloonsByCompetitionId
 export type IMBalloonGetBalloonsByCompetitionIdRes = defModel.FullListModelRes<IMBalloonLite>;
 //#endregion
+
+export interface BalloonProblemConfig {
+  index: number,
+  config: IMCompetitionProblemLite,
+  solutions: IMSolutionLitePlain[]
+}
+
+export type BalloonProblemConfigMap = Record<number, BalloonProblemConfig>
