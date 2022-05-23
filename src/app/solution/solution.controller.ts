@@ -87,13 +87,15 @@ export default class SolutionController {
       limit,
       order,
     });
-    // TODO competition
     list.forEach((d) => {
       if (
-        d.contest &&
-        !ctx.helper.isContestEnded(d.contest) &&
-        !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
-        !ctx.helper.checkPerms(EPerm.ContestAccess)
+        (d.contest &&
+          !ctx.helper.isContestEnded(d.contest) &&
+          !ctx.helper.isContestLoggedIn(d.contest.contestId) &&
+          !ctx.helper.checkPerms(EPerm.ContestAccess)) ||
+        (d.competition &&
+          !ctx.helper.isContestEnded(d.competition) &&
+          !ctx.helper.isCompetitionLoggedIn(d.competition.competitionId))
       ) {
         delete d.time;
         delete d.memory;
@@ -114,16 +116,29 @@ export default class SolutionController {
   async [routesBe.getSolutionDetail.i](ctx: Context) {
     const detail = ctx.detail as IMSolutionDetail;
     const isSelf = this.service.isSolutionSelf(ctx, detail);
+    let hasPermission = ctx.helper.checkPerms(EPerm.ReadSolution);
     let canSharedView = ctx.loggedIn && detail.shared;
-    // TODO competition
     if (detail.contest) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
     }
-    if (!(ctx.helper.checkPerms(EPerm.ReadSolution) || canSharedView || isSelf)) {
+    if (detail.competition) {
+      canSharedView = canSharedView && ctx.helper.isContestEnded(detail.competition);
+      hasPermission =
+        hasPermission ||
+        ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.principal,
+          ECompetitionUserRole.judge,
+        ]);
+    }
+    if (!(hasPermission || canSharedView || isSelf)) {
       if (
-        detail.contest &&
-        !ctx.helper.isContestEnded(detail.contest) &&
-        !ctx.helper.isContestLoggedIn(detail.contest.contestId)
+        (detail.contest &&
+          !ctx.helper.isContestEnded(detail.contest) &&
+          !ctx.helper.isContestLoggedIn(detail.contest.contestId)) ||
+        (detail.competition &&
+          !ctx.helper.isContestEnded(detail.competition) &&
+          !ctx.helper.isCompetitionLoggedIn(detail.competition.competitionId))
       ) {
         delete detail.time;
         delete detail.memory;
@@ -144,16 +159,29 @@ export default class SolutionController {
       const detail = await this.service.getDetail(solutionId);
       if (detail) {
         const isSelf = this.service.isSolutionSelf(ctx, detail);
+        let hasPermission = ctx.helper.checkPerms(EPerm.ReadSolution);
         let canSharedView = ctx.loggedIn && detail.shared;
-        // TODO competition
         if (detail.contest) {
           canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
         }
-        if (!(ctx.helper.checkPerms(EPerm.ReadSolution) || canSharedView || isSelf)) {
+        if (detail.competition) {
+          canSharedView = canSharedView && ctx.helper.isContestEnded(detail.competition);
+          hasPermission =
+            hasPermission ||
+            ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+              ECompetitionUserRole.admin,
+              ECompetitionUserRole.principal,
+              ECompetitionUserRole.judge,
+            ]);
+        }
+        if (!(hasPermission || canSharedView || isSelf)) {
           if (
-            detail.contest &&
-            !ctx.helper.isContestEnded(detail.contest) &&
-            !ctx.helper.isContestLoggedIn(detail.contest.contestId)
+            (detail.contest &&
+              !ctx.helper.isContestEnded(detail.contest) &&
+              !ctx.helper.isContestLoggedIn(detail.contest.contestId)) ||
+            (detail.competition &&
+              !ctx.helper.isContestEnded(detail.competition) &&
+              !ctx.helper.isCompetitionLoggedIn(detail.competition.competitionId))
           ) {
             delete detail.time;
             delete detail.memory;

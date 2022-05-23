@@ -1028,7 +1028,10 @@ export default class SolutionService {
       (detail.contest?.contestId &&
         detail.isContestUser &&
         detail.user.userId &&
-        ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId)
+        ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId) ||
+      (detail.competition &&
+        detail.user.userId &&
+        ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId === detail.user.userId)
     );
   }
 

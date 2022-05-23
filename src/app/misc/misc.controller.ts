@@ -35,7 +35,7 @@ export default class MiscController {
    * 权限：需要登录
    *
    * 图片校验逻辑：
-   * 1. 格式限制：jpeg/png
+   * 1. 格式限制：jpeg/png/gif
    * 2. 大小限制
    *
    * 上传成功后保留原图。
@@ -44,7 +44,7 @@ export default class MiscController {
   @login()
   @rateLimitUser(120, 20)
   async [routesBe.uploadMedia.i](ctx: Context): Promise<IUploadMediaResp> {
-    const ALLOWED_TYPE = ['image/jpeg', 'image/png'];
+    const ALLOWED_TYPE = ['image/jpeg', 'image/png', 'image/gif'];
     const image = ctx.request.files?.filter((f) => f.field === 'image')[0];
     if (!image) {
       throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
