@@ -47,6 +47,7 @@ import {
   IUpdateCompetitionDetailReq,
   IGetCompetitionProblemSolutionStatsResp,
   IGetCompetitionSettingsResp,
+  IUpdateCompetitionSettingsReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -220,6 +221,7 @@ export default class CompetitionController {
         nickname: 'Admin',
       },
     });
+    await this.service.createCompetitionSetting(competitionId, {});
     return { competitionId };
   }
 
@@ -706,5 +708,20 @@ export default class CompetitionController {
     delete res.createdAt;
     delete res.updatedAt;
     return res;
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  @id()
+  @getDetail(null)
+  async [routesBe.updateCompetitionSettings.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const { ...data } = ctx.request.body as IUpdateCompetitionSettingsReq;
+    delete data.competitionId;
+    await this.service.updateCompetitionSetting(competitionId, data);
+    await this.service.clearCompetitionSettingDetailCache(competitionId);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateSettings, {
+      detail: data,
+    });
   }
 }

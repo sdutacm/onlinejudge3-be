@@ -59,6 +59,9 @@ import {
   TMCompetitionSettingDetailFields,
   IMCompetitionSettingDetail,
   ICompetitionSettingModel,
+  IMCompetitionServiceCreateCompetitionSettingOpt,
+  IMCompetitionServiceUpdateCompetitionSettingOpt,
+  IMCompetitionServiceUpdateCompetitionSettingRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -940,6 +943,38 @@ export default class CompetitionService {
       where: {
         competitionId,
         userId,
+      },
+    });
+    return res[0] > 0;
+  }
+
+  /**
+   * 创建比赛设置。
+   * @param competitionId competitionId
+   * @param data 创建数据
+   */
+  async createCompetitionSetting(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionServiceCreateCompetitionSettingOpt,
+  ): Promise<void> {
+    await this.competitionSettingModel.create({
+      ...data,
+      competitionId,
+    });
+  }
+
+  /**
+   * 更新比赛设置（部分更新）。
+   * @param competitionId competitionId
+   * @param data 更新数据
+   */
+  async updateCompetitionSetting(
+    competitionId: ICompetitionSettingModel['competitionId'],
+    data: IMCompetitionServiceUpdateCompetitionSettingOpt,
+  ): Promise<IMCompetitionServiceUpdateCompetitionSettingRes> {
+    const res = await this.competitionSettingModel.update(data, {
+      where: {
+        competitionId,
       },
     });
     return res[0] > 0;

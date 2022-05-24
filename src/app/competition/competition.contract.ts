@@ -816,6 +816,18 @@ const competitionContract = {
       'externalRanklistUrl',
     ],
   } as defContract.ContractSchema,
+
+  updateCompetitionSettingsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      frozenLength: { type: 'number' },
+      allowedAuthMethods: { type: 'array', items: { type: 'string' } },
+      allowedSolutionLanguages: { type: 'array', items: { type: 'string' } },
+      externalRanklistUrl: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

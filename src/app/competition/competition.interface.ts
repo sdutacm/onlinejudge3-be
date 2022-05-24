@@ -481,3 +481,23 @@ export type IMCompetitionServiceUpdateCompetitionUserRes = boolean;
 // //#region service.getRatingCompetitionDetail
 // export type IMCompetitionServiceGetRatingCompetitionDetailRes = IMCompetitionRatingCompetitionDetail | null;
 // //#endregion
+
+//#region service.createCompetitionSetting
+export interface IMCompetitionServiceCreateCompetitionSettingOpt {
+  frozenLength?: ICompetitionSettingModel['frozenLength'];
+  allowedAuthMethods?: ICompetitionSettingModel['allowedAuthMethods'];
+  allowedSolutionLanguages?: ICompetitionSettingModel['allowedSolutionLanguages'];
+  externalRanklistUrl?: ICompetitionSettingModel['externalRanklistUrl'];
+}
+//#endregion
+
+//#region service.updateCompetitionSetting
+export interface IMCompetitionServiceUpdateCompetitionSettingOpt {
+  frozenLength?: ICompetitionSettingModel['frozenLength'];
+  allowedAuthMethods?: ICompetitionSettingModel['allowedAuthMethods'];
+  allowedSolutionLanguages?: ICompetitionSettingModel['allowedSolutionLanguages'];
+  externalRanklistUrl?: ICompetitionSettingModel['externalRanklistUrl'];
+}
+
+export type IMCompetitionServiceUpdateCompetitionSettingRes = boolean;
+//#endregion
