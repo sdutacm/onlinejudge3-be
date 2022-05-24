@@ -490,6 +490,64 @@ const competitionContract = {
     ],
   } as defContract.ContractSchema,
 
+  getSelfCompetitionUserDetailReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getSelfCompetitionUserDetailResp: {
+    properties: {
+      competitionId: { type: 'number' },
+      userId: { type: 'number' },
+      role: { type: 'number' },
+      status: { type: 'number' },
+      fieldShortName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      seatNo: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+      banned: { type: 'boolean' },
+      unofficialParticipation: { type: 'boolean' },
+      createdAt: { type: 'string', format: 'date-time' },
+      info: {
+        type: 'object',
+        properties: {
+          nickname: { type: 'string' },
+          subname: { type: 'string' },
+          realName: { type: 'string' },
+          organization: { type: 'string' },
+          company: { type: 'string' },
+          studentNo: { type: 'string' },
+          school: { type: 'string' },
+          college: { type: 'string' },
+          major: { type: 'string' },
+          class: { type: 'string' },
+          tel: { type: 'string' },
+          qq: { type: 'string' },
+          weChat: { type: 'string' },
+          clothing: { type: 'string' },
+          slogan: { type: 'string' },
+          group: { type: 'string' },
+        },
+        additionalProperties: true,
+        required: ['nickname'],
+      },
+    },
+    additionalProperties: false,
+    required: [
+      'competitionId',
+      'userId',
+      'role',
+      'status',
+      'info',
+      'fieldShortName',
+      'seatNo',
+      'banned',
+      'unofficialParticipation',
+      'createdAt',
+    ],
+  } as defContract.ContractSchema,
+
   getPublicCompetitionParticipantsReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },

@@ -158,7 +158,11 @@ export default class BalloonService {
       if (frozenStart <= solution.createdAt) {
         continue;
       }
-      if ([ESolutionResult.WT, ESolutionResult.JG, ESolutionResult.SE].includes(solution.result)) {
+      if (
+        [ESolutionResult.RPD, ESolutionResult.WT, ESolutionResult.JG, ESolutionResult.SE].includes(
+          solution.result,
+        )
+      ) {
         break;
       }
       // AC

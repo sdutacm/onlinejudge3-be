@@ -48,6 +48,7 @@ import {
   IGetCompetitionProblemSolutionStatsResp,
   IGetCompetitionSettingsResp,
   IUpdateCompetitionSettingsReq,
+  IGetSelfCompetitionUserDetailReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -252,6 +253,7 @@ export default class CompetitionController {
       !ctx.helper.checkCompetitionRole(competitionId, [
         ECompetitionUserRole.admin,
         ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
       ]) &&
       ctx.helper.isContestPending(detail)
     ) {
@@ -263,11 +265,21 @@ export default class CompetitionController {
   @route()
   @id()
   @getDetail(null)
-  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
   async [routesBe.getCompetitionProblemConfig.i](
     ctx: Context,
   ): Promise<IGetCompetitionProblemConfigResp> {
     const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    if (
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ]) &&
+      ctx.helper.isContestPending(detail)
+    ) {
+      throw new ReqError(Codes.COMPETITION_PENDING);
+    }
     const list = await this.service.getCompetitionProblemConfig(competitionId);
     const problemIds = list.rows.map((d) => d.problemId);
     const relativeProblems = await this.problemService.getRelative(problemIds, null);
@@ -341,6 +353,22 @@ export default class CompetitionController {
     if (!ctx.helper.checkCompetitionRole(competitionId, [ECompetitionUserRole.admin])) {
       delete detail.password;
     }
+    return detail;
+  }
+
+  @route()
+  async [routesBe.getSelfCompetitionUserDetail.i](ctx: Context) {
+    const { competitionId } = ctx.request.body as IGetSelfCompetitionUserDetailReq;
+    const session = ctx.helper.getCompetitionSession(competitionId);
+    if (!session) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+    const userId = session.userId;
+    const detail = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    delete detail.password;
     return detail;
   }
 
