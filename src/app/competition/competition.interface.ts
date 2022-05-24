@@ -228,6 +228,7 @@ export interface ICompetitionSettingModel {
   frozenLength: number;
   allowedAuthMethods: string[];
   allowedSolutionLanguages: string[];
+  externalRanklistUrl: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -240,6 +241,7 @@ export type TMCompetitionSettingDetailFields = Extract<
   | 'frozenLength'
   | 'allowedAuthMethods'
   | 'allowedSolutionLanguages'
+  | 'externalRanklistUrl'
   | 'createdAt'
   | 'updatedAt'
 >;
@@ -249,6 +251,7 @@ export interface IMCompetitionSettingDetail {
   frozenLength: ICompetitionSettingModel['frozenLength'];
   allowedAuthMethods: ICompetitionSettingModel['allowedAuthMethods'];
   allowedSolutionLanguages: ICompetitionSettingModel['allowedSolutionLanguages'];
+  externalRanklistUrl: ICompetitionSettingModel['externalRanklistUrl'];
   createdAt: ICompetitionSettingModel['createdAt'];
   updatedAt: ICompetitionSettingModel['updatedAt'];
 }

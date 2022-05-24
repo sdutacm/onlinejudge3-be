@@ -86,6 +86,14 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   }
 
   @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'external_ranklist_url',
+    type: DataType.STRING(1024),
+  })
+  externalRanklistUrl: string;
+
+  @AllowNull(false)
   @CreatedAt
   @Column({
     field: 'created_at',

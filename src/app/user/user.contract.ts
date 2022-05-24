@@ -383,6 +383,7 @@ const userContract = {
     properties: {
       userId: { type: 'number', minimum: 1 },
       contestId: { type: 'number', minimum: 1 },
+      competitionId: { type: 'number', minimum: 1 },
     },
     additionalProperties: false,
     required: ['userId'],

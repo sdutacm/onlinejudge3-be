@@ -806,9 +806,15 @@ const competitionContract = {
       frozenLength: { type: 'number' },
       allowedAuthMethods: { type: 'array', items: { type: 'string' } },
       allowedSolutionLanguages: { type: 'array', items: { type: 'string' } },
+      externalRanklistUrl: { type: 'string' },
     },
     additionalProperties: false,
-    required: ['frozenLength', 'allowedAuthMethods', 'allowedSolutionLanguages'],
+    required: [
+      'frozenLength',
+      'allowedAuthMethods',
+      'allowedSolutionLanguages',
+      'externalRanklistUrl',
+    ],
   } as defContract.ContractSchema,
 };
 

@@ -373,15 +373,30 @@ export default class SolutionController {
   }
 
   @route()
-  @authPerm(EPerm.RejudgeSolution)
   async [routesBe.rejudgeSolution.i](ctx: Context) {
     const data = ctx.request.body as IRejudgeSolutionReq;
-    const solutionIds = await this.service.findAllSolutionIds(data);
-    // TODO competition
+    const hasPermission = ctx.helper.checkPerms(EPerm.RejudgeSolution);
+    const solutionWithIds = await this.service.findAllSolutionWithIds(data);
+    const solutionIds = solutionWithIds
+      .filter((sln) => {
+        if (hasPermission) {
+          return true;
+        } else if (
+          sln.competitionId &&
+          ctx.helper.checkCompetitionRole(sln.competitionId, [
+            ECompetitionUserRole.admin,
+            ECompetitionUserRole.participant,
+            ECompetitionUserRole.judge,
+          ])
+        ) {
+          return true;
+        }
+        return false;
+      })
+      .map((sln) => sln.solutionId);
     const pq = new this.PromiseQueue(5, Infinity);
     const queueTasks = solutionIds.map((solutionId) =>
       pq.add(async () => {
-        // t-judger
         await this.service.update(solutionId, {
           result: ESolutionResult.RPD,
         });

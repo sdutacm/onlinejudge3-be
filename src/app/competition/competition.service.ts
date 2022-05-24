@@ -138,6 +138,7 @@ const competitionSettingDetailFields: Array<TMCompetitionSettingDetailFields> = 
   'frozenLength',
   'allowedAuthMethods',
   'allowedSolutionLanguages',
+  'externalRanklistUrl',
   'createdAt',
   'updatedAt',
 ];

@@ -711,15 +711,15 @@ export default class UserController {
   /**
    * 获取用户的题目提交结果统计。
    *
-   * 如传了 contestId，则查找范围限定在指定比赛。
+   * 如传了 contestId/competitionId，则查找范围限定在指定比赛。
    * @returns 用户提交结果统计
    */
   @route()
   @id()
   async [routesBe.getUserProblemResultStats.i](ctx: Context) {
     const userId = ctx.id!;
-    const { contestId } = ctx.request.body;
-    return this.solutionService.getUserProblemResultStats(userId, contestId);
+    const { contestId, competitionId } = ctx.request.body;
+    return this.solutionService.getUserProblemResultStats(userId, contestId, competitionId);
   }
 
   /**

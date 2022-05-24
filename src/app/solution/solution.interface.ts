@@ -279,6 +279,22 @@ export interface IMSolutionServiceFindAllSolutionIdsOpt {
 export type IMSolutionServiceFindAllSolutionIdsRes = ISolutionModel['solutionId'][];
 //#endregion
 
+//#region service.findAllSolutionWithIds
+export interface IMSolutionServiceFindAllSolutionWithIdsOpt {
+  solutionId?: ISolutionModel['solutionId'];
+  problemId?: ISolutionModel['problemId'];
+  userId?: ISolutionModel['userId'];
+  contestId?: ISolutionModel['contestId'];
+  competitionId?: ISolutionModel['competitionId'];
+  result?: ISolutionModel['result'];
+}
+
+export type IMSolutionServiceFindAllSolutionWithIdsRes = Pick<
+  ISolutionModel,
+  'solutionId' | 'problemId' | 'userId' | 'contestId' | 'competitionId'
+>[];
+//#endregion
+
 //#region service.getPendingSolutions
 export type IMSolutionServiceGetPendingSolutionsRes = Array<{
   solutionId: ISolutionModel['solutionId'];

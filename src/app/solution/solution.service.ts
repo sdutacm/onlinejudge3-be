@@ -31,6 +31,8 @@ import {
   IMSolutionDetail,
   IMSolutionServiceFindAllSolutionIdsOpt,
   IMSolutionServiceFindAllSolutionIdsRes,
+  IMSolutionServiceFindAllSolutionWithIdsOpt,
+  IMSolutionServiceFindAllSolutionWithIdsRes,
   IMSolutionServiceJudgeOpt,
   IMSolutionServiceJudgeRes,
   IMSolutionServiceGetPendingSolutionsRes,
@@ -42,6 +44,7 @@ import {
   IMSolutionJudgeInfoFull,
   IMSolutionServiceGetCompetitionProblemSolutionStatsRes,
   IMSolutionServiceGetAllCompetitionSolutionListRes,
+  IMSolutionRelativeCompetition,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -379,6 +382,8 @@ export default class SolutionService {
         user: IMSolutionRelativeUser;
       } & {
         contest?: IMSolutionRelativeContest;
+      } & {
+        competition?: IMSolutionRelativeCompetition;
       }
     >
   > {
@@ -778,11 +783,13 @@ export default class SolutionService {
    * 获取指定用户提交过的 problemId 列表（去重）。
    * @param userId userId
    * @param contestId contestId
+   * @param competitionId competitionId
    * @param result 评测结果
    */
   async getUserSubmittedProblemIds(
     userId: ISolutionModel['userId'],
     contestId?: ISolutionModel['contestId'],
+    competitionId?: ISolutionModel['competitionId'],
     result?: ESolutionResult,
   ): Promise<ISolutionModel['problemId'][]> {
     return this.model
@@ -792,7 +799,8 @@ export default class SolutionService {
         where: this.utils.misc.ignoreUndefined({
           userId,
           contestId,
-          result: result,
+          competitionId,
+          result,
         }),
       })
       .then((r: any) => r.map((d: any) => d.problemId));
@@ -802,24 +810,26 @@ export default class SolutionService {
    * 获取用户题目的 已通过/已尝试未通过 提交统计。
    * @param userId userId
    * @param contestId contestId
+   * @param competitionId competitionId
    */
   async getUserProblemResultStats(
     userId: ISolutionModel['userId'],
     contestId?: ISolutionModel['contestId'],
+    competitionId?: ISolutionModel['competitionId'],
   ): Promise<IMSolutionUserProblemResultStats> {
     let res: IMSolutionUserProblemResultStats | null = null;
-    if (!contestId) {
+    if (!contestId && !competitionId) {
       const cached = await this._getUserProblemResultStatsCache(userId);
       cached && (res = cached);
     }
     if (!res) {
       const [acceptedProblemIds, submittedProblemIds] = await Promise.all([
-        this.getUserSubmittedProblemIds(userId, contestId, ESolutionResult.AC),
-        this.getUserSubmittedProblemIds(userId, contestId),
+        this.getUserSubmittedProblemIds(userId, contestId, competitionId, ESolutionResult.AC),
+        this.getUserSubmittedProblemIds(userId, contestId, competitionId),
       ]);
       const attemptedProblemIds = this.lodash.difference(submittedProblemIds, acceptedProblemIds);
       res = { acceptedProblemIds, attemptedProblemIds };
-      !contestId && (await this._setUserProblemResultStatsCache(userId, res));
+      !contestId && !competitionId && (await this._setUserProblemResultStatsCache(userId, res));
     }
     return res;
   }
@@ -933,6 +943,16 @@ export default class SolutionService {
   }
 
   /**
+   * 清除比赛题目提交统计缓存。
+   * @param competitionId competitionId
+   */
+  async clearCompetitionProblemSolutionStatsCache(
+    competitionId: ISolutionModel['competitionId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionProblemResultStats, [competitionId]);
+  }
+
+  /**
    * 获取用户提交日历图统计
    * @param userId userId
    * @param result 指定 result
@@ -970,8 +990,8 @@ export default class SolutionService {
   }
 
   /**
-   * 清除比赛题目提交统计缓存。
-   * @param contestId contestId
+   * 清除用户提交日历统计缓存。
+   * @param userId userId
    * @param result 提交结果
    */
   async clearUserSolutionCalendarCache(
@@ -1031,13 +1051,14 @@ export default class SolutionService {
         ctx.helper.getContestSession(detail.contest.contestId)?.userId === detail.user.userId) ||
       (detail.competition &&
         detail.user.userId &&
-        ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId === detail.user.userId)
+        ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId ===
+          detail.user.userId)
     );
   }
 
   /**
    * 根据条件获取所有提交的 ID。
-   * @param contestId contestId
+   * @param options 查询条件
    */
   async findAllSolutionIds(
     options: IMSolutionServiceFindAllSolutionIdsOpt,
@@ -1051,6 +1072,33 @@ export default class SolutionService {
         where: options as any,
       })
       .then((r) => r.map((d) => d.solutionId));
+    return res;
+  }
+
+  /**
+   * 根据条件获取所有提交的各项 ID。
+   * @param options 查询条件
+   */
+  async findAllSolutionWithIds(
+    options: IMSolutionServiceFindAllSolutionWithIdsOpt,
+  ): Promise<IMSolutionServiceFindAllSolutionWithIdsRes> {
+    if (Object.keys(options).length === 0) {
+      return [];
+    }
+    const res = await this.model
+      .findAll({
+        attributes: ['solutionId', 'problemId', 'userId', 'contestId', 'competitionId'],
+        where: options as any,
+      })
+      .then((r) =>
+        r.map((d) => ({
+          solutionId: d.solutionId,
+          problemId: d.problemId,
+          userId: d.userId,
+          contestId: d.contestId,
+          competitionId: d.competitionId,
+        })),
+      );
     return res;
   }
 
