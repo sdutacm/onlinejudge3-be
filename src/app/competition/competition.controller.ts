@@ -46,6 +46,7 @@ import {
   IAuditCompetitionParticipantReq,
   IUpdateCompetitionDetailReq,
   IGetCompetitionProblemSolutionStatsResp,
+  IGetCompetitionSettingsResp,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -421,8 +422,9 @@ export default class CompetitionController {
     let password = detail.password;
     if (!detail.password) {
       password = this.utils.misc.randomString({
-        length: 6,
-        characters: 'ABCDEFGHJKLMNPQRTUVWXY346789',
+        length: 8,
+        // characters: 'ABCDEFGHJKLMNPQRTUVWXY346789',
+        type: 'numeric',
       });
       await this.service.updateCompetitionUser(competitionId, userId, {
         password,
@@ -689,5 +691,20 @@ export default class CompetitionController {
     const problems = await this.service.getCompetitionProblems(competitionId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
     return this.solutionService.getCompetitionProblemSolutionStats(competitionId, problemIds);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionSettings.i](ctx: Context): Promise<IGetCompetitionSettingsResp> {
+    const competitionId = ctx.id!;
+    const res = await this.service.getCompetitionSettingDetail(competitionId);
+    if (!res) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    delete res.competitionId;
+    delete res.createdAt;
+    delete res.updatedAt;
+    return res;
   }
 }

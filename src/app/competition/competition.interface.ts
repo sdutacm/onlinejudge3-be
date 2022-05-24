@@ -3,6 +3,7 @@ import { IMProblemDetail } from '../problem/problem.interface';
 import { ECompetitionUserRole, ECompetitionUserStatus, EContestRatingStatus } from '@/common/enums';
 import { ICompetitionUserInfo } from '@/common/interfaces/competition';
 import { ECompetitionLogAction } from './competition.enum';
+import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
 
 //#region competition model
 export interface ICompetitionModel {
@@ -229,6 +230,27 @@ export interface ICompetitionSettingModel {
   allowedSolutionLanguages: string[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type TCompetitionSettingModelFields = keyof ICompetitionSettingModel;
+
+export type TMCompetitionSettingDetailFields = Extract<
+  TCompetitionSettingModelFields,
+  | 'competitionId'
+  | 'frozenLength'
+  | 'allowedAuthMethods'
+  | 'allowedSolutionLanguages'
+  | 'createdAt'
+  | 'updatedAt'
+>;
+
+export interface IMCompetitionSettingDetail {
+  competitionId: ICompetitionSettingModel['competitionId'];
+  frozenLength: ICompetitionSettingModel['frozenLength'];
+  allowedAuthMethods: ICompetitionSettingModel['allowedAuthMethods'];
+  allowedSolutionLanguages: ICompetitionSettingModel['allowedSolutionLanguages'];
+  createdAt: ICompetitionSettingModel['createdAt'];
+  updatedAt: ICompetitionSettingModel['updatedAt'];
 }
 //#endregion
 

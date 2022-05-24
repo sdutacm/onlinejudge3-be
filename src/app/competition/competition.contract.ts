@@ -792,6 +792,24 @@ const competitionContract = {
       required: ['accepted', 'submitted'],
     },
   } as defContract.ContractSchema,
+
+  getCompetitionSettingsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionSettingsResp: {
+    properties: {
+      frozenLength: { type: 'number' },
+      allowedAuthMethods: { type: 'array', items: { type: 'string' } },
+      allowedSolutionLanguages: { type: 'array', items: { type: 'string' } },
+    },
+    additionalProperties: false,
+    required: ['frozenLength', 'allowedAuthMethods', 'allowedSolutionLanguages'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

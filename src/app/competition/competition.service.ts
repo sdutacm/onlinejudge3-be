@@ -56,6 +56,9 @@ import {
   IMCompetitionServiceFindOneCompetitionUserOpt,
   IMCompetitionServiceFindOneCompetitionUserRes,
   IMCompetitionServiceIsCompetitionUserExistsOpt,
+  TMCompetitionSettingDetailFields,
+  IMCompetitionSettingDetail,
+  ICompetitionSettingModel,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -66,6 +69,7 @@ import { IProblemModel } from '../problem/problem.interface';
 import { TCompetitionUserModel } from '@/lib/models/competitionUser.model';
 import { CSolutionService } from '../solution/solution.service';
 import { CUserService } from '../user/user.service';
+import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
 
 export type CCompetitionService = CompetitionService;
 
@@ -129,6 +133,15 @@ const competitionUserDetailFields: Array<TMCompetitionUserDetailFields> = [
   'createdAt',
 ];
 
+const competitionSettingDetailFields: Array<TMCompetitionSettingDetailFields> = [
+  'competitionId',
+  'frozenLength',
+  'allowedAuthMethods',
+  'allowedSolutionLanguages',
+  'createdAt',
+  'updatedAt',
+];
+
 const MEMBER_NUM = 3;
 
 @provide()
@@ -144,6 +157,9 @@ export default class CompetitionService {
 
   @inject()
   competitionUserModel: TCompetitionUserModel;
+
+  @inject()
+  competitionSettingModel: TCompetitionSettingModel;
 
   @inject()
   problemService: CProblemService;
@@ -303,6 +319,36 @@ export default class CompetitionService {
     return this.ctx.helper.redisSet(
       this.redisKey.competitionUserDetail,
       [competitionId, userId],
+      data,
+      data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取比赛设置详情缓存。
+   * @param competitionId competitionId
+   */
+  private async _getCompetitionSettingDetailCache(
+    competitionId: ICompetitionSettingModel['competitionId'],
+  ): Promise<IMCompetitionSettingDetail | null | ''> {
+    return this.ctx.helper.redisGet<IMCompetitionSettingDetail>(
+      this.redisKey.competitionSettingDetail,
+      [competitionId],
+    );
+  }
+
+  /**
+   * 设置比赛设置详情缓存。
+   * @param competitionId competitionId
+   * @param data 详情数据
+   */
+  private async _setCompetitionSettingDetailCache(
+    competitionId: ICompetitionSettingModel['competitionId'],
+    data: IMCompetitionSettingDetail | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.competitionSettingDetail,
+      [competitionId],
       data,
       data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
     );
@@ -899,6 +945,34 @@ export default class CompetitionService {
   }
 
   /**
+   * 获取比赛设置详情。
+   * @param competitionId competitionId
+   */
+  async getCompetitionSettingDetail(
+    competitionId: ICompetitionUserModel['competitionId'],
+  ): Promise<IMCompetitionSettingDetail | null> {
+    let res: IMCompetitionSettingDetail | null = null;
+    const cached = await this._getCompetitionSettingDetailCache(competitionId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.competitionSettingModel
+        .findOne({
+          attributes: competitionSettingDetailFields,
+          where: {
+            competitionId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IMCompetitionSettingDetail));
+      await this._setCompetitionSettingDetailCache(competitionId, res);
+    }
+    if (!res) {
+      return null;
+    }
+    return res;
+  }
+
+  /**
    * 清除全部比赛用户列表缓存。
    * @param competitionId competitionId
    */
@@ -918,5 +992,15 @@ export default class CompetitionService {
     userId: ICompetitionUserModel['userId'],
   ): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.competitionUserDetail, [competitionId, userId]);
+  }
+
+  /**
+   * 清除比赛设置详情缓存。
+   * @param competitionId competitionId
+   */
+  async clearCompetitionSettingDetailCache(
+    competitionId: ICompetitionSettingModel['competitionId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionSettingDetail, [competitionId]);
   }
 }
