@@ -822,6 +822,14 @@ const competitionContract = {
     required: ['password'],
   } as defContract.ContractSchema,
 
+  randomAllCompetitionUserPasswordsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
   getSignedUpCompetitionParticipantReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },

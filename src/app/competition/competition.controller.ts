@@ -120,10 +120,14 @@ export default class CompetitionController {
       if (!competitionUser) {
         return null;
       }
-      // 允许管理员、审核员凭借 OJ 登录态免密登录
+      // 允许一部分角色凭借 OJ 登录态免密登录
       // TODO 比赛被结束后均可以平均 OJ 登录态免密登录
       if (
-        [ECompetitionUserRole.admin, ECompetitionUserRole.auditor].includes(competitionUser.role)
+        [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.principal,
+          ECompetitionUserRole.auditor,
+        ].includes(competitionUser.role)
       ) {
         const session = {
           userId: competitionUser.userId,
@@ -589,6 +593,26 @@ export default class CompetitionController {
     return {
       password,
     };
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authCompetitionRole([ECompetitionUserRole.admin])
+  async [routesBe.randomAllCompetitionUserPasswords.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const list = await this.service.getAllCompetitionUsers(competitionId);
+    for (const user of list.rows) {
+      if (!user.password) {
+        await this.service.updateCompetitionUser(competitionId, user.userId, {
+          password: this.utils.misc.randomString({
+            length: 8,
+            type: 'numeric',
+          }),
+        });
+        await this.service.clearCompetitionUserDetailCache(competitionId, user.userId);
+      }
+    }
   }
 
   @route()
