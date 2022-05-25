@@ -733,7 +733,7 @@ export default class CompetitionController {
   async [routesBe.auditCompetitionParticipant.i](ctx: Context): Promise<void> {
     const competitionId = ctx.id!;
     const detail = ctx.detail! as IMCompetitionDetail;
-    if (!ctx.helper.isCompetitionPending(detail)) {
+    if (!ctx.helper.isContestPending(detail)) {
       throw new ReqError(Codes.COMPETITION_RUNNING_OR_ENDED);
     }
     const { userId, status, reason } = ctx.request.body as IAuditCompetitionParticipantReq;
