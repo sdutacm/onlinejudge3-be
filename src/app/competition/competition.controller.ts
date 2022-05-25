@@ -49,6 +49,9 @@ import {
   IGetCompetitionSettingsResp,
   IUpdateCompetitionSettingsReq,
   IGetSelfCompetitionUserDetailReq,
+  IBatchCreateCompetitionUsersReq,
+  ICreateCompetitionUserReq,
+  IUpdateCompetitionUserReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -304,6 +307,77 @@ export default class CompetitionController {
   }
 
   @route()
+  @authCompetitionRole([ECompetitionUserRole.admin])
+  @id()
+  @getDetail(null)
+  async [routesBe.batchCreateCompetitionUsers.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const { users, conflict } = ctx.request.body as IBatchCreateCompetitionUsersReq;
+    for (const user of users) {
+      const { userId } = user;
+      const userInfo = await this.service.findOneCompetitionUser(competitionId, { userId });
+      if (userInfo) {
+        if (conflict === 'upsert') {
+          // 覆盖更新
+          await this.service.updateCompetitionUser(competitionId, userId, {
+            ...this.lodash.omit(user, ['userId']),
+            status: user.status ?? ECompetitionUserStatus.available,
+          });
+          await this.service.clearCompetitionUserDetailCache(competitionId, userId);
+        }
+        continue;
+      }
+      // 创建用户
+      await this.service.createCompetitionUser(competitionId, userId, {
+        ...this.lodash.omit(user, ['userId']),
+        status: user.status ?? ECompetitionUserStatus.available,
+      });
+    }
+    await this.service.clearCompetitionUsersCache(competitionId);
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin])
+  @id()
+  @getDetail(null)
+  async [routesBe.createCompetitionUser.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const { userId } = ctx.request.body as ICreateCompetitionUserReq;
+    const data = this.lodash.omit(ctx.request.body as ICreateCompetitionUserReq, [
+      'competitionId',
+      'userId',
+    ]);
+    const userInfo = await this.service.findOneCompetitionUser(competitionId, { userId });
+    if (userInfo) {
+      throw new ReqError(Codes.COMPETITION_USER_EXISTS);
+    }
+    await this.service.createCompetitionUser(competitionId, userId, data);
+    await this.service.clearCompetitionUsersCache(competitionId);
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin])
+  @id()
+  @getDetail(null)
+  async [routesBe.updateCompetitionUser.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const { userId } = ctx.request.body as IUpdateCompetitionUserReq;
+    const data = this.lodash.omit(ctx.request.body as IUpdateCompetitionUserReq, [
+      'competitionId',
+      'userId',
+    ]);
+    const userInfo = await this.service.findOneCompetitionUser(competitionId, { userId });
+    if (!userInfo) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    await this.service.updateCompetitionUser(competitionId, userId, data);
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
+  }
+
+  @route()
   @id()
   @getDetail(null)
   @authCompetitionRole([
@@ -314,27 +388,78 @@ export default class CompetitionController {
   async [routesBe.getCompetitionUsers.i](ctx: Context) {
     const competitionId = ctx.id!;
     const req = ctx.request.body as IGetCompetitionUsersReq;
-    const list = await this.service.getCompetitionUsers(competitionId);
+    const currentRole = ctx.helper.getCompetitionSession(competitionId)?.role;
+    const list = await this.service.getAllCompetitionUsers(competitionId);
     return {
       ...list,
-      rows: list.rows.filter((user) => {
-        if (req.role !== undefined && user.role !== req.role) {
-          return false;
-        }
-        if (req.status !== undefined && user.status !== req.status) {
-          return false;
-        }
-        if (req.fieldShortName !== undefined && user.fieldShortName !== req.fieldShortName) {
-          return false;
-        }
-        if (req.seatNo !== undefined && user.seatNo !== req.seatNo) {
-          return false;
-        }
-        if (req.banned !== undefined && user.banned !== req.banned) {
-          return false;
-        }
-        return true;
-      }),
+      rows: list.rows
+        .filter((user) => {
+          if (req.role !== undefined && user.role !== req.role) {
+            return false;
+          }
+          if (req.status !== undefined && user.status !== req.status) {
+            return false;
+          }
+          if (req.fieldShortName !== undefined && user.fieldShortName !== req.fieldShortName) {
+            return false;
+          }
+          if (req.seatNo !== undefined && user.seatNo !== req.seatNo) {
+            return false;
+          }
+          if (req.banned !== undefined && user.banned !== req.banned) {
+            return false;
+          }
+          return true;
+        })
+        .map((user) => {
+          if (currentRole !== ECompetitionUserRole.admin) {
+            return this.lodash.omit(user, ['password']);
+          }
+          return user;
+        }),
+    };
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.auditor,
+  ])
+  async [routesBe.getCompetitionUsers.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const req = ctx.request.body as IGetCompetitionUsersReq;
+    const currentRole = ctx.helper.getCompetitionSession(competitionId)?.role;
+    const list = await this.service.getAllCompetitionUsers(competitionId);
+    return {
+      ...list,
+      rows: list.rows
+        .filter((user) => {
+          if (req.role !== undefined && user.role !== req.role) {
+            return false;
+          }
+          if (req.status !== undefined && user.status !== req.status) {
+            return false;
+          }
+          if (req.fieldShortName !== undefined && user.fieldShortName !== req.fieldShortName) {
+            return false;
+          }
+          if (req.seatNo !== undefined && user.seatNo !== req.seatNo) {
+            return false;
+          }
+          if (req.banned !== undefined && user.banned !== req.banned) {
+            return false;
+          }
+          return true;
+        })
+        .map((user) => {
+          if (currentRole !== ECompetitionUserRole.admin) {
+            return this.lodash.omit(user, ['password']);
+          }
+          return user;
+        }),
     };
   }
 

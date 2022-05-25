@@ -414,6 +414,12 @@ export type IMCompetitionServiceGetCompetitionUsersRes = defModel.ListModelRes<
 >;
 //#endregion
 
+//#region service.getAllCompetitionUsers
+export type IMCompetitionServiceGetAllCompetitionUsersRes = defModel.ListModelRes<
+  IMCompetitionUserDetail
+>;
+//#endregion
+
 //#region service.getCompetitionUserDetail
 export type IMCompetitionServiceGetCompetitionUserDetailRes = defModel.DetailModelRes<
   IMCompetitionUserDetail

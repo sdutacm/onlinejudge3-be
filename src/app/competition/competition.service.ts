@@ -62,6 +62,7 @@ import {
   IMCompetitionServiceCreateCompetitionSettingOpt,
   IMCompetitionServiceUpdateCompetitionSettingOpt,
   IMCompetitionServiceUpdateCompetitionSettingRes,
+  IMCompetitionServiceGetAllCompetitionUsersRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -768,7 +769,7 @@ export default class CompetitionService {
   }
 
   /**
-   * 获取全部比赛用户。
+   * 获取全部比赛用户（带缓存，不包含密码）。
    * @param competitionId competitionId
    */
   async getCompetitionUsers(
@@ -797,6 +798,33 @@ export default class CompetitionService {
     }
     // res = await this._handleRelativeCompetitionUserData(res) || [],
     res = res || [];
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 获取全部比赛用户（不带缓存，全部字段）。
+   * @param competitionId competitionId
+   */
+  async getAllCompetitionUsers(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<IMCompetitionServiceGetAllCompetitionUsersRes> {
+    const res = await this.competitionUserModel
+      .findAll({
+        attributes: competitionUserDetailFields,
+        where: this.utils.misc.ignoreUndefined({
+          competitionId,
+        }),
+        order: [['createdAt', 'ASC']],
+      })
+      .then((r) =>
+        r.map((d) => {
+          const plain = d.get({ plain: true });
+          return this._parseCompetitionUser<IMCompetitionUserDetailPlain>(plain);
+        }),
+      );
     return {
       count: res.length,
       rows: res,
