@@ -481,6 +481,7 @@ export default class SolutionService {
               isTeam: relativeCompetition.isTeam,
               startAt: relativeCompetition.startAt,
               endAt: relativeCompetition.endAt,
+              settings: relativeCompetition.settings,
             }
           : undefined,
         judgeInfo: relativeJudgeInfo,

@@ -502,28 +502,64 @@ export default class CompetitionService {
     const res: IMCompetitionServiceGetRelativeRes = {};
     let uncached: typeof keys = [];
     for (const k of ks) {
-      const cached = await this._getDetailCache(k);
+      const [detailCached, settingsCached] = await Promise.all([
+        this._getDetailCache(k),
+        this._getCompetitionSettingDetailCache(k),
+      ]);
+      const cached = detailCached
+        ? {
+            ...detailCached,
+            settings: settingsCached
+              ? this.lodash.omit(settingsCached, ['competitionId', 'createdAt', 'updatedAt'])
+              : undefined,
+          }
+        : null;
       if (cached) {
+        // @ts-ignore
         res[k] = cached;
       } else if (cached === null) {
         uncached.push(k);
       }
     }
     if (uncached.length) {
-      const dbRes = await this.model
-        // .scope(scope || undefined)
-        .findAll({
-          attributes: competitionDetailFields,
-          where: {
-            competitionId: {
-              [Op.in]: uncached,
+      const [dbRes, settingsDbRes] = await Promise.all<
+        IMCompetitionDetail[],
+        IMCompetitionSettingDetail[]
+      >([
+        this.model
+          // .scope(scope || undefined)
+          .findAll({
+            attributes: competitionDetailFields,
+            where: {
+              competitionId: {
+                [Op.in]: uncached,
+              },
             },
-          },
-        })
-        .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionDetail));
+          })
+          .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionDetail)),
+        this.competitionSettingModel
+          // .scope(scope || undefined)
+          .findAll({
+            attributes: competitionSettingDetailFields,
+            where: {
+              competitionId: {
+                [Op.in]: uncached,
+              },
+            },
+          })
+          .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionSettingDetail)),
+      ]);
       for (const d of dbRes) {
-        res[d.competitionId] = d;
+        const s = settingsDbRes.find((r) => r.competitionId === d.competitionId);
+        res[d.competitionId] = {
+          ...d,
+          // @ts-ignore
+          settings: s
+            ? this.lodash.omit(s, ['competitionId', 'createdAt', 'updatedAt'])
+            : undefined,
+        };
         await this._setDetailCache(d.competitionId, d);
+        await this._setCompetitionSettingDetailCache(d.competitionId, s || null);
       }
       for (const k of ks) {
         !res[k] && (await this._setDetailCache(k, null));

@@ -35,6 +35,7 @@ import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CJudgerService } from '../judger/judger.service';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCompetitionService } from '../competition/competition.service';
+import { isCompetitionSolutionInFrozen } from '@/utils/competition';
 
 @provide()
 @controller('/')
@@ -87,7 +88,7 @@ export default class SolutionController {
       limit,
       order,
     });
-    list.forEach((d) => {
+    for (const d of list) {
       if (
         (d.contest &&
           !ctx.helper.isContestEnded(d.contest) &&
@@ -101,7 +102,20 @@ export default class SolutionController {
         delete d.memory;
         delete d.codeLength;
       }
-    });
+      // 如果是封榜且无权限查看，则修改 result
+      if (
+        d.competition &&
+        isCompetitionSolutionInFrozen(d, d.competition, d.competition.settings?.frozenLength) &&
+        d.user.userId !== ctx.helper.getCompetitionSession(d.competition.competitionId)?.userId &&
+        !ctx.helper.checkCompetitionRole(d.competition.competitionId, [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.principal,
+          ECompetitionUserRole.judge,
+        ])
+      ) {
+        d.result = ESolutionResult.V_Frozen;
+      }
+    }
     return {
       lt,
       gt,
@@ -147,6 +161,24 @@ export default class SolutionController {
       delete detail.code;
       delete detail.compileInfo;
     }
+    // 如果是封榜且无权限查看，则修改 result
+    if (
+      detail.competition &&
+      isCompetitionSolutionInFrozen(
+        detail,
+        detail.competition,
+        detail.competition.settings?.frozenLength,
+      ) &&
+      detail.user.userId !==
+        ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
+      !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ])
+    ) {
+      detail.result = ESolutionResult.V_Frozen;
+    }
     return detail;
   }
 
@@ -189,6 +221,24 @@ export default class SolutionController {
           }
           delete detail.code;
           delete detail.compileInfo;
+        }
+        // 如果是封榜且无权限查看，则修改 result
+        if (
+          detail.competition &&
+          isCompetitionSolutionInFrozen(
+            detail,
+            detail.competition,
+            detail.competition.settings?.frozenLength,
+          ) &&
+          detail.user.userId !==
+            ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
+          !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+            ECompetitionUserRole.admin,
+            ECompetitionUserRole.principal,
+            ECompetitionUserRole.judge,
+          ])
+        ) {
+          detail.result = ESolutionResult.V_Frozen;
         }
         solutionDetailMap[solutionId] = detail;
       }

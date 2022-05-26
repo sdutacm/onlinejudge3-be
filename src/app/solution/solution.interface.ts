@@ -1,7 +1,7 @@
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { IContestModel } from '../contest/contest.interface';
-import { ICompetitionModel } from '../competition/competition.interface';
+import { ICompetitionModel, ICompetitionSettingModel } from '../competition/competition.interface';
 
 export interface ISolutionModel {
   solutionId: number;
@@ -109,7 +109,9 @@ export type IMSolutionRelativeContest = Pick<
 export type IMSolutionRelativeCompetition = Pick<
   ICompetitionModel,
   'competitionId' | 'title' | 'isTeam' | 'startAt' | 'endAt'
->;
+> & {
+  settings: Omit<ICompetitionSettingModel, 'competitionId' | 'createdAt' | 'updatedAt'>;
+};
 
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
 export type IMSolutionLite = Omit<

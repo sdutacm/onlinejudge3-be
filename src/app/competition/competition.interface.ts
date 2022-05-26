@@ -313,7 +313,9 @@ export type IMCompetitionServiceGetDetailRes = defModel.DetailModelRes<IMCompeti
 //#region service.getRelative
 export type IMCompetitionServiceGetRelativeRes = Record<
   ICompetitionModel['competitionId'],
-  IMCompetitionDetail
+  IMCompetitionDetail & {
+    settings: Omit<ICompetitionSettingModel, 'competitionId' | 'createdAt' | 'updatedAt'>;
+  }
 >;
 //#endregion
 

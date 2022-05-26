@@ -124,7 +124,9 @@ export default class BalloonService {
       })
       .then((r) => r && (r.get({ plain: true }) as ICompetitionSettingModel));
     const frozenLength = competitionSetting?.frozenLength || 0;
-    const frozenStart = new Date(competition.endAt.getTime() - frozenLength * 1000);
+    const endAt =
+      competition.endAt instanceof Date ? competition.endAt : new Date(competition.endAt);
+    const frozenStart = new Date(endAt.getTime() - frozenLength * 1000);
     // 获取当前比赛的题目配置
     const problemConfig = await this.competitionService.getCompetitionProblemConfig(competitionId);
     const problem: BalloonProblemConfigMap = {};
@@ -155,7 +157,9 @@ export default class BalloonService {
       if (!userConfig[solution.userId]) {
         continue;
       }
-      if (frozenStart <= solution.createdAt) {
+      const solutionCreatedAt =
+        solution.createdAt instanceof Date ? solution.createdAt : new Date(solution.createdAt);
+      if (frozenStart <= solutionCreatedAt) {
         continue;
       }
       if (
