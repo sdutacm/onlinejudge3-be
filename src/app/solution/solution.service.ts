@@ -479,6 +479,7 @@ export default class SolutionService {
               competitionId: relativeCompetition.competitionId,
               title: relativeCompetition.title,
               isTeam: relativeCompetition.isTeam,
+              ended: relativeCompetition.ended,
               startAt: relativeCompetition.startAt,
               endAt: relativeCompetition.endAt,
               settings: relativeCompetition.settings,

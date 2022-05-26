@@ -108,7 +108,7 @@ export type IMSolutionRelativeContest = Pick<
 >;
 export type IMSolutionRelativeCompetition = Pick<
   ICompetitionModel,
-  'competitionId' | 'title' | 'isTeam' | 'startAt' | 'endAt'
+  'competitionId' | 'title' | 'isTeam' | 'ended' | 'startAt' | 'endAt'
 > & {
   settings: Omit<ICompetitionSettingModel, 'competitionId' | 'createdAt' | 'updatedAt'>;
 };

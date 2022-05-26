@@ -105,6 +105,7 @@ export default class SolutionController {
       // 如果是封榜且无权限查看，则修改 result
       if (
         d.competition &&
+        !d.competition.ended &&
         isCompetitionSolutionInFrozen(d, d.competition, d.competition.settings?.frozenLength) &&
         d.user.userId !== ctx.helper.getCompetitionSession(d.competition.competitionId)?.userId &&
         !ctx.helper.checkCompetitionRole(d.competition.competitionId, [
@@ -114,6 +115,7 @@ export default class SolutionController {
         ])
       ) {
         d.result = ESolutionResult.V_Frozen;
+        delete d.judgeInfo;
       }
     }
     return {
@@ -164,6 +166,7 @@ export default class SolutionController {
     // 如果是封榜且无权限查看，则修改 result
     if (
       detail.competition &&
+      !detail.competition.ended &&
       isCompetitionSolutionInFrozen(
         detail,
         detail.competition,
@@ -178,6 +181,7 @@ export default class SolutionController {
       ])
     ) {
       detail.result = ESolutionResult.V_Frozen;
+      delete detail.judgeInfo;
     }
     return detail;
   }
@@ -225,6 +229,7 @@ export default class SolutionController {
         // 如果是封榜且无权限查看，则修改 result
         if (
           detail.competition &&
+          !detail.competition.ended &&
           isCompetitionSolutionInFrozen(
             detail,
             detail.competition,
@@ -239,6 +244,7 @@ export default class SolutionController {
           ])
         ) {
           detail.result = ESolutionResult.V_Frozen;
+          delete detail.judgeInfo;
         }
         solutionDetailMap[solutionId] = detail;
       }
