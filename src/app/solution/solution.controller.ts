@@ -456,6 +456,9 @@ export default class SolutionController {
         return false;
       })
       .map((sln) => sln.solutionId);
+    if (solutionIds.length === 0) {
+      throw new ReqError(Codes.SOLUTION_NO_SOLUTION_REJUDGED);
+    }
     const pq = new this.PromiseQueue(5, Infinity);
     const queueTasks = solutionIds.map((solutionId) =>
       pq.add(async () => {
