@@ -114,15 +114,21 @@ export default class SolutionController {
           ECompetitionUserRole.judge,
         ])
       ) {
-        d.result = ESolutionResult.V_Frozen;
-        delete d.judgeInfo;
+        if (req.result === d.result) {
+          // 临时策略，对于筛选了 result 但其实封榜的提交过滤掉
+          // @ts-ignore
+          d.result = null;
+        } else {
+          d.result = ESolutionResult.V_Frozen;
+          delete d.judgeInfo;
+        }
       }
     }
     return {
       lt,
       gt,
-      limit: limit,
-      rows: list,
+      limit,
+      rows: list.filter((d) => d.result !== null),
     };
   }
 
