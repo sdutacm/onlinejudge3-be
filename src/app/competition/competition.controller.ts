@@ -425,49 +425,6 @@ export default class CompetitionController {
   }
 
   @route()
-  @id()
-  @getDetail(null)
-  @authCompetitionRole([
-    ECompetitionUserRole.admin,
-    ECompetitionUserRole.principal,
-    ECompetitionUserRole.auditor,
-  ])
-  async [routesBe.getCompetitionUsers.i](ctx: Context) {
-    const competitionId = ctx.id!;
-    const req = ctx.request.body as IGetCompetitionUsersReq;
-    const currentRole = ctx.helper.getCompetitionSession(competitionId)?.role;
-    const list = await this.service.getAllCompetitionUsers(competitionId);
-    return {
-      ...list,
-      rows: list.rows
-        .filter((user) => {
-          if (req.role !== undefined && user.role !== req.role) {
-            return false;
-          }
-          if (req.status !== undefined && user.status !== req.status) {
-            return false;
-          }
-          if (req.fieldShortName !== undefined && user.fieldShortName !== req.fieldShortName) {
-            return false;
-          }
-          if (req.seatNo !== undefined && user.seatNo !== req.seatNo) {
-            return false;
-          }
-          if (req.banned !== undefined && user.banned !== req.banned) {
-            return false;
-          }
-          return true;
-        })
-        .map((user) => {
-          if (currentRole !== ECompetitionUserRole.admin) {
-            return this.lodash.omit(user, ['password']);
-          }
-          return user;
-        }),
-    };
-  }
-
-  @route()
   @authCompetitionRole([
     ECompetitionUserRole.admin,
     ECompetitionUserRole.principal,

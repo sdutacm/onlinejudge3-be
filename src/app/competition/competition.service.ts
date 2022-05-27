@@ -853,7 +853,7 @@ export default class CompetitionService {
         where: this.utils.misc.ignoreUndefined({
           competitionId,
         }),
-        order: [['createdAt', 'ASC']],
+        order: [['role', 'ASC'], ['createdAt', 'ASC']],
       })
       .then((r) =>
         r.map((d) => {
