@@ -13,8 +13,6 @@ const balloonContract = {
   getCompetitionBalloonsReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },
-      type: { type: 'number' },
-      status: { type: 'number' },
     },
     additionalProperties: false,
     required: ['competitionId'],

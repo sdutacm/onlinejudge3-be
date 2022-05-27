@@ -121,7 +121,7 @@ export default class CompetitionController {
         return null;
       }
       // 允许一部分角色凭借 OJ 登录态免密登录
-      // TODO 比赛被结束后均可以平均 OJ 登录态免密登录
+      // TODO 比赛被结束后均可以凭借 OJ 登录态免密登录
       if (
         [
           ECompetitionUserRole.admin,
