@@ -41,6 +41,7 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   competitionId: number;
 
   @AllowNull(false)
+  @Default(0)
   @Column({
     field: 'frozen_length',
     type: DataType.INTEGER,
