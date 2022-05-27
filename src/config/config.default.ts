@@ -16,7 +16,7 @@ export default (appInfo: EggAppInfo) => {
   config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
 
   // add your config here
-  config.middleware = ['reqMid'];
+  config.middleware = ['competitionSideSwitchMid', 'reqMid'];
 
   config.siteName = 'SDUT OJ';
   config.siteTeam = 'SDUTACM Team';
