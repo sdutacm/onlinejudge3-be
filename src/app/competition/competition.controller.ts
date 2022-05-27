@@ -215,7 +215,7 @@ export default class CompetitionController {
   async [routesBe.getCompetitionDetail.i](_ctx: Context) {}
 
   @route()
-  @authPerm(EPerm.WriteContest)
+  @authPerm(EPerm.WriteCompetition)
   async [routesBe.createCompetition.i](ctx: Context): Promise<ICreateCompetitionResp> {
     const data = ctx.request.body as ICreateCompetitionReq;
     const competitionId = await this.service.create({
@@ -239,7 +239,7 @@ export default class CompetitionController {
   @authCompetitionRoleOrAuthPerm(
     [ECompetitionUserRole.admin, ECompetitionUserRole.principal],
     undefined,
-    EPerm.WriteContest,
+    EPerm.WriteCompetition,
   )
   async [routesBe.updateCompetitionDetail.i](ctx: Context): Promise<void> {
     const competitionId = ctx.id!;
