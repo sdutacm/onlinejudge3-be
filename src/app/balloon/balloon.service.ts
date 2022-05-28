@@ -231,17 +231,6 @@ export default class BalloonService {
           if (!oldStr.includes(str)) {
             oldStr.push(str);
           }
-          // 移除回撤的数据
-          if (elem.type === 2) {
-            const idx = oldStr.indexOf(`${elem.userId}-${elem.problemId}-true`);
-            if (idx > -1) {
-              oldStr.splice(idx, 1);
-            }
-            const idx1 = oldStr.indexOf(`${elem.userId}-${elem.problemId}-false`);
-            if (idx1 > -1) {
-              oldStr.splice(idx1, 1);
-            }
-          }
         }
         for (const elem of balloonSolution) {
           const str = `${elem.user.userId}-${elem.problem.config.problemId}-${elem.isFb}`;
@@ -249,7 +238,6 @@ export default class BalloonService {
         }
         // diff
         const needInsert = newStr.filter((elem) => !oldStr.includes(elem));
-        const needRevoke = oldStr.filter((elem) => !newStr.includes(elem));
 
         // 新增的直接创建
         for (const str of needInsert) {
@@ -276,32 +264,6 @@ export default class BalloonService {
             seatNo: userConfig[userId].seatNo,
             subname: userConfig[userId].info?.subname,
           });
-        }
-
-        // 需要回撤的插入
-        for (const str of needRevoke) {
-          const [userIdStr, problemIdStr, _] = str.split('-');
-          const userId = Number(userIdStr);
-          const problemId = Number(problemIdStr);
-          const revokeData = (await this.model
-            .findOne({
-              where: {
-                competitionId,
-                userId,
-                problemId,
-              },
-            })
-            .then((r) => r && r.get({ plain: true }))) as IMBalloonLite;
-          if (revokeData) {
-            delete revokeData.balloonId;
-            delete revokeData.createdAt;
-            delete revokeData.updatedAt;
-            await this.model.create({
-              ...revokeData,
-              type: EBalloonType.recall,
-              status: EBalloonStatus.pending,
-            });
-          }
         }
       } catch (e) {
         this.ctx.logger.error(`calc balloons error for competition ${competitionId}:`, e);
