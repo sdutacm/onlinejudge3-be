@@ -13,8 +13,12 @@ export default function (options: any, app: any) {
         // @ts-ignore
         !routesBe[possibleRouteName].competitionSide
       ) {
-        ctx.status = 404;
+        ctx.status = 451;
         ctx.body = ctx.helper.rFail(Codes.GENERAL_FEATURE_NOT_AVAILABLE);
+        const logger = ctx.getLogger('reqLogger');
+        logger.info(
+          `[status: ${ctx.status}] [code: -] [referer: ${ctx.header.referer}] [ua: ${ctx.header['user-agent']}] COMPETITION_SIDE limited: ${ctx.path} ${ctx.url}`,
+        );
         return;
       }
     }

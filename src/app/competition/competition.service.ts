@@ -63,6 +63,10 @@ import {
   IMCompetitionServiceUpdateCompetitionSettingOpt,
   IMCompetitionServiceUpdateCompetitionSettingRes,
   IMCompetitionServiceGetAllCompetitionUsersRes,
+  TMCompetitionNotificationDetailFields,
+  IMCompetitionNotificationDetail,
+  IMCompetitionServiceCreateCompetitionNotificationOpt,
+  ICompetitionNotificationModel,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -74,6 +78,7 @@ import { TCompetitionUserModel } from '@/lib/models/competitionUser.model';
 import { CSolutionService } from '../solution/solution.service';
 import { CUserService } from '../user/user.service';
 import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
+import { TCompetitionNotificationModel } from '@/lib/models/competitionNotification.model';
 
 export type CCompetitionService = CompetitionService;
 
@@ -147,6 +152,15 @@ const competitionSettingDetailFields: Array<TMCompetitionSettingDetailFields> = 
   'updatedAt',
 ];
 
+const competitionNotificationDetailFields: Array<TMCompetitionNotificationDetailFields> = [
+  'competitionNotificationId',
+  'competitionId',
+  'userId',
+  'content',
+  'createdAt',
+  'updatedAt',
+];
+
 const MEMBER_NUM = 3;
 
 @provide()
@@ -165,6 +179,9 @@ export default class CompetitionService {
 
   @inject()
   competitionSettingModel: TCompetitionSettingModel;
+
+  @inject()
+  competitionNotificationModel: TCompetitionNotificationModel;
 
   @inject()
   problemService: CProblemService;
@@ -853,7 +870,10 @@ export default class CompetitionService {
         where: this.utils.misc.ignoreUndefined({
           competitionId,
         }),
-        order: [['role', 'ASC'], ['createdAt', 'ASC']],
+        order: [
+          ['role', 'ASC'],
+          ['createdAt', 'ASC'],
+        ],
       })
       .then((r) =>
         r.map((d) => {
@@ -1070,6 +1090,66 @@ export default class CompetitionService {
       return null;
     }
     return res;
+  }
+
+  /**
+   * 获取全部比赛通知。
+   * @param competitionId competitionId
+   */
+  async getAllCompetitionNotifications(
+    competitionId: ICompetitionUserModel['competitionId'],
+  ): Promise<defModel.FullListModelRes<IMCompetitionNotificationDetail>> {
+    const res = await this.competitionNotificationModel
+      .findAll({
+        attributes: competitionNotificationDetailFields,
+        where: {
+          competitionId,
+          deleted: false,
+        },
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionNotificationDetail));
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 创建比赛通知。
+   * @param competitionId competitionId
+   * @param data 创建数据
+   */
+  async createCompetitionNotification(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionServiceCreateCompetitionNotificationOpt,
+  ): Promise<void> {
+    await this.competitionNotificationModel.create({
+      ...data,
+      competitionId,
+    });
+  }
+
+  /**
+   * 删除比赛通知。
+   * @param competitionNotificationId competitionNotificationId
+   * @param competitionId competitionId
+   */
+  async deleteCompetitionNotification(
+    competitionNotificationId: ICompetitionNotificationModel['competitionNotificationId'],
+    competitionId: ICompetitionNotificationModel['competitionId'],
+  ): Promise<boolean> {
+    const res = await this.competitionNotificationModel.update(
+      {
+        deleted: true,
+      },
+      {
+        where: {
+          competitionNotificationId,
+          competitionId,
+        },
+      },
+    );
+    return res[0] > 0;
   }
 
   /**

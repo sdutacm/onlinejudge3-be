@@ -1033,6 +1033,63 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionId'],
   } as defContract.ContractSchema,
+
+  getCompetitionNotificationsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionNotificationsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            competitionNotificationId: { type: 'number', minimum: 1 },
+            competitionId: { type: 'number', minimum: 1 },
+            userId: { type: 'number', minimum: 1 },
+            content: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: [
+            'competitionNotificationId',
+            'competitionId',
+            'userId',
+            'content',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  createCompetitionNotificationReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      content: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'content'],
+  } as defContract.ContractSchema,
+
+  deleteCompetitionNotificationReq: {
+    properties: {
+      competitionNotificationId: { type: 'number', minimum: 1 },
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionNotificationId', 'competitionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

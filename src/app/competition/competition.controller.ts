@@ -52,6 +52,8 @@ import {
   IBatchCreateCompetitionUsersReq,
   ICreateCompetitionUserReq,
   IUpdateCompetitionUserReq,
+  ICreateCompetitionNotificationReq,
+  IDeleteCompetitionNotificationReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -857,5 +859,52 @@ export default class CompetitionController {
     this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateSettings, {
       detail: data,
     });
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.participant,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionNotifications.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    return this.service.getAllCompetitionNotifications(competitionId);
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.createCompetitionNotification.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const data = this.lodash.omit(ctx.request.body as ICreateCompetitionNotificationReq, [
+      'competitionId',
+    ]);
+    await this.service.createCompetitionNotification(competitionId, {
+      ...data,
+      userId: ctx.helper.getCompetitionSession(competitionId)!.userId,
+    });
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.deleteCompetitionNotification.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const { competitionNotificationId } = ctx.request.body as IDeleteCompetitionNotificationReq;
+    await this.service.deleteCompetitionNotification(competitionNotificationId, competitionId);
   }
 }

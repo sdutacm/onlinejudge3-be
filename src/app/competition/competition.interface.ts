@@ -257,6 +257,33 @@ export interface IMCompetitionSettingDetail {
 }
 //#endregion
 
+//#region competition notification model
+export interface ICompetitionNotificationModel {
+  competitionNotificationId: number;
+  competitionId: number;
+  userId: number;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type TCompetitionNotificationModelFields = keyof ICompetitionNotificationModel;
+
+export type TMCompetitionNotificationDetailFields = Extract<
+  TCompetitionNotificationModelFields,
+  'competitionNotificationId' | 'competitionId' | 'userId' | 'content' | 'createdAt' | 'updatedAt'
+>;
+
+export interface IMCompetitionNotificationDetail {
+  competitionNotificationId: ICompetitionNotificationModel['competitionNotificationId'];
+  competitionId: ICompetitionNotificationModel['competitionId'];
+  userId: ICompetitionNotificationModel['userId'];
+  content: ICompetitionNotificationModel['content'];
+  createdAt: ICompetitionNotificationModel['createdAt'];
+  updatedAt: ICompetitionNotificationModel['updatedAt'];
+}
+//#endregion
+
 //#region ranklist
 export interface IMCompetitionRanklistProblemResultStat {
   result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
@@ -508,4 +535,11 @@ export interface IMCompetitionServiceUpdateCompetitionSettingOpt {
 }
 
 export type IMCompetitionServiceUpdateCompetitionSettingRes = boolean;
+//#endregion
+
+//#region service.createCompetitionNotification
+export interface IMCompetitionServiceCreateCompetitionNotificationOpt {
+  userId: ICompetitionNotificationModel['userId'];
+  content: ICompetitionNotificationModel['content'];
+}
 //#endregion
