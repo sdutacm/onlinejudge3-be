@@ -45,6 +45,7 @@ const redisKey = {
   rateIp: 'rateIp:%s:%s', // {interfaceName} {ip}
   rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
   session: 'session:%d:%s', // {userId} {sessionKey}
+  lockCompetitionBallonCalc: 'lock:competition_balloon_calc:%d', // {competitionId}
 };
 
 export default redisKey;
