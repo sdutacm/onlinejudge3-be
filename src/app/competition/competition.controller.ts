@@ -862,12 +862,6 @@ export default class CompetitionController {
   }
 
   @route()
-  @authCompetitionRole([
-    ECompetitionUserRole.admin,
-    ECompetitionUserRole.participant,
-    ECompetitionUserRole.principal,
-    ECompetitionUserRole.judge,
-  ])
   @id()
   @getDetail(null)
   async [routesBe.getCompetitionNotifications.i](ctx: Context) {
