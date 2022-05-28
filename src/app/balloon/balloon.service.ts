@@ -117,7 +117,7 @@ export default class BalloonService {
       .redisGet<string>(this.redisKey.lockCompetitionBallonCalc, [competitionId])
       .then((ret) => (ret ? Number(ret) === 1 : false));
     if (isLock) {
-      this.ctx.logger.info(`calc balloon is locked for competition ${competitionId}, skipped`);
+      this.ctx.logger.info(`[balloon:${competitionId}] calc balloon is locked, skipped`);
     } else {
       try {
         await this.ctx.helper.redisSet(
@@ -222,6 +222,7 @@ export default class BalloonService {
 
         // 获取已有的气球数据
         const balloonsRes = await this.getAllBalloonsByCompetitionId(competitionId);
+        this.ctx.logger.info(`[balloon:${competitionId}] balloonsRes:`, balloonsRes);
 
         // userId-problemId-isFb
         const oldStr: string[] = [];
@@ -236,8 +237,11 @@ export default class BalloonService {
           const str = `${elem.user.userId}-${elem.problem.config.problemId}-${elem.isFb}`;
           newStr.push(str);
         }
+        this.ctx.logger.info(`[balloon:${competitionId}] oldStr:`, oldStr);
+        this.ctx.logger.info(`[balloon:${competitionId}] newStr:`, newStr);
         // diff
         const needInsert = newStr.filter((elem) => !oldStr.includes(elem));
+        this.ctx.logger.info(`[balloon:${competitionId}] needInsert:`, needInsert);
 
         // 新增的直接创建
         for (const str of needInsert) {
@@ -266,7 +270,7 @@ export default class BalloonService {
           });
         }
       } catch (e) {
-        this.ctx.logger.error(`calc balloons error for competition ${competitionId}:`, e);
+        this.ctx.logger.error(`[balloon:${competitionId}] calc balloons error:`, e);
       } finally {
         await this.ctx.helper.redisDel(this.redisKey.lockCompetitionBallonCalc, [competitionId]);
       }
