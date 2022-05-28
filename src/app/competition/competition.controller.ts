@@ -918,7 +918,12 @@ export default class CompetitionController {
   }
 
   @route()
-  @authCompetitionRole([ECompetitionUserRole.participant])
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.participant,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
   @id()
   @getDetail(null)
   async [routesBe.getSelfCompetitionQuestions.i](ctx: Context) {
