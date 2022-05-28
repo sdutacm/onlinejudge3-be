@@ -67,6 +67,12 @@ import {
   IMCompetitionNotificationDetail,
   IMCompetitionServiceCreateCompetitionNotificationOpt,
   ICompetitionNotificationModel,
+  TMCompetitionQuestionDetailFields,
+  IMCompetitionQuestionDetail,
+  IMCompetitionServiceCreateCompetitionQuestionOpt,
+  ICompetitionQuestionModel,
+  IMCompetitionServiceUpdateCompetitionQuestionOpt,
+  IMCompetitionServicegetCompetitionQuestionsOpt,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -79,6 +85,7 @@ import { CSolutionService } from '../solution/solution.service';
 import { CUserService } from '../user/user.service';
 import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
 import { TCompetitionNotificationModel } from '@/lib/models/competitionNotification.model';
+import { TCompetitionQuestionModel } from '@/lib/models/competitionQuestion.model';
 
 export type CCompetitionService = CompetitionService;
 
@@ -161,6 +168,19 @@ const competitionNotificationDetailFields: Array<TMCompetitionNotificationDetail
   'updatedAt',
 ];
 
+const competitionQuestionDetailFields: Array<TMCompetitionQuestionDetailFields> = [
+  'competitionQuestionId',
+  'competitionId',
+  'status',
+  'userId',
+  'content',
+  'reply',
+  'repliedUserId',
+  'repliedAt',
+  'createdAt',
+  'updatedAt',
+];
+
 const MEMBER_NUM = 3;
 
 @provide()
@@ -182,6 +202,9 @@ export default class CompetitionService {
 
   @inject()
   competitionNotificationModel: TCompetitionNotificationModel;
+
+  @inject()
+  competitionQuestionModel: TCompetitionQuestionModel;
 
   @inject()
   problemService: CProblemService;
@@ -1149,6 +1172,66 @@ export default class CompetitionService {
         },
       },
     );
+    return res[0] > 0;
+  }
+
+  /**
+   * 获取比赛提问。
+   * @param competitionId competitionId
+   * @param opts
+   */
+  async getCompetitionQuestions(
+    competitionId: ICompetitionUserModel['competitionId'],
+    opts: IMCompetitionServicegetCompetitionQuestionsOpt = {},
+  ): Promise<defModel.FullListModelRes<IMCompetitionQuestionDetail>> {
+    const res = await this.competitionQuestionModel
+      .findAll({
+        attributes: competitionQuestionDetailFields,
+        where: {
+          ...this.utils.misc.ignoreUndefined(opts),
+          competitionId,
+        },
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionQuestionDetail));
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 创建比赛提问。
+   * @param competitionId competitionId
+   * @param data 创建数据
+   */
+  async createCompetitionQuestion(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionServiceCreateCompetitionQuestionOpt,
+  ): Promise<void> {
+    await this.competitionQuestionModel.create({
+      ...data,
+      competitionId,
+      reply: '',
+    });
+  }
+
+  /**
+   * 更新比赛提问。
+   * @param competitionQuestionId competitionQuestionId
+   * @param competitionId competitionId
+   * @param data
+   */
+  async updateCompetitionQuestion(
+    competitionQuestionId: ICompetitionQuestionModel['competitionQuestionId'],
+    competitionId: ICompetitionQuestionModel['competitionId'],
+    data: IMCompetitionServiceUpdateCompetitionQuestionOpt,
+  ): Promise<boolean> {
+    const res = await this.competitionQuestionModel.update(this.utils.misc.ignoreUndefined(data), {
+      where: {
+        competitionQuestionId,
+        competitionId,
+      },
+    });
     return res[0] > 0;
   }
 

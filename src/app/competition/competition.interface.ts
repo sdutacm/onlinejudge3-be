@@ -284,6 +284,50 @@ export interface IMCompetitionNotificationDetail {
 }
 //#endregion
 
+//#region competition question model
+export interface ICompetitionQuestionModel {
+  competitionQuestionId: number;
+  competitionId: number;
+  userId: number;
+  status: number;
+  content: string;
+  reply: string;
+  repliedUserId: number | null;
+  repliedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type TCompetitionQuestionModelFields = keyof ICompetitionQuestionModel;
+
+export type TMCompetitionQuestionDetailFields = Extract<
+  TCompetitionQuestionModelFields,
+  | 'competitionQuestionId'
+  | 'competitionId'
+  | 'userId'
+  | 'status'
+  | 'content'
+  | 'reply'
+  | 'repliedUserId'
+  | 'repliedAt'
+  | 'createdAt'
+  | 'updatedAt'
+>;
+
+export interface IMCompetitionQuestionDetail {
+  competitionQuestionId: ICompetitionQuestionModel['competitionQuestionId'];
+  competitionId: ICompetitionQuestionModel['competitionId'];
+  status: ICompetitionQuestionModel['status'];
+  userId: ICompetitionQuestionModel['userId'];
+  content: ICompetitionQuestionModel['content'];
+  reply: ICompetitionQuestionModel['reply'];
+  repliedUserId: ICompetitionQuestionModel['repliedUserId'];
+  repliedAt: ICompetitionQuestionModel['repliedAt'];
+  createdAt: ICompetitionQuestionModel['createdAt'];
+  updatedAt: ICompetitionQuestionModel['updatedAt'];
+}
+//#endregion
+
 //#region ranklist
 export interface IMCompetitionRanklistProblemResultStat {
   result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
@@ -542,4 +586,31 @@ export interface IMCompetitionServiceCreateCompetitionNotificationOpt {
   userId: ICompetitionNotificationModel['userId'];
   content: ICompetitionNotificationModel['content'];
 }
+//#endregion
+
+//#region service.getCompetitionQuestions
+export interface IMCompetitionServicegetCompetitionQuestionsOpt {
+  status?: ICompetitionQuestionModel['status'];
+  userId?: ICompetitionQuestionModel['userId'];
+  repliedUserId?: ICompetitionQuestionModel['repliedUserId'];
+}
+//#endregion
+
+//#region service.createCompetitionQuestion
+export interface IMCompetitionServiceCreateCompetitionQuestionOpt {
+  userId: ICompetitionQuestionModel['userId'];
+  content: ICompetitionQuestionModel['content'];
+}
+//#endregion
+
+//#region service.updateCompetitionQuestion
+export interface IMCompetitionServiceUpdateCompetitionQuestionOpt {
+  status?: ICompetitionQuestionModel['status'];
+  content?: ICompetitionQuestionModel['content'];
+  reply?: ICompetitionQuestionModel['reply'];
+  repliedUserId?: ICompetitionQuestionModel['repliedUserId'];
+  repliedAt?: ICompetitionQuestionModel['repliedAt'];
+}
+
+export type IMCompetitionServiceUpdateCompetitionQuestionRes = boolean;
 //#endregion

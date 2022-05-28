@@ -54,6 +54,8 @@ import {
   IUpdateCompetitionUserReq,
   ICreateCompetitionNotificationReq,
   IDeleteCompetitionNotificationReq,
+  ICreateCompetitionQuestionReq,
+  IReplyCompetitionQuestionReq,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -900,5 +902,67 @@ export default class CompetitionController {
     const competitionId = ctx.id!;
     const { competitionNotificationId } = ctx.request.body as IDeleteCompetitionNotificationReq;
     await this.service.deleteCompetitionNotification(competitionNotificationId, competitionId);
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionQuestions.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    return this.service.getCompetitionQuestions(competitionId);
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.participant])
+  @id()
+  @getDetail(null)
+  async [routesBe.getSelfCompetitionQuestions.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    return this.service.getCompetitionQuestions(competitionId, {
+      userId: ctx.helper.getCompetitionSession(competitionId)!.userId,
+    });
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.participant])
+  @id()
+  @getDetail(null)
+  async [routesBe.createCompetitionQuestion.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const data = this.lodash.omit(ctx.request.body as ICreateCompetitionQuestionReq, [
+      'competitionId',
+    ]);
+    await this.service.createCompetitionQuestion(competitionId, {
+      ...data,
+      userId: ctx.helper.getCompetitionSession(competitionId)!.userId,
+    });
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.replyCompetitionQuestion.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const { competitionQuestionId } = ctx.request.body as IReplyCompetitionQuestionReq;
+    const data = this.lodash.omit(ctx.request.body as IReplyCompetitionQuestionReq, [
+      'competitionId',
+      'competitionQuestionId',
+    ]);
+    await this.service.updateCompetitionQuestion(competitionQuestionId, competitionId, {
+      ...data,
+      status: 1,
+      repliedUserId: ctx.helper.getCompetitionSession(competitionId)!.userId,
+      repliedAt: new Date(),
+    });
   }
 }

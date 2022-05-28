@@ -1090,6 +1090,127 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionNotificationId', 'competitionId'],
   } as defContract.ContractSchema,
+
+  getCompetitionQuestionsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionQuestionsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            competitionQuestionId: { type: 'number', minimum: 1 },
+            competitionId: { type: 'number', minimum: 1 },
+            status: { type: 'number' },
+            userId: { type: 'number', minimum: 1 },
+            content: { type: 'string' },
+            reply: { type: 'string' },
+            repliedUserId: {
+              anyOf: [{ type: 'number' }, { type: 'null' }],
+            },
+            repliedAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: [
+            'competitionQuestionId',
+            'competitionId',
+            'status',
+            'userId',
+            'content',
+            'reply',
+            'repliedUserId',
+            'repliedAt',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  getSelfCompetitionQuestionsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getSelfCompetitionQuestionsResp: {
+    properties: {
+      count: { type: 'number', minimum: 0 },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            competitionQuestionId: { type: 'number', minimum: 1 },
+            competitionId: { type: 'number', minimum: 1 },
+            status: { type: 'number' },
+            userId: { type: 'number', minimum: 1 },
+            content: { type: 'string' },
+            reply: { type: 'string' },
+            repliedUserId: {
+              anyOf: [{ type: 'number' }, { type: 'null' }],
+            },
+            repliedAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: [
+            'competitionQuestionId',
+            'competitionId',
+            'status',
+            'userId',
+            'content',
+            'reply',
+            'repliedUserId',
+            'repliedAt',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  createCompetitionQuestionReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      content: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'content'],
+  } as defContract.ContractSchema,
+
+  replyCompetitionQuestionReq: {
+    properties: {
+      competitionQuestionId: { type: 'number', minimum: 1 },
+      competitionId: { type: 'number', minimum: 1 },
+      reply: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionQuestionId', 'competitionId', 'reply'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;
