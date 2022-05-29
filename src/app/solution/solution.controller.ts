@@ -36,6 +36,8 @@ import { CJudgerService } from '../judger/judger.service';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCompetitionService } from '../competition/competition.service';
 import { isCompetitionSolutionInFrozen } from '@/utils/competition';
+import { CCompetitionLogService } from '../competition/competitionLog.service';
+import { ECompetitionLogAction } from '../competition/competition.enum';
 
 @provide()
 @controller('/')
@@ -57,6 +59,9 @@ export default class SolutionController {
 
   @inject()
   judgerService: CJudgerService;
+
+  @inject()
+  competitionLogService: CCompetitionLogService;
 
   @inject()
   utils: IUtils;
@@ -421,6 +426,17 @@ export default class SolutionController {
       code,
       spj: problem.spj,
     });
+    try {
+      if (competitionId) {
+        this.competitionLogService.log(competitionId, ECompetitionLogAction.SubmitSolution, {
+          solutionId: newId,
+          problemId,
+          userId: sess.userId,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
     // const REDIS_QUEUE_NAME = 'judge:queue';
     // const task = {
     //   solution_id: `${newId}`,
@@ -451,6 +467,11 @@ export default class SolutionController {
             ECompetitionUserRole.judge,
           ])
         ) {
+          this.competitionLogService.log(sln.competitionId, ECompetitionLogAction.RejudgeSolution, {
+            solutionId: sln.solutionId,
+            problemId: sln.problemId,
+            userId: sln.userId,
+          });
           return true;
         }
         return false;

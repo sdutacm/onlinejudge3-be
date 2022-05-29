@@ -198,7 +198,18 @@ export default class CompetitionController {
         },
       };
     }
-    this.competitionLogService.log(competitionId, ECompetitionLogAction.Login);
+    try {
+      this.competitionLogService.log(competitionId, ECompetitionLogAction.Login, {
+        detail: {
+          userId: competitionUser.userId,
+          nickname: competitionUser.info?.nickname || '',
+          subname: competitionUser.info?.subname || '',
+          role: competitionUser.role,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+    }
     return session;
   }
 
@@ -206,7 +217,19 @@ export default class CompetitionController {
   @id()
   async [routesBe.logoutCompetition.i](ctx: Context) {
     const competitionId = ctx.id!;
-    await this.competitionLogService.log(competitionId, ECompetitionLogAction.Logout);
+    const sess = ctx.helper.getCompetitionSession(competitionId);
+    try {
+      this.competitionLogService.log(competitionId, ECompetitionLogAction.Logout, {
+        detail: {
+          userId: sess?.userId,
+          nickname: sess?.nickname,
+          subname: sess?.subname,
+          role: sess?.role,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+    }
     delete ctx.session.competitions?.[competitionId];
   }
 
@@ -251,7 +274,17 @@ export default class CompetitionController {
       'competitionId',
     ]);
     await this.service.update(competitionId, data);
-    await this.service.clearDetailCache(competitionId);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateDetail, {
+      detail: {
+        title: data.title,
+        startAt: data.startAt,
+        endAt: data.endAt,
+        registerStartAt: data.registerStartAt,
+        registerEndAt: data.registerEndAt,
+        isTeam: data.isTeam,
+        hidden: data.hidden,
+      },
+    });
   }
 
   @route()
@@ -312,6 +345,11 @@ export default class CompetitionController {
     const { problems } = ctx.request.body as ISetCompetitionProblemConfigReq;
     await this.service.setCompetitionProblems(competitionId, problems);
     await this.service.clearCompetitionProblemsCache(competitionId);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateProblemConfig, {
+      detail: {
+        problems,
+      },
+    });
   }
 
   @route()
@@ -342,6 +380,7 @@ export default class CompetitionController {
       });
     }
     await this.service.clearCompetitionUsersCache(competitionId);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.BatchCreateUser);
   }
 
   @route()
@@ -361,6 +400,10 @@ export default class CompetitionController {
     }
     await this.service.createCompetitionUser(competitionId, userId, data);
     await this.service.clearCompetitionUsersCache(competitionId);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.CreateUser, {
+      userId,
+      detail: data,
+    });
   }
 
   @route()
@@ -383,6 +426,10 @@ export default class CompetitionController {
       this.service.clearCompetitionUserDetailCache(competitionId, userId),
       this.service.clearCompetitionUsersCache(competitionId),
     ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateUser, {
+      userId,
+      detail: data,
+    });
   }
 
   @route()
@@ -550,6 +597,9 @@ export default class CompetitionController {
         password,
       });
       await this.service.clearCompetitionUserDetailCache(competitionId, userId);
+      this.competitionLogService.log(competitionId, ECompetitionLogAction.RequestPassword, {
+        userId,
+      });
     }
     return {
       password,
@@ -574,6 +624,7 @@ export default class CompetitionController {
         await this.service.clearCompetitionUserDetailCache(competitionId, user.userId);
       }
     }
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.RandomAllUserPasswords);
   }
 
   @route()
@@ -887,6 +938,9 @@ export default class CompetitionController {
     await this.service.createCompetitionNotification(competitionId, {
       ...data,
       userId: ctx.helper.getCompetitionSession(competitionId)!.userId,
+    });
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.CreateNotification, {
+      detail: data,
     });
   }
 

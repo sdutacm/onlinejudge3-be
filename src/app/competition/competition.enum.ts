@@ -8,6 +8,13 @@ export enum ECompetitionLogAction {
   ConfirmQuit = 'ConfirmQuit',
   UpdateDetail = 'UpdateDetail',
   UpdateSettings = 'UpdateSettings',
+  UpdateProblemConfig = 'UpdateProblemConfig',
   SubmitSolution = 'SubmitSolution',
   RejudgeSolution = 'RejudgeSolution',
+  BatchCreateUser = 'BatchCreateUser',
+  CreateUser = 'CreateUser',
+  UpdateUser = 'UpdateUser',
+  RequestPassword = 'RequestPassword',
+  RandomAllUserPasswords = 'RandomAllUserPasswords',
+  CreateNotification = 'CreateNotification',
 }
