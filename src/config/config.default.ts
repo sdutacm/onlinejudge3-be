@@ -184,6 +184,8 @@ export default (appInfo: EggAppInfo) => {
     regionId: 'cn-hangzhou',
   };
 
+  // 外部 JS 脚本，可以 clone oj3-scripts 项目部署，并在此指定其路径
+  // @see https://github.com/sdutacm/oj3-scripts
   // config.scripts = {
   //   dirPath: path.join(__dirname, '../../dev-scripts'),
   //   logPath: path.join(__dirname, '../../dev-scripts/logs'),

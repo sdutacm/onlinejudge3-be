@@ -16,7 +16,7 @@ export const redis = {
 };
 
 export const alinode = {
-  enable: true,
+  enable: process.env.NODE_ENV !== 'development',
   package: 'egg-alinode',
 };
 
