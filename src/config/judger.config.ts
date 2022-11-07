@@ -1,7 +1,10 @@
 import path from 'path';
 
 const judgerConfig = {
-  /** 评测数据所在目录 */
+  /**
+   * 评测数据所在目录。如有需要，可以直接 clone 测试数组到本地，然后在此指定其路径
+   * @see https://github.com/sdutacm/judger-data_test
+   */
   dataPath: path.join(__dirname, '../../judger-data_test'),
   /** 是否使用 git */
   dataUsingGit: false,
