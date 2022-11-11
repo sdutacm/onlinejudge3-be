@@ -43,6 +43,13 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
+  //#region secret configs
+  // use for cookie sign key, should change to your own and keep security
+  // set your production keys and remove next line
+  throw new Error('Please set `config.keys` in config.prod.ts');
+  // config.keys = appInfo.name + '_onlinejudge3_xxx';
+  //#endregion
+
   //#region custom config
 
   //#endregion

@@ -6,7 +6,6 @@ import { IDurationsConfig } from './durations.config';
 import { IJudgerConfig } from './judger.config';
 
 export interface IAppConfig extends PowerPartial<EggAppConfig> {
-  welcomeMsg: string;
   siteName: string;
   siteTeam: string;
   redisKey: IRedisKeyConfig;

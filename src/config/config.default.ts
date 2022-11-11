@@ -12,16 +12,13 @@ import { v4 as uuidv4 } from 'uuid';
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
 
-  // use for cookie sign key, should change to your own and keep security
-  config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
+  config.keys = appInfo.name;
 
   // add your config here
   config.middleware = ['competitionSideSwitchMid', 'reqMid'];
 
   config.siteName = 'SDUT OJ';
   config.siteTeam = 'SDUTACM Team';
-
-  config.welcomeMsg = 'Hello midwayjs!';
 
   config.security = {
     csrf: {

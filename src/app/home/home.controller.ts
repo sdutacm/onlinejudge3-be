@@ -4,8 +4,6 @@ import { routesBe } from '@/common/routes/be.route';
 @provide()
 @controller('/')
 export class HomeController {
-  constructor(@config() private readonly welcomeMsg: string) {}
-
   @get('/')
   public index(ctx: Context): void {
     ctx.body = {
