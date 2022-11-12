@@ -979,7 +979,7 @@ export default class SolutionService {
       } else {
         // 如果获取 AC 状态，则每个题目只计算第一次 AC
         res = await DB.sequelize.query(
-          `SELECT DATE(sub_time) AS date, COUNT(*) AS count FROM (SELECT sub_time FROM solution WHERE user_id=? AND result=? GROUP BY problem_id) AS r GROUP BY DATE(sub_time)`,
+          `SELECT DATE(sub_time) AS date, COUNT(*) AS count FROM (SELECT MIN(sub_time) AS sub_time FROM solution WHERE user_id=? AND result=? GROUP BY problem_id) AS r GROUP BY DATE(sub_time)`,
           {
             replacements: [userId, result],
             type: QueryTypes.SELECT,
