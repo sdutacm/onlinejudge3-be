@@ -17,18 +17,13 @@ import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CCompetitionService } from './competition.service';
 import { ILodash } from '@/utils/libs/lodash';
-import {
-  IMCompetitionDetail,
-  IMCompetitionUserLite,
-  IMCompetitionUserDetail,
-} from './competition.interface';
+import { IMCompetitionDetail } from './competition.interface';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import { CMailSender } from '@/utils/mail';
 import { CSolutionService } from '../solution/solution.service';
 import { CMessageService } from '../message/message.service';
 import { CUserService } from '../user/user.service';
-import { IAppConfig } from '@/config/config.interface';
 import { CProblemService } from '../problem/problem.service';
 import { EPerm } from '@/common/configs/perm.config';
 import {
@@ -274,6 +269,7 @@ export default class CompetitionController {
       'competitionId',
     ]);
     await this.service.update(competitionId, data);
+    await this.service.clearDetailCache(competitionId);
     this.competitionLogService.log(competitionId, ECompetitionLogAction.UpdateDetail, {
       detail: {
         title: data.title,
