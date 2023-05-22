@@ -150,13 +150,11 @@ export default class SolutionController {
     }
     if (detail.competition) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.competition);
-      hasPermission =
-        hasPermission ||
-        ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
-          ECompetitionUserRole.admin,
-          ECompetitionUserRole.principal,
-          ECompetitionUserRole.judge,
-        ]);
+      hasPermission = ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ]);
     }
     if (!(hasPermission || canSharedView || isSelf)) {
       if (
