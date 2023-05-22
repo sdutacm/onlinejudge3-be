@@ -466,7 +466,7 @@ export default {
    */
   checkPerms(...permExpr: (EPerm | EPerm[])[]) {
     const { ctx } = getThis.call(this);
-    return checkPermExpr(permExpr, ctx.permissions);
+    return checkPermExpr(permExpr, ctx.permissions || []);
   },
 
   /**

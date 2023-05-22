@@ -884,7 +884,10 @@ function rateLimitFactoryFactory(
       const method = descriptor.value;
 
       descriptor.value = async function (ctx: Context, ...rest: any[]) {
-        if (process.env.NODE_ENV !== 'test') {
+        if (
+          process.env.NODE_ENV !== 'test' &&
+          !ctx.helper.checkPerms(EPerm.NoFrequencyLimitAccess)
+        ) {
           let keyConfig: string;
           let keyArgs: any[] = [propertyKey];
           switch (type) {
