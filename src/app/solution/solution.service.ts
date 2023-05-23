@@ -1365,6 +1365,7 @@ export default class SolutionService {
           let userSubmitted: number;
           let problemAccepted: number;
           let problemSubmitted: number;
+          let _us = Date.now();
           // 更新用户 AC/Submitted 计数
           res = await DB.sequelize.query(
             'SELECT COUNT(DISTINCT(problem_id)) AS accept FROM solution WHERE user_id=? AND result=?',
@@ -1373,7 +1374,10 @@ export default class SolutionService {
               type: QueryTypes.SELECT,
             },
           );
+          const _sql1Cost = Date.now() - _us;
+
           userAccepted = res[0].accept;
+          _us = Date.now();
           res = await DB.sequelize.query(
             'SELECT COUNT(solution_id) AS submit FROM solution WHERE user_id=? AND result NOT IN (?)',
             {
@@ -1390,13 +1394,18 @@ export default class SolutionService {
               type: QueryTypes.SELECT,
             },
           );
+          const _sql2Cost = Date.now() - _us;
+
           userSubmitted = res[0].submit;
+          _us = Date.now();
           await DB.sequelize.query('UPDATE user SET accept=?, submit=? WHERE user_id=?', {
             replacements: [userAccepted, userSubmitted, userId],
             type: QueryTypes.UPDATE,
           });
+          const _sql3Cost = Date.now() - _us;
           await this.userService.clearDetailCache(userId);
           // 更新题目 AC/Submitted 计数
+          _us = Date.now();
           res = await DB.sequelize.query(
             'SELECT COUNT(DISTINCT(solution_id)) AS accept FROM solution WHERE problem_id=? AND result=?',
             {
@@ -1404,7 +1413,10 @@ export default class SolutionService {
               type: QueryTypes.SELECT,
             },
           );
+          const _sql4Cost = Date.now() - _us;
+
           problemAccepted = res[0].accept;
+          _us = Date.now();
           res = await DB.sequelize.query(
             'SELECT COUNT(solution_id) AS submit FROM solution WHERE problem_id=? AND result NOT IN (?)',
             {
@@ -1421,11 +1433,22 @@ export default class SolutionService {
               type: QueryTypes.SELECT,
             },
           );
+          const _sql5Cost = Date.now() - _us;
           problemSubmitted = res[0].submit;
+          _us = Date.now();
           await DB.sequelize.query('UPDATE problem SET accept=?, submit=? WHERE problem_id=?', {
             replacements: [problemAccepted, problemSubmitted, problemId],
             type: QueryTypes.UPDATE,
           });
+          const _sql6Cost = Date.now() - _us;
+          this.ctx.logger.info('solution.judge time cost:', solutionId, [
+            _sql1Cost,
+            _sql2Cost,
+            _sql3Cost,
+            _sql4Cost,
+            _sql5Cost,
+            _sql6Cost,
+          ]);
           // await this.problemService.clearDetailCache(problemId);
           console.log('judge all ok');
           // break;
