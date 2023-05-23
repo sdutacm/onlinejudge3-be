@@ -74,12 +74,14 @@ export default class SolutionController {
 
   @route()
   async [routesBe.getSolutionList.i](ctx: Context) {
+    const _s = Date.now();
     const req = { ...ctx.request.body } as IGetSolutionListReq;
     const { contestId } = req;
     if (contestId && !ctx.helper.isContestLoggedIn(contestId)) {
       delete req.contestId;
     }
     const { lt = null, gt, limit, order = [] } = req;
+    const _authCost = Date.now() - _s;
     // if (lt === undefined && gt === undefined) {
     //   throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
     // }
@@ -93,6 +95,7 @@ export default class SolutionController {
       limit,
       order,
     });
+    const _dbListCost = Date.now() - _s - _authCost;
     for (const d of list) {
       if (
         (d.contest &&
@@ -129,6 +132,13 @@ export default class SolutionController {
         }
       }
     }
+    const _postprocessCost = Date.now() - _s - _authCost - _dbListCost;
+    ctx.logger.info('getSolutionList time cost:', req, {
+      _authCost,
+      _dbListCost,
+      _postprocessCost,
+      total: Date.now() - _s,
+    });
     return {
       lt,
       gt,
