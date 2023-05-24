@@ -285,7 +285,7 @@ export default {
   },
 
   /**
-   * redis rpush
+   * redis rpush。
    * @param key redis key 配置
    * @param args key 格式化参数
    * @param values 要推入的数据
@@ -316,6 +316,141 @@ export default {
             20,
           )}] [${number}]`,
         );
+  },
+
+  /**
+   * redis sadd。
+   *
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param values 要推入的数据
+   * @returns 插入记录数
+   */
+  async redisSadd(key: string, args: any[] = [], ...values: string[]): Promise<number> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const v = values.map((value) => (typeof value === 'object' ? JSON.stringify(value) : value));
+    const number = await redis.sadd(k, ...v);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.sadd](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ...values,
+        number,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(
+          `[redis.sadd](${cost}ms) [${k}] [${getString(
+            JSON.stringify([...values]),
+            20,
+          )}] [${number}]`,
+        );
+    return number;
+  },
+
+  /**
+   * redis srem。
+   *
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param values 要删除的数据
+   * @returns 删除记录数
+   */
+  async redisSrem(key: string, args: any[] = [], ...values: string[]): Promise<number> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const v = values.map((value) => (typeof value === 'object' ? JSON.stringify(value) : value));
+    const number = await redis.srem(k, ...v);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.srem](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ...values,
+        number,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(
+          `[redis.srem](${cost}ms) [${k}] [${getString(
+            JSON.stringify([...values]),
+            20,
+          )}] [${number}]`,
+        );
+    return number;
+  },
+
+  /**
+   * redis smembers
+   *
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @returns 记录
+   */
+  async redisSmembers(key: string, args: any[] = []): Promise<string[]> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const redisRet = await redis.smembers(k);
+    const ret = redisRet.filter((f) => f);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.redisSmembers](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ret,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.redisSmembers](${cost}ms) [${k}] [${getString(ret, 20)}]`);
+    return ret;
+  },
+
+  /**
+   * redis srandmember。
+   *
+   * @param key redis key 配置
+   * @param args key 格式化参数
+   * @param count 要取出数据条数
+   * @returns 记录
+   */
+  async redisSrandmember(key: string, args: any[] = [], count = 1): Promise<string[]> {
+    const _start = Date.now();
+    const {
+      app: { redis },
+      ctx,
+    } = getThis.call(this);
+    const k = util.format(key, ...args);
+    const redisRet = await redis.srandmember(k, count);
+    const ret = redisRet.filter((f) => f);
+    const cost = Date.now() - _start;
+    isDev &&
+      console.log(
+        consoleColors.DEBUG(`[redis.redisSrandmember](${cost}ms)`),
+        consoleColors.INFO(`[${k}]`),
+        ret,
+      );
+    isProd &&
+      ctx
+        .getLogger('redisLogger')
+        .info(`[redis.redisSrandmember](${cost}ms) [${k}] [${getString(ret, 20)}]`);
+    return ret;
   },
 
   /**

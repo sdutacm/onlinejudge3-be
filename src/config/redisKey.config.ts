@@ -46,6 +46,8 @@ const redisKey = {
   rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
   session: 'session:%d:%s', // {userId} {sessionKey}
   lockCompetitionBallonCalc: 'lock:competition_balloon_calc:%d', // {competitionId}
+  asyncSolutionProblemStatsTasks: 'async:solution_problem_stats_tasks',
+  asyncSolutionUserStatsTasks: 'async:solution_user_stats_tasks',
 };
 
 export default redisKey;
