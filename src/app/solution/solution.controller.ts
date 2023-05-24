@@ -97,6 +97,15 @@ export default class SolutionController {
     });
     const _dbListCost = Date.now() - _s - _authCost;
     for (const d of list) {
+      const isSelf = this.service.isSolutionSelf(ctx, d);
+      let hasPermission = ctx.helper.checkPerms(EPerm.ReadSolution);
+      if (d.competition) {
+        hasPermission = ctx.helper.checkCompetitionRole(d.competition.competitionId, [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.principal,
+          ECompetitionUserRole.judge,
+        ]);
+      }
       if (
         (d.contest &&
           !ctx.helper.isContestEnded(d.contest) &&
@@ -109,6 +118,14 @@ export default class SolutionController {
         delete d.time;
         delete d.memory;
         delete d.codeLength;
+      }
+      const canViewProblem =
+        hasPermission ||
+        isSelf ||
+        (d.contest && ctx.helper.isContestLoggedIn(d.contest.contestId)) ||
+        (d.competition && ctx.helper.isCompetitionLoggedIn(d.competition.competitionId));
+      if (!canViewProblem && d.problem) {
+        delete d.problem.title;
       }
       // 如果是封榜且无权限查看，则修改 result
       if (
@@ -178,9 +195,18 @@ export default class SolutionController {
         delete detail.time;
         delete detail.memory;
         delete detail.codeLength;
+        detail.problem && delete detail.problem.title;
       }
       delete detail.code;
       delete detail.compileInfo;
+    }
+    const canViewProblem =
+      hasPermission ||
+      isSelf ||
+      (detail.contest && ctx.helper.isContestLoggedIn(detail.contest.contestId)) ||
+      (detail.competition && ctx.helper.isCompetitionLoggedIn(detail.competition.competitionId));
+    if (!canViewProblem && detail.problem) {
+      delete detail.problem.title;
     }
     // 如果是封榜且无权限查看，则修改 result
     if (
@@ -244,6 +270,15 @@ export default class SolutionController {
           }
           delete detail.code;
           delete detail.compileInfo;
+        }
+        const canViewProblem =
+          hasPermission ||
+          isSelf ||
+          (detail.contest && ctx.helper.isContestLoggedIn(detail.contest.contestId)) ||
+          (detail.competition &&
+            ctx.helper.isCompetitionLoggedIn(detail.competition.competitionId));
+        if (!canViewProblem && detail.problem) {
+          delete detail.problem.title;
         }
         // 如果是封榜且无权限查看，则修改 result
         if (

@@ -28,6 +28,7 @@ import {
   IMSolutionCalendar,
   IMSolutionServiceGetAllContestSolutionListRes,
   IMSolutionServiceGetRelativeRes,
+  IMSolutionLite,
   IMSolutionDetail,
   IMSolutionServiceFindAllSolutionIdsOpt,
   IMSolutionServiceFindAllSolutionIdsRes,
@@ -460,8 +461,8 @@ export default class SolutionService {
         problem: {
           problemId: relativeProblem?.problemId,
           title: relativeProblem?.title,
-          timeLimit: relativeProblem?.timeLimit,
-          memoryLimit: relativeProblem?.memoryLimit,
+          // timeLimit: relativeProblem?.timeLimit,
+          // memoryLimit: relativeProblem?.memoryLimit,
           spj: relativeProblem?.spj,
         },
         user,
@@ -1044,7 +1045,7 @@ export default class SolutionService {
    * @param ctx ctx
    * @param detail 提交详情
    */
-  isSolutionSelf(ctx: Context, detail: IMSolutionDetail): boolean {
+  isSolutionSelf(ctx: Context, detail: IMSolutionLite | IMSolutionDetail): boolean {
     return !!(
       (ctx.loggedIn && ctx.session.userId === detail.user.userId) ||
       (detail.contest?.contestId &&

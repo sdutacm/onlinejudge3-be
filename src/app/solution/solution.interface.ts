@@ -96,7 +96,7 @@ export type IMSolutionJudgeInfoFull = Pick<
 
 export type IMSolutionRelativeProblem = Pick<
   IProblemModel,
-  'problemId' | 'title' | 'timeLimit' | 'memoryLimit' | 'spj'
+  'problemId' | 'title' | 'spj'
 >;
 export type IMSolutionRelativeUser = Pick<
   IUserModel,
