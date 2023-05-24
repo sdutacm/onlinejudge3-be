@@ -23,7 +23,7 @@ const isProd = process.env.NODE_ENV === 'production';
   type: 'worker',
   immediate: true,
 })
-export class SolutionProblemStatsCron implements CommonSchedule {
+export class SolutionUserStatsCron implements CommonSchedule {
   @inject()
   userService: CUserService;
 
