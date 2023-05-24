@@ -35,8 +35,6 @@ export default {
    * @param data
    */
   rSuc(data?: any) {
-    const { config } = getThis.call(this);
-    console.log('????', config);
     return {
       success: true,
       data,
