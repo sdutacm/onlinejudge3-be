@@ -9,6 +9,8 @@ import checkCompetitionUserRole from '@/common/utils/competition';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
+const enableRedisLog =
+  process.env.ENABLE_REDIS_LOG === 'true' || process.env.ENABLE_REDIS_LOG === '1';
 
 interface IBaseContext {
   app: Application;
@@ -33,6 +35,8 @@ export default {
    * @param data
    */
   rSuc(data?: any) {
+    const { config } = getThis.call(this);
+    console.log('????', config);
     return {
       success: true,
       data,
@@ -142,6 +146,7 @@ export default {
     isDev &&
       console.log(consoleColors.DEBUG(`[redis.get](${cost}ms)`), consoleColors.INFO(`[${k}]`), ret);
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.get](${cost}ms) [${k}] [${getString(redisRet, 20)}]`);
@@ -182,6 +187,7 @@ export default {
         expires,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(
@@ -205,7 +211,7 @@ export default {
     const cost = Date.now() - _start;
     isDev &&
       console.log(consoleColors.DEBUG(`[redis.del](${cost}ms)`), consoleColors.INFO(`[${k}]`));
-    isProd && ctx.getLogger('redisLogger').info(`[redis.del](${cost}ms) [${k}]`);
+    isProd && enableRedisLog && ctx.getLogger('redisLogger').info(`[redis.del](${cost}ms) [${k}]`);
   },
 
   /**
@@ -239,6 +245,7 @@ export default {
         incrNoneMsg,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.incr](${cost}ms) [${k}] [${incrValue}]${incrNoneMsg}`);
@@ -278,6 +285,7 @@ export default {
         ret,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.lrange](${cost}ms) [${k}] [${getString(redisRet, 20)}]`);
@@ -308,6 +316,7 @@ export default {
         number,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(
@@ -344,6 +353,7 @@ export default {
         number,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(
@@ -381,6 +391,7 @@ export default {
         number,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(
@@ -416,6 +427,7 @@ export default {
         ret,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.redisSmembers](${cost}ms) [${k}] [${getString(ret, 20)}]`);
@@ -447,6 +459,7 @@ export default {
         ret,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.redisSrandmember](${cost}ms) [${k}] [${getString(ret, 20)}]`);
@@ -477,6 +490,7 @@ export default {
         ret,
       );
     isProd &&
+      enableRedisLog &&
       ctx.getLogger('redisLogger').info(`[redis.keys](${cost}ms) [${k}] [${getString(ret, 20)}]`);
     return ret;
   },
@@ -517,6 +531,7 @@ export default {
         ret,
       );
     isProd &&
+      enableRedisLog &&
       ctx
         .getLogger('redisLogger')
         .info(`[redis.scan](${cost}ms) [${k}] [${limit}] [${getString(ret, 20)}]`);
