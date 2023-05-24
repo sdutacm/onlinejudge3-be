@@ -461,8 +461,8 @@ export default class SolutionService {
         problem: {
           problemId: relativeProblem?.problemId,
           title: relativeProblem?.title,
-          // timeLimit: relativeProblem?.timeLimit,
-          // memoryLimit: relativeProblem?.memoryLimit,
+          timeLimit: relativeProblem?.timeLimit,
+          memoryLimit: relativeProblem?.memoryLimit,
           spj: relativeProblem?.spj,
         },
         user,
