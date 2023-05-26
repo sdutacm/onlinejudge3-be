@@ -1,5 +1,5 @@
 // @ts-ignore
-import AliMailSDK from 'alimail-sdk';
+import AliMailSDK from 'alimail-sdk-fork';
 import { provide, config, logger, EggLogger } from 'midway';
 import { IAppConfig } from '@/config/config.interface';
 import { AxiosResponse } from 'axios';
