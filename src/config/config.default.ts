@@ -33,6 +33,11 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
+  config.bodyParser = {
+    formLimit: '1mb',
+    jsonLimit: '1mb',
+  };
+
   config.multipart = {
     mode: 'file',
     fileSize: '64mb',
