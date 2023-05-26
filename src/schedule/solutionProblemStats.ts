@@ -34,6 +34,11 @@ export class SolutionProblemStatsCron implements CommonSchedule {
 
       for (const problemId of problemIds) {
         this.logger.info('[solutionProblemStats] processing', problemId);
+        if (!(problemId > 0)) {
+          this.logger.info('[solutionProblemStats] skipped cuz invalid problemId', problemId);
+          continue;
+        }
+
         _us = Date.now();
         res = await DB.sequelize.query(
           'SELECT COUNT(DISTINCT(solution_id)) AS accept FROM solution WHERE problem_id=? AND result=?',

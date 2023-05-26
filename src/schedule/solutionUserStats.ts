@@ -47,6 +47,10 @@ export class SolutionUserStatsCron implements CommonSchedule {
 
       for (const userId of userIds) {
         this.logger.info('[solutionUserStats] processing', userId);
+        if (!(userId > 0)) {
+          this.logger.info('[solutionUserStats] skipped cuz invalid userId', userId);
+          continue;
+        }
 
         _us = Date.now();
         res = await DB.sequelize.query(
