@@ -60,7 +60,9 @@ export default class JudgerService {
     @inject()
     simpleGit: ISimpleGit,
   ) {
-    this.git = simpleGit(judgerConfig.dataPath);
+    if (judgerConfig.dataUsingGit) {
+      this.git = simpleGit(judgerConfig.dataPath);
+    }
   }
 
   /**
