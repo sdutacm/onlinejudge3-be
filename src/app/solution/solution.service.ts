@@ -912,7 +912,7 @@ export default class SolutionService {
       res = {};
       let frozenStart: Date | null = null;
       if (withFrozen) {
-        const competition = await this.competitionService.getDetail(competitionId);
+        const competition = await this.competitionService.getDetail(competitionId, null);
         const setting = await this.competitionService.getCompetitionSettingDetail(competitionId);
         frozenStart = new Date(competition!.endAt.getTime() - (setting?.frozenLength || 0) * 1000);
       }
