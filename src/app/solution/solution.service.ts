@@ -261,12 +261,16 @@ export default class SolutionService {
    * 获取比赛题目提交统计缓存。
    * 如果未找到缓存，则返回 `null`
    * @param competitionId competitionId
+   * @param withFrozen 是否是封榜视角数据（封榜后的 AC 并入 submitted）
    */
   private async _getCompetitionProblemSolutionStatsCache(
     competitionId: ISolutionModel['competitionId'],
+    withFrozen = false,
   ): Promise<IMSolutionContestProblemSolutionStats | null> {
     return this.ctx.helper.redisGet<IMSolutionContestProblemSolutionStats>(
-      this.redisKey.competitionProblemResultStats,
+      withFrozen
+        ? this.redisKey.competitionProblemResultStatsWithFrozen
+        : this.redisKey.competitionProblemResultStats,
       [competitionId],
     );
   }
@@ -275,13 +279,17 @@ export default class SolutionService {
    * 设置比赛题目提交统计缓存。
    * @param competitionId competitionId
    * @param data 数据
+   * @param withFrozen 是否是封榜视角数据（封榜后的 AC 并入 submitted）
    */
   private async _setCompetitionProblemSolutionStatsCache(
     competitionId: ISolutionModel['competitionId'],
     data: IMSolutionContestProblemSolutionStats,
+    withFrozen = false,
   ): Promise<void> {
     return this.ctx.helper.redisSet(
-      this.redisKey.competitionProblemResultStats,
+      withFrozen
+        ? this.redisKey.competitionProblemResultStatsWithFrozen
+        : this.redisKey.competitionProblemResultStats,
       [competitionId],
       data,
       this.durations.cacheDetailMedium,
@@ -890,26 +898,48 @@ export default class SolutionService {
    * 获取比赛内的题目提交统计（accepted/submitted）。
    * @param competitionId competitionId
    * @param problemIds 比赛 problemId 列表
+   * @param withFrozen 是否是封榜视角数据（封榜后的 AC 并入 submitted）
    */
   async getCompetitionProblemSolutionStats(
-    competitionId: ISolutionModel['competitionId'],
+    competitionId: number,
     problemIds: ISolutionModel['problemId'][],
+    withFrozen: boolean,
   ): Promise<IMSolutionServiceGetCompetitionProblemSolutionStatsRes> {
     let res: IMSolutionContestProblemSolutionStats | null = null;
-    const cached = await this._getCompetitionProblemSolutionStatsCache(competitionId);
+    const cached = await this._getCompetitionProblemSolutionStatsCache(competitionId, withFrozen);
     cached && (res = cached);
     if (!res) {
       res = {};
+      let frozenStart: Date | null = null;
+      if (withFrozen) {
+        const competition = await this.competitionService.getDetail(competitionId);
+        const setting = await this.competitionService.getCompetitionSettingDetail(competitionId);
+        frozenStart = new Date(competition!.endAt.getTime() - (setting?.frozenLength || 0) * 1000);
+      }
       for (const problemId of problemIds) {
+        const acWhere: any = {
+          competitionId,
+          problemId,
+          result: ESolutionResult.AC,
+        };
         const accepted = await this.model.count({
-          where: {
-            competitionId,
-            problemId,
-            result: ESolutionResult.AC,
-          },
+          where: acWhere,
           distinct: true,
           col: 'userId',
         });
+        let acceptedWithFrozen = 0;
+        if (withFrozen) {
+          acceptedWithFrozen = await this.model.count({
+            where: {
+              ...acWhere,
+              createdAt: {
+                [Op.lt]: frozenStart,
+              },
+            },
+            distinct: true,
+            col: 'userId',
+          });
+        }
         const unaccepted = await this.model.count({
           where: {
             competitionId,
@@ -917,6 +947,7 @@ export default class SolutionService {
             result: {
               [Op.and]: [
                 { [Op.ne]: ESolutionResult.AC },
+                { [Op.ne]: ESolutionResult.RPD },
                 { [Op.ne]: ESolutionResult.WT },
                 { [Op.ne]: ESolutionResult.JG },
                 { [Op.ne]: ESolutionResult.CE },
@@ -926,11 +957,11 @@ export default class SolutionService {
           },
         });
         res[problemId] = {
-          accepted,
+          accepted: withFrozen ? acceptedWithFrozen : accepted,
           submitted: accepted + unaccepted,
         };
       }
-      await this._setCompetitionProblemSolutionStatsCache(competitionId, res);
+      await this._setCompetitionProblemSolutionStatsCache(competitionId, res, withFrozen);
     }
     return res;
   }
@@ -948,11 +979,18 @@ export default class SolutionService {
   /**
    * 清除比赛题目提交统计缓存。
    * @param competitionId competitionId
+   * @param withFrozen 是否是封榜视角数据（封榜后的 AC 并入 submitted）
    */
   async clearCompetitionProblemSolutionStatsCache(
     competitionId: ISolutionModel['competitionId'],
+    withFrozen = false,
   ): Promise<void> {
-    return this.ctx.helper.redisDel(this.redisKey.competitionProblemResultStats, [competitionId]);
+    return this.ctx.helper.redisDel(
+      withFrozen
+        ? this.redisKey.competitionProblemResultStatsWithFrozen
+        : this.redisKey.competitionProblemResultStats,
+      [competitionId],
+    );
   }
 
   /**

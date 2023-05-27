@@ -14,6 +14,7 @@ const redisKey = {
   competitionDetail: 'cache:competition_detail:%d',
   competitionProblems: 'cache:competition_problems:%d',
   competitionProblemResultStats: 'cache:competition_problem_result_stats:%d',
+  competitionProblemResultStatsWithFrozen: 'cache:competition_problem_result_stats_frozen:%d',
   competitionStandardRanklist: 'cache:competition_srk:%d_%d',
   competitionUsers: 'cache:competition_users:%d',
   competitionUserDetail: 'cache:competition_user_detail:%d_%d',

@@ -877,7 +877,16 @@ export default class CompetitionController {
     const competitionId = ctx.id!;
     const problems = await this.service.getCompetitionProblems(competitionId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
-    return this.solutionService.getCompetitionProblemSolutionStats(competitionId, problemIds);
+    const useFrozen = !ctx.helper.checkCompetitionRole(competitionId, [
+      ECompetitionUserRole.admin,
+      ECompetitionUserRole.principal,
+      ECompetitionUserRole.judge,
+    ]);
+    return this.solutionService.getCompetitionProblemSolutionStats(
+      competitionId,
+      problemIds,
+      useFrozen,
+    );
   }
 
   @route()
