@@ -588,6 +588,12 @@ export interface IMCompetitionServiceCreateCompetitionNotificationOpt {
 }
 //#endregion
 
+//#region service.getCompetitionNotifications
+export type IMCompetitionServiceGetCompetitionNotificationsRes = defModel.FullListModelRes<
+  IMCompetitionNotificationDetail
+>;
+//#endregion
+
 //#region service.getCompetitionQuestions
 export interface IMCompetitionServicegetCompetitionQuestionsOpt {
   status?: ICompetitionQuestionModel['status'];

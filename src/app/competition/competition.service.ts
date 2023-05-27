@@ -73,6 +73,7 @@ import {
   ICompetitionQuestionModel,
   IMCompetitionServiceUpdateCompetitionQuestionOpt,
   IMCompetitionServicegetCompetitionQuestionsOpt,
+  IMCompetitionServiceGetCompetitionNotificationsRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -396,6 +397,36 @@ export default class CompetitionService {
       [competitionId],
       data,
       data ? this.durations.cacheDetail : this.durations.cacheDetailNull,
+    );
+  }
+
+  /**
+   * 获取比赛通知列表缓存。
+   * @param competitionId competitionId
+   */
+  private async _getCompetitionNotificationsCache(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<IMCompetitionNotificationDetail[] | null> {
+    return this.ctx.helper.redisGet<IMCompetitionNotificationDetail[]>(
+      this.redisKey.competitionNotifications,
+      [competitionId],
+    );
+  }
+
+  /**
+   * 设置比赛通知列表缓存。
+   * @param competitionId competitionId
+   * @param data 列表数据
+   */
+  private async _setCompetitionNotificationsCache(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionNotificationDetail[] | null,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.competitionNotifications,
+      [competitionId],
+      data,
+      this.durations.cacheDetailMedium,
     );
   }
 
@@ -1122,15 +1153,23 @@ export default class CompetitionService {
   async getAllCompetitionNotifications(
     competitionId: ICompetitionUserModel['competitionId'],
   ): Promise<defModel.FullListModelRes<IMCompetitionNotificationDetail>> {
-    const res = await this.competitionNotificationModel
-      .findAll({
-        attributes: competitionNotificationDetailFields,
-        where: {
-          competitionId,
-          deleted: false,
-        },
-      })
-      .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionNotificationDetail));
+    let res: IMCompetitionServiceGetCompetitionNotificationsRes['rows'] | null = null;
+    const cached = await this._getCompetitionNotificationsCache(competitionId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.competitionNotificationModel
+        .findAll({
+          attributes: competitionNotificationDetailFields,
+          where: {
+            competitionId,
+            deleted: false,
+          },
+        })
+        .then((r) => r.map((d) => d.get({ plain: true }) as IMCompetitionNotificationDetail));
+      await this._setCompetitionNotificationsCache(competitionId, res);
+    }
+    res = res || [];
     return {
       count: res.length,
       rows: res,
@@ -1173,6 +1212,16 @@ export default class CompetitionService {
       },
     );
     return res[0] > 0;
+  }
+
+  /**
+   * 清除比赛通知列表缓存。
+   * @param competitionId competitionId
+   */
+  async clearCompetitionNotificationsCache(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionNotifications, [competitionId]);
   }
 
   /**

@@ -944,6 +944,7 @@ export default class CompetitionController {
       ...data,
       userId: ctx.helper.getCompetitionSession(competitionId)!.userId,
     });
+    await this.service.clearCompetitionNotificationsCache(competitionId);
     this.competitionLogService.log(competitionId, ECompetitionLogAction.CreateNotification, {
       detail: data,
     });
@@ -961,6 +962,7 @@ export default class CompetitionController {
     const competitionId = ctx.id!;
     const { competitionNotificationId } = ctx.request.body as IDeleteCompetitionNotificationReq;
     await this.service.deleteCompetitionNotification(competitionNotificationId, competitionId);
+    await this.service.clearCompetitionNotificationsCache(competitionId);
   }
 
   @route()

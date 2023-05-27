@@ -19,6 +19,7 @@ const redisKey = {
   competitionUsers: 'cache:competition_users:%d',
   competitionUserDetail: 'cache:competition_user_detail:%d_%d',
   competitionSettingDetail: 'cache:competition_setting_detail:%d',
+  competitionNotifications: 'cache:competition_notifications:%d',
   topicDetail: 'cache:topic_detail:%d',
   postDetail: 'cache:post_detail:%d',
   tagList: 'cache:tag_list',
