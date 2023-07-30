@@ -67,7 +67,6 @@ export default class ProblemController {
     const data = ctx.request.body as ICreateProblemReq;
     const newId = await this.service.create({
       ...data,
-      author: ctx.session.userId,
     });
     return { problemId: newId };
   }

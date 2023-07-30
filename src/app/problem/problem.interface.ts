@@ -6,11 +6,20 @@ export interface IProblemModel {
   description: string;
   input: string;
   output: string;
+  /** @deprecated */
   sampleInput: string;
+  /** @deprecated */
   sampleOutput: string;
+  samples: {
+    in: string;
+    out: string;
+  }[];
   hint: string;
   source: string;
+  /** @deprecated */
   author: number | null;
+  /** Authors. */
+  authors: string[];
   timeLimit: number;
   memoryLimit: number;
   accepted: number;
@@ -29,7 +38,7 @@ export type TMProblemLiteFields = Extract<
   | 'problemId'
   | 'title'
   | 'source'
-  | 'author'
+  | 'authors'
   | 'difficulty'
   | 'createdAt'
   | 'updatedAt'
@@ -45,11 +54,10 @@ export type TMProblemDetailFields = Extract<
   | 'description'
   | 'input'
   | 'output'
-  | 'sampleInput'
-  | 'sampleOutput'
+  | 'samples'
   | 'hint'
   | 'source'
-  | 'author'
+  | 'authors'
   | 'timeLimit'
   | 'memoryLimit'
   | 'difficulty'
@@ -76,7 +84,7 @@ export interface IMProblemServiceGetListOpt {
   problemIds?: Array<IProblemModel['problemId']>;
   title?: IProblemModel['title'];
   source?: IProblemModel['source'];
-  author?: IProblemModel['author'];
+  authors?: IProblemModel['authors'];
   display?: IProblemModel['display'];
   tagIds?: Array<ITagModel['tagId']>;
 }
@@ -107,11 +115,10 @@ export interface IMProblemServiceCreateOpt {
   description: IProblemModel['description'];
   input: IProblemModel['input'];
   output: IProblemModel['output'];
-  sampleInput: IProblemModel['sampleInput'];
-  sampleOutput: IProblemModel['sampleOutput'];
+  samples: IProblemModel['samples'];
   hint: IProblemModel['hint'];
   source: IProblemModel['source'];
-  author: IProblemModel['author'];
+  authors: IProblemModel['authors'];
   timeLimit: IProblemModel['timeLimit'];
   memoryLimit: IProblemModel['memoryLimit'];
   display?: IProblemModel['display'];
@@ -128,10 +135,10 @@ export interface IMProblemServiceUpdateOpt {
   description?: IProblemModel['description'];
   input?: IProblemModel['input'];
   output?: IProblemModel['output'];
-  sampleInput?: IProblemModel['sampleInput'];
-  sampleOutput?: IProblemModel['sampleOutput'];
+  samples?: IProblemModel['samples'];
   hint?: IProblemModel['hint'];
   source?: IProblemModel['source'];
+  authors?: IProblemModel['authors'];
   timeLimit?: IProblemModel['timeLimit'];
   memoryLimit?: IProblemModel['memoryLimit'];
   display?: IProblemModel['display'];
