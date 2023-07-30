@@ -35,7 +35,7 @@ const problemLiteFields: Array<TMProblemLiteFields> = [
   'problemId',
   'title',
   'source',
-  'author',
+  'authors',
   'difficulty',
   'createdAt',
   'updatedAt',
@@ -49,11 +49,10 @@ const problemDetailFields: Array<TMProblemDetailFields> = [
   'description',
   'input',
   'output',
-  'sampleInput',
-  'sampleOutput',
+  'samples',
   'hint',
   'source',
-  'author',
+  'authors',
   'timeLimit',
   'memoryLimit',
   'difficulty',
@@ -145,9 +144,10 @@ export default class ProblemService {
         [Op.like]: `%${opts.source}%`,
       };
     }
-    if (opts.author) {
-      where.author = {
-        [Op.like]: `%${opts.author}%`,
+    const authors = (opts.authors || []).filter(Boolean);
+    if (authors.length > 0) {
+      where.authors = {
+        [Op.or]: authors.map((author) => ({ [Op.like]: `%${JSON.stringify(author)}%` })),
       };
     }
     if (opts.problemIds) {

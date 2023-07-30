@@ -20,9 +20,11 @@ const mockDefaultFields = {
   output: 'mock_output',
   sampleInput: '1 2',
   sampleOutput: '3',
+  samples: [{ in: '1 2', out: '3' }],
   hint: '',
   source: 'mock_source',
-  author: 1,
+  // author: 1,
+  authors: ['mock_author'],
   timeLimit: 1000,
   memoryLimit: 65536,
   createdAt: new Date('2020-01-01T00:00:00+08:00'),
@@ -64,7 +66,7 @@ describe(basename(__filename), () => {
       ...mockDefaultFields,
       problemId: 1002,
       title: 'p1002',
-      author: 3,
+      authors: ['mock_author1'],
     });
     await tagModel.create({
       nameEn: 't1',
@@ -113,7 +115,7 @@ describe(basename(__filename), () => {
             problemId: 1000,
             title: 'p1000',
             source: 'SDUTACMPC',
-            author: 1,
+            authors: ['mock_author'],
             difficulty: 0,
             createdAt: new Date('2020-01-01T00:00:00+08:00'),
             updatedAt: new Date(),
@@ -220,7 +222,7 @@ describe(basename(__filename), () => {
       assert.strictEqual(res.count, 1);
       // author
       res = await service.getList({
-        author: 3,
+        authors: ['mock_author1'],
       });
       assert.strictEqual(res.count, 1);
       // tagIds
@@ -256,11 +258,10 @@ describe(basename(__filename), () => {
         description: 'mock_desc',
         input: 'mock_input',
         output: 'mock_output',
-        sampleInput: '1 2',
-        sampleOutput: '3',
+        samples: [{ in: '1 2', out: '3' }],
         hint: '',
         source: 'SDUTACMPC',
-        author: 1,
+        authors: ['mock_author'],
         timeLimit: 1000,
         memoryLimit: 65536,
         accepted: 1,
@@ -345,11 +346,10 @@ describe(basename(__filename), () => {
           description: 'mock_desc',
           input: 'mock_input',
           output: 'mock_output',
-          sampleInput: '1 2',
-          sampleOutput: '3',
+          samples: [{ in: '1 2', out: '3' }],
           hint: '',
           source: 'SDUTACMPC',
-          author: 1,
+          authors: ['mock_author'],
           timeLimit: 1000,
           memoryLimit: 65536,
           accepted: 1,
@@ -411,11 +411,10 @@ describe(basename(__filename), () => {
         description: 'mock_desc',
         input: 'mock_input',
         output: 'mock_output',
-        sampleInput: '1 2',
-        sampleOutput: '3',
+        samples: [{ in: '1 2', out: '3' }],
         hint: '',
         source: 'SDUTACMPC',
-        author: 1,
+        authors: ['mock_author'],
         timeLimit: 1000,
         memoryLimit: 65536,
         accepted: 1,
@@ -480,11 +479,10 @@ describe(basename(__filename), () => {
         description: 'mock_create_description1',
         input: 'mock_create_input1',
         output: 'mock_create_output1',
-        sampleInput: 'mock_create_sampleInput1',
-        sampleOutput: 'mock_create_sampleOutput1',
+        samples: [{ in: 'mock_create_sampleInput1', out: 'mock_create_sampleOutput1' }],
         hint: 'mock_create_hint1',
         source: 'mock_create_source1',
-        author: 1,
+        authors: ['mock_author'],
         timeLimit: 500,
         memoryLimit: 32768,
       };
@@ -502,11 +500,10 @@ describe(basename(__filename), () => {
       assert.strictEqual(problem?.description, opt.description);
       assert.strictEqual(problem?.input, opt.input);
       assert.strictEqual(problem?.output, opt.output);
-      assert.strictEqual(problem?.sampleInput, opt.sampleInput);
-      assert.strictEqual(problem?.sampleOutput, opt.sampleOutput);
+      assert.strictEqual(problem?.samples, opt.samples);
       assert.strictEqual(problem?.hint, opt.hint);
       assert.strictEqual(problem?.source, opt.source);
-      assert.strictEqual(problem?.author, opt.author);
+      assert.strictEqual(problem?.authors, opt.authors);
       assert.strictEqual(problem?.timeLimit, opt.timeLimit);
       assert.strictEqual(problem?.memoryLimit, opt.memoryLimit);
     });

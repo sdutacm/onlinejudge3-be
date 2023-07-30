@@ -79,6 +79,7 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   })
   output: string;
 
+  /** @deprecated */
   @AllowNull(false)
   @Default('')
   @Column({
@@ -87,6 +88,7 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   })
   sampleInput: string;
 
+  /** @deprecated */
   @AllowNull(false)
   @Default('')
   @Column({
@@ -94,6 +96,30 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
     type: DataType.TEXT({ length: 'medium' }),
   })
   sampleOutput: string;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    type: DataType.TEXT({ length: 'medium' }),
+  })
+  get samples(): IProblemModel['samples'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('samples')) || [];
+    } catch (e) {
+      console.error('ProblemModel.samples getter error:', e);
+      return [];
+    }
+  }
+  set samples(value: IProblemModel['samples']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('samples', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('samples', '');
+    }
+  }
 
   @AllowNull(false)
   @Default('')
@@ -109,12 +135,35 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   })
   source: string;
 
+  /** @deprecated */
   @AllowNull(true)
-  @Default(0)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.STRING(400),
   })
   author: number | null;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    type: DataType.STRING(256),
+  })
+  get authors(): IProblemModel['authors'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('authors')) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+  set authors(value: IProblemModel['authors']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('authors', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('authors', '');
+    }
+  }
 
   @AllowNull(false)
   @CreatedAt
