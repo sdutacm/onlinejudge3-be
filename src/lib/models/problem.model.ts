@@ -244,6 +244,30 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   })
   difficulty: number;
 
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'sp_config',
+    type: DataType.TEXT({ length: 'medium' }),
+  })
+  get spConfig(): IProblemModel['spConfig'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('spConfig')) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  set spConfig(value: IProblemModel['spConfig']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('spConfig', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('spConfig', '');
+    }
+  }
+
   @BelongsToMany(() => TagModel, () => ProblemTagModel)
   tags: Array<TagModel & { ProblemTagModel: ProblemTagModel }>;
 }

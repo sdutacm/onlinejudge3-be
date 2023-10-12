@@ -279,6 +279,7 @@ const competitionContract = {
             submitted: { type: 'number' },
             spj: { type: 'boolean' },
             display: { type: 'boolean' },
+            spConfig: { type: 'object' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: {
               anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
@@ -304,6 +305,7 @@ const competitionContract = {
             'submitted',
             'spj',
             'display',
+            'spConfig',
             'createdAt',
             'updatedAt',
           ],

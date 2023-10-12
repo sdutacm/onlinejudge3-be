@@ -136,6 +136,7 @@ const problemContract = {
       submitted: { type: 'number' },
       spj: { type: 'boolean' },
       display: { type: 'boolean' },
+      spConfig: { type: 'object' },
       tags: {
         type: 'array',
         items: {
@@ -175,6 +176,7 @@ const problemContract = {
       'submitted',
       'spj',
       'display',
+      'spConfig',
       'tags',
       'createdAt',
       'updatedAt',
@@ -207,6 +209,7 @@ const problemContract = {
       difficulty: { type: 'number', minimum: 1, maximum: 10 },
       spj: { type: 'boolean' },
       display: { type: 'boolean' },
+      spConfig: { type: 'object' },
     },
     additionalProperties: false,
     required: [
@@ -258,6 +261,7 @@ const problemContract = {
       difficulty: { type: 'number', minimum: 1, maximum: 10 },
       spj: { type: 'boolean' },
       display: { type: 'boolean' },
+      spConfig: { type: 'object' },
     },
     additionalProperties: false,
     required: ['problemId'],

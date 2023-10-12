@@ -27,6 +27,7 @@ export interface IProblemModel {
   display: boolean;
   spj: boolean;
   difficulty: number;
+  spConfig: any;
   createdAt: Date;
   updatedAt: Date | null;
 }
@@ -67,6 +68,7 @@ export type TMProblemDetailFields = Extract<
   | 'submitted'
   | 'spj'
   | 'display'
+  | 'spConfig'
 >;
 
 export type IMProblemLite = Pick<IProblemModel, TMProblemLiteFields> & {
@@ -124,6 +126,7 @@ export interface IMProblemServiceCreateOpt {
   display?: IProblemModel['display'];
   spj?: IProblemModel['spj'];
   difficulty?: IProblemModel['difficulty'];
+  spConfig?: IProblemModel['spConfig'];
 }
 
 export type IMProblemServiceCreateRes = IProblemModel['problemId'];
@@ -144,6 +147,7 @@ export interface IMProblemServiceUpdateOpt {
   display?: IProblemModel['display'];
   spj?: IProblemModel['spj'];
   difficulty?: IProblemModel['difficulty'];
+  spConfig?: IProblemModel['spConfig'];
 }
 
 export type IMProblemServiceUpdateRes = boolean;

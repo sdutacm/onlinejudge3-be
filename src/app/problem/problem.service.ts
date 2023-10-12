@@ -62,6 +62,7 @@ const problemDetailFields: Array<TMProblemDetailFields> = [
   'submitted',
   'spj',
   'display',
+  'spConfig',
 ];
 
 @provide()
