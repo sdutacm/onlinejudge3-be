@@ -29,6 +29,7 @@ export default class MailSender {
         SignatureMethod: 'HMAC-SHA1', // 默认并仅支持 HMAC-SHA1
         RegionId: mailConfig.regionId || 'cn-hangzhou', // 可选
         Format: 'json', // 可选
+        UrlBase: mailConfig.urlBase, // 可选
       });
     }
   }
