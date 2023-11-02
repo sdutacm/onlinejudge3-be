@@ -1,7 +1,7 @@
 export function isCompetitionSolutionInFrozen(
   solution: { createdAt: Date | string },
   competition: { endAt: Date | string },
-  frozenLength: number = 0,
+  frozenLength = 0,
 ) {
   const solutionCreatedAt =
     solution.createdAt instanceof Date ? solution.createdAt : new Date(solution.createdAt);
