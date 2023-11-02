@@ -808,7 +808,7 @@ export default class UserController {
     if (cached) {
       return cached;
     }
-    const ACTIVE_TIME = 3600 * 1000; // 最近一小时活动过视为活跃用户
+    const ACTIVE_TIME = 12 * 3600 * 1000;
     const sessionKeys = await ctx.helper.redisScan('session:*', [], 10000);
     const activeUserIdSet = new Set<number>();
     const pq = new this.PromiseQueue(100, Infinity);

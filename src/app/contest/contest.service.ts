@@ -1130,12 +1130,12 @@ export default class ContestService {
   async getRanklist(
     contest: RequireSome<
       IMContestDetail,
-      'contestId' | 'type' | 'frozenLength' | 'startAt' | 'endAt'
+      'contestId' | 'type' | 'frozenLength' | 'startAt' | 'endAt' | 'ended'
     >,
     ignoreFrozen = false,
   ): Promise<IMContestServiceGetRanklistRes> {
     const { contestId } = contest;
-    const displayAll = contest.frozenLength <= 0 || ignoreFrozen;
+    const displayAll = contest.frozenLength <= 0 || ignoreFrozen || contest.ended;
     const god = contest.frozenLength > 0 && ignoreFrozen;
     let res: IMContestRanklist | null = null;
     const cached = await this._getContestRanklistCache(contestId, god);

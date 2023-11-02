@@ -38,6 +38,7 @@ import { CCompetitionService } from '../competition/competition.service';
 import { isCompetitionSolutionInFrozen } from '@/utils/competition';
 import { CCompetitionLogService } from '../competition/competitionLog.service';
 import { ECompetitionLogAction } from '../competition/competition.enum';
+import { isContestSolutionInFrozen } from '@/utils/contest';
 
 @provide()
 @controller('/')
@@ -129,15 +130,19 @@ export default class SolutionController {
       }
       // 如果是封榜且无权限查看，则修改 result
       if (
-        d.competition &&
-        !d.competition.ended &&
-        isCompetitionSolutionInFrozen(d, d.competition, d.competition.settings?.frozenLength) &&
-        d.user.userId !== ctx.helper.getCompetitionSession(d.competition.competitionId)?.userId &&
-        !ctx.helper.checkCompetitionRole(d.competition.competitionId, [
-          ECompetitionUserRole.admin,
-          ECompetitionUserRole.principal,
-          ECompetitionUserRole.judge,
-        ])
+        (d.contest &&
+          !d.contest.ended &&
+          isContestSolutionInFrozen(d, d.contest, d.contest.frozenLength) &&
+          !ctx.helper.checkPerms(EPerm.ContestAccess)) ||
+        (d.competition &&
+          !d.competition.ended &&
+          isCompetitionSolutionInFrozen(d, d.competition, d.competition.settings?.frozenLength) &&
+          d.user.userId !== ctx.helper.getCompetitionSession(d.competition.competitionId)?.userId &&
+          !ctx.helper.checkCompetitionRole(d.competition.competitionId, [
+            ECompetitionUserRole.admin,
+            ECompetitionUserRole.principal,
+            ECompetitionUserRole.judge,
+          ]))
       ) {
         if (req.result === d.result) {
           // 临时策略，对于筛选了 result 但其实封榜的提交过滤掉
@@ -210,20 +215,24 @@ export default class SolutionController {
     }
     // 如果是封榜且无权限查看，则修改 result
     if (
-      detail.competition &&
-      !detail.competition.ended &&
-      isCompetitionSolutionInFrozen(
-        detail,
-        detail.competition,
-        detail.competition.settings?.frozenLength,
-      ) &&
-      detail.user.userId !==
-        ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
-      !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
-        ECompetitionUserRole.admin,
-        ECompetitionUserRole.principal,
-        ECompetitionUserRole.judge,
-      ])
+      (detail.contest &&
+        !detail.contest.ended &&
+        isContestSolutionInFrozen(detail, detail.contest, detail.contest.frozenLength) &&
+        !ctx.helper.checkPerms(EPerm.ContestAccess)) ||
+      (detail.competition &&
+        !detail.competition.ended &&
+        isCompetitionSolutionInFrozen(
+          detail,
+          detail.competition,
+          detail.competition.settings?.frozenLength,
+        ) &&
+        detail.user.userId !==
+          ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
+        !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.principal,
+          ECompetitionUserRole.judge,
+        ]))
     ) {
       detail.result = ESolutionResult.V_Frozen;
       delete detail.judgeInfo;
@@ -282,20 +291,24 @@ export default class SolutionController {
         }
         // 如果是封榜且无权限查看，则修改 result
         if (
-          detail.competition &&
-          !detail.competition.ended &&
-          isCompetitionSolutionInFrozen(
-            detail,
-            detail.competition,
-            detail.competition.settings?.frozenLength,
-          ) &&
-          detail.user.userId !==
-            ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
-          !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
-            ECompetitionUserRole.admin,
-            ECompetitionUserRole.principal,
-            ECompetitionUserRole.judge,
-          ])
+          (detail.contest &&
+            !detail.contest.ended &&
+            isContestSolutionInFrozen(detail, detail.contest, detail.contest.frozenLength) &&
+            !ctx.helper.checkPerms(EPerm.ContestAccess)) ||
+          (detail.competition &&
+            !detail.competition.ended &&
+            isCompetitionSolutionInFrozen(
+              detail,
+              detail.competition,
+              detail.competition.settings?.frozenLength,
+            ) &&
+            detail.user.userId !==
+              ctx.helper.getCompetitionSession(detail.competition.competitionId)?.userId &&
+            !ctx.helper.checkCompetitionRole(detail.competition.competitionId, [
+              ECompetitionUserRole.admin,
+              ECompetitionUserRole.principal,
+              ECompetitionUserRole.judge,
+            ]))
         ) {
           detail.result = ESolutionResult.V_Frozen;
           delete detail.judgeInfo;

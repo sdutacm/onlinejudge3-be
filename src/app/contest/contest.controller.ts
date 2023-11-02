@@ -618,9 +618,11 @@ export default class ContestController {
     ctx: Context,
   ): Promise<IGetContestProblemSolutionStatsResp> {
     const contestId = ctx.id!;
+    const detail = ctx.detail as IMContestDetail;
     const problems = await this.service.getContestProblems(contestId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
-    return this.solutionService.getContestProblemSolutionStats(contestId, problemIds);
+    const useFrozen = !detail.ended && !ctx.helper.checkPerms(EPerm.ContestAccess);
+    return this.solutionService.getContestProblemSolutionStats(contestId, problemIds, useFrozen);
   }
 
   @route()
@@ -702,6 +704,10 @@ export default class ContestController {
     await this.service.update(contestId, {
       ended: true,
     });
-    await this.service.clearDetailCache(contestId);
+    await Promise.all([
+      this.service.clearDetailCache(contestId),
+      this.service.clearContestRanklistCache(contestId),
+      this.solutionService.clearContestProblemSolutionStatsCache(contestId),
+    ]);
   }
 }

@@ -8,6 +8,7 @@ const redisKey = {
   contestDetail: 'cache:contest_detail:%d',
   contestProblems: 'cache:contest_problems:%d',
   contestProblemResultStats: 'cache:contest_problem_result_stats:%d',
+  contestProblemResultStatsWithFrozen: 'cache:contest_problem_result_stats_frozen:%d',
   contestRanklist: 'cache:contest_ranklist:%d_%d',
   contestUserDetail: 'cache:contest_user_detail:%d',
   userContests: 'cache:user_contests:%d',

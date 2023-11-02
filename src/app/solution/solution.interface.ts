@@ -104,7 +104,7 @@ export type IMSolutionRelativeUser = Pick<
 >;
 export type IMSolutionRelativeContest = Pick<
   IContestModel,
-  'contestId' | 'title' | 'type' | 'startAt' | 'endAt'
+  'contestId' | 'title' | 'type' | 'startAt' | 'endAt' | 'ended' | 'frozenLength'
 >;
 export type IMSolutionRelativeCompetition = Pick<
   ICompetitionModel,
