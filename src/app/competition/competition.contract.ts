@@ -1222,6 +1222,14 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionQuestionId', 'competitionId', 'reply'],
   } as defContract.ContractSchema,
+
+  endCompetitionReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

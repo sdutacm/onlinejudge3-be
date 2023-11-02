@@ -875,13 +875,16 @@ export default class CompetitionController {
     ctx: Context,
   ): Promise<IGetCompetitionProblemSolutionStatsResp> {
     const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
     const problems = await this.service.getCompetitionProblems(competitionId);
     const problemIds = problems.rows.map((problem) => problem.problemId);
-    const useFrozen = !ctx.helper.checkCompetitionRole(competitionId, [
-      ECompetitionUserRole.admin,
-      ECompetitionUserRole.principal,
-      ECompetitionUserRole.judge,
-    ]);
+    const useFrozen =
+      !detail.ended &&
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ]);
     return this.solutionService.getCompetitionProblemSolutionStats(
       competitionId,
       problemIds,
@@ -1030,5 +1033,27 @@ export default class CompetitionController {
       repliedUserId: ctx.helper.getCompetitionSession(competitionId)!.userId,
       repliedAt: new Date(),
     });
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  @id()
+  @getDetail(null)
+  async [routesBe.endCompetition.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    if (!ctx.helper.isContestEnded(detail)) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    } else if (detail.ended) {
+      throw new ReqError(Codes.COMPETITION_ENDED);
+    }
+    await this.service.update(competitionId, {
+      ended: true,
+    });
+    await Promise.all([
+      this.service.clearDetailCache(competitionId),
+      // this.service.clearCompetitionRanklistCache(competitionId),
+      this.solutionService.clearCompetitionProblemSolutionStatsCache(competitionId),
+    ]);
   }
 }
