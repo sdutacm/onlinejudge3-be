@@ -498,7 +498,7 @@ export default class ContestController {
         if (conflict === 'upsert') {
           // 覆盖更新
           await this.service.updateContestUser(userInfo.contestUserId, {
-            ...this.lodash.omit(user, ['username', 'password']),
+            ...this.lodash.omit(user, ['username']),
             status: user.status ?? EContestUserStatus.accepted,
           });
           await this.service.clearContestUserDetailCache(userInfo.contestUserId);
