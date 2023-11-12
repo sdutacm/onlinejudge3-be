@@ -344,6 +344,18 @@ const userContract = {
     required: ['email', 'code', 'password'],
   } as defContract.ContractSchema,
 
+  resetUserPasswordByUsernameAndPasswordReq: {
+    properties: {
+      username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
+      password: { type: 'string', minLength: 8, maxLength: 20, pattern: '^[!-~]+$' },
+      email: { type: 'string', format: 'email' },
+      code: { type: 'number' },
+      newPassword: { type: 'string', minLength: 8, maxLength: 20 },
+    },
+    additionalProperties: false,
+    required: ['username', 'password', 'email', 'code', 'newPassword'],
+  } as defContract.ContractSchema,
+
   resetUserPasswordByAdminReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },

@@ -25,6 +25,7 @@ import {
   IUpdateUserDetailReq,
   IUpdateUserPasswordReq,
   IResetUserPasswordReq,
+  IResetUserPasswordByUsernameAndPasswordReq,
   IUpdateUserEmailReq,
   IResetUserPasswordByAdminReq,
   IGetUserDetailResp,
@@ -518,6 +519,36 @@ export default class UserController {
     }
     await this.service.update(user.userId, {
       password: this.utils.misc.hashPassword(password),
+    });
+    this.verificationService.deleteEmailVerificationCode(email);
+  }
+
+  /**
+   * 重置弱密码。
+   *
+   * 通过账号密码重置密码. 根据账号密码验证用户身份, 强要求绑定邮箱, 需要验证码有效.
+   */
+  @route()
+  async [routesBe.resetUserPasswordByUsernameAndPassword.i](ctx: Context): Promise<void> {
+    const { username, password, email, code, newPassword } = ctx.request
+      .body as IResetUserPasswordByUsernameAndPasswordReq;
+    const pass = this.utils.misc.hashPassword(password);
+    const newPass = this.utils.misc.hashPassword(newPassword);
+    const user = await this.service.findOne({
+      username,
+      password: pass,
+    });
+    if (!user) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    const verificationCode = await this.verificationService.getEmailVerificationCode(email);
+    if (verificationCode?.code !== code) {
+      throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
+    }
+    await this.service.update(user.userId, {
+      password: newPass,
+      email,
+      verified: true,
     });
     this.verificationService.deleteEmailVerificationCode(email);
   }
