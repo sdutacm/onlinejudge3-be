@@ -17,6 +17,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
+import { isWeakPassword } from '@/common/utils/weakpwd-check';
 import {
   ILoginReq,
   IRegisterReq,
@@ -145,6 +146,10 @@ export default class UserController {
       }));
     if (!user) {
       throw new ReqError(Codes.USER_INCORRECT_LOGIN_INFO);
+    }
+    const weak = isWeakPassword(pass);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
     }
     ctx.userId = user.userId;
     // @ts-ignore
