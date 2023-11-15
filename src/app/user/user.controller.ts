@@ -17,7 +17,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
-import { isWeakPassword } from '@/common/utils/weakpwd-check';
+import WeakPasswordChecker from '@/common/utils/weakpwd-check';
 import {
   ILoginReq,
   IRegisterReq,
@@ -25,7 +25,7 @@ import {
   IUpdateUserDetailReq,
   IUpdateUserPasswordReq,
   IResetUserPasswordReq,
-  IResetUserPasswordByUsernameAndPasswordReq,
+  IResetUserPasswordAndEmailReq,
   IUpdateUserEmailReq,
   IResetUserPasswordByAdminReq,
   IGetUserDetailResp,
@@ -148,7 +148,8 @@ export default class UserController {
     if (!user) {
       throw new ReqError(Codes.USER_INCORRECT_LOGIN_INFO);
     }
-    const weak = isWeakPassword(pass);
+    // 检查密码强度
+    const weak = WeakPasswordChecker.isWeak(password);
     if (weak) {
       throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
     }
@@ -529,14 +530,14 @@ export default class UserController {
    * 通过账号密码重置密码. 根据账号密码验证用户身份, 强要求绑定邮箱, 需要验证码有效.
    */
   @route()
-  async [routesBe.resetUserPasswordByUsernameAndPassword.i](ctx: Context): Promise<void> {
-    const { username, password, email, code, newPassword } = ctx.request
-      .body as IResetUserPasswordByUsernameAndPasswordReq;
+  async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<ILoginResp> {
+    const { username, oldPassword, email, code, password } = ctx.request
+      .body as IResetUserPasswordAndEmailReq;
+    const oldPass = this.utils.misc.hashPassword(oldPassword);
     const pass = this.utils.misc.hashPassword(password);
-    const newPass = this.utils.misc.hashPassword(newPassword);
     const user = await this.service.findOne({
       username,
-      password: pass,
+      password: oldPass,
     });
     if (!user) {
       throw new ReqError(Codes.USER_NOT_EXIST);
@@ -546,11 +547,40 @@ export default class UserController {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
     }
     await this.service.update(user.userId, {
-      password: newPass,
+      password: pass,
       email,
       verified: true,
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    ctx.userId = user.userId;
+    // @ts-ignore
+    await ctx.session._sessCtx.initFromExternal();
+    const loginAt = new Date();
+    ctx.session = {
+      userId: user.userId,
+      username: user.username,
+      nickname: user.nickname,
+      permission: user.permission,
+      avatar: user.avatar,
+      loginUa: ctx.request.headers['user-agent'] as string,
+      loginIp: ctx.ip,
+      loginAt: loginAt.toISOString(),
+      lastAccessIp: ctx.ip,
+      lastAccessAt: loginAt.toISOString(),
+      contests: {},
+      competitions: {},
+    };
+    this.service.updateUserLastStatus(user.userId, { lastIp: ctx.ip }).then(() => {
+      this.service.clearDetailCache(user.userId);
+    });
+    return {
+      userId: user.userId,
+      username: user.username,
+      nickname: user.nickname,
+      permission: user.permission,
+      permissions: await this.authService.getPermissions(ctx.session.userId),
+      avatar: user.avatar,
+    };
   }
 
   /**
