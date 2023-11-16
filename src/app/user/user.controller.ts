@@ -530,7 +530,7 @@ export default class UserController {
    * 通过账号密码重置密码. 根据账号密码验证用户身份, 强要求绑定邮箱, 需要验证码有效.
    */
   @route()
-  async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<ILoginResp> {
+  async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<void> {
     const { username, oldPassword, email, code, password } = ctx.request
       .body as IResetUserPasswordAndEmailReq;
     const oldPass = this.utils.misc.hashPassword(oldPassword);
@@ -552,35 +552,7 @@ export default class UserController {
       verified: true,
     });
     this.verificationService.deleteEmailVerificationCode(email);
-    ctx.userId = user.userId;
-    // @ts-ignore
-    await ctx.session._sessCtx.initFromExternal();
-    const loginAt = new Date();
-    ctx.session = {
-      userId: user.userId,
-      username: user.username,
-      nickname: user.nickname,
-      permission: user.permission,
-      avatar: user.avatar,
-      loginUa: ctx.request.headers['user-agent'] as string,
-      loginIp: ctx.ip,
-      loginAt: loginAt.toISOString(),
-      lastAccessIp: ctx.ip,
-      lastAccessAt: loginAt.toISOString(),
-      contests: {},
-      competitions: {},
-    };
-    this.service.updateUserLastStatus(user.userId, { lastIp: ctx.ip }).then(() => {
-      this.service.clearDetailCache(user.userId);
-    });
-    return {
-      userId: user.userId,
-      username: user.username,
-      nickname: user.nickname,
-      permission: user.permission,
-      permissions: await this.authService.getPermissions(ctx.session.userId),
-      avatar: user.avatar,
-    };
+    return;
   }
 
   /**
