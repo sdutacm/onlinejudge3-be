@@ -11,7 +11,7 @@
     "clean": "midway-bin clean",
     "cov": "cross-env DEBUG=-* midway-bin cov --ts",
     "cov-serve": "static-server coverage/lcov-report -p 7087",
-    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git GRPC_NODE_TRACE=all GRPC_NODE_VERBOSITY=debug midway-bin debug --ts",
+    "debug": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git GRPC_NODE_TRACE=all GRPC_NODE_VERBOSITY=debug midway-bin debug --ts --debug-port=9230 --proxy=9710",
     "dev": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git midway-bin dev --ts",
     "dev-w2": "cross-env NODE_ENV=development DEBUG=oj3:*,simple-git,egg-socket.io* midway-bin dev --ts --workers=2",
     "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts",

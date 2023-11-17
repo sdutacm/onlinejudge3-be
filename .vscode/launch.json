@@ -12,9 +12,6 @@
       "env": {
         "NODE_ENV": "development"
       },
-      "port": 9229,
-      // "preLaunchTask": "TypeScript compile",
-      "protocol": "auto",
       "request": "launch",
       "restart": true,
       "runtimeArgs": [
@@ -39,8 +36,6 @@
         "NODE_ENV": "test",
         "TS_NODE_PROJECT": "test/tsconfig.json",
       },
-      "port": 9229,
-      "protocol": "auto",
       "request": "launch",
       "restart": true,
       "runtimeArgs": [
