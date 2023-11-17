@@ -61,7 +61,7 @@ const solutionContract = {
                 spj: { type: 'boolean' },
               },
               additionalProperties: false,
-              required: ['problemId', 'title', 'timeLimit', 'memoryLimit', 'spj'],
+              required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
             },
             user: {
               type: 'object',
@@ -207,7 +207,7 @@ const solutionContract = {
           spj: { type: 'boolean' },
         },
         additionalProperties: false,
-        required: ['problemId', 'title', 'timeLimit', 'memoryLimit', 'spj'],
+        required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
       },
       user: {
         type: 'object',
@@ -353,7 +353,7 @@ const solutionContract = {
             spj: { type: 'boolean' },
           },
           additionalProperties: false,
-          required: ['problemId', 'title', 'timeLimit', 'memoryLimit', 'spj'],
+          required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
         },
         user: {
           type: 'object',
