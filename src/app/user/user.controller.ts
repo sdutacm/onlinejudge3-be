@@ -522,6 +522,7 @@ export default class UserController {
       password: this.utils.misc.hashPassword(password),
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    this.service.clearAllSessions(user.userId);
   }
 
   /**
@@ -531,13 +532,7 @@ export default class UserController {
    */
   @route()
   async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<void> {
-    const {
-      username,
-      oldPassword,
-      email,
-      code,
-      password
-    } = ctx.request
+    const { username, oldPassword, email, code, password } = ctx.request
       .body as IResetUserPasswordAndEmailReq;
     const oldPass = this.utils.misc.hashPassword(oldPassword);
     const pass = this.utils.misc.hashPassword(password);
@@ -558,6 +553,7 @@ export default class UserController {
       verified: true,
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    this.service.clearAllSessions(user.userId);
   }
 
   /**

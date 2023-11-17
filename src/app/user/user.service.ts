@@ -29,6 +29,7 @@ import { IDurationsConfig } from '@/config/durations.config';
 import { ILodash } from '@/utils/libs/lodash';
 import { EUserForbidden } from '@/common/enums';
 import DB from '@/lib/models/db';
+import { IRedisKeyConfig } from '@/config/redisKey.config';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -101,6 +102,9 @@ export default class UserService {
 
   @config()
   durations: IDurationsConfig;
+
+  @config()
+  redisKey: IRedisKeyConfig;
 
   scopeChecker = {
     available(data: Partial<IUserModel> | null): boolean {
@@ -350,6 +354,14 @@ export default class UserService {
    */
   async clearDetailCache(userId: IUserModel['userId']): Promise<void> {
     return this.ctx.helper.redisDel(this.meta.detailCacheKey, [userId]);
+  }
+
+  /**
+   * 清除所有session
+   */
+  async clearAllSessions(userId: IUserModel['userId']): Promise<void> {
+    const sessionKeys = await this.ctx.helper.redisKeys(this.redisKey.session, [userId, '*']);
+    await Promise.all(sessionKeys.map((key) => this.ctx.helper.redisDel(key)));
   }
 
   /**
