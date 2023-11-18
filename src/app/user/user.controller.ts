@@ -215,6 +215,10 @@ export default class UserController {
     } else if (await this.service.isEmailExists(email)) {
       throw new ReqError(Codes.USER_EMAIL_EXISTS);
     }
+    const weak = WeakPasswordChecker.isWeak(password);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
+    }
     const verificationCode = await this.verificationService.getEmailVerificationCode(email);
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
@@ -514,6 +518,10 @@ export default class UserController {
     if (!user) {
       throw new ReqError(Codes.USER_NOT_EXIST);
     }
+    const weak = WeakPasswordChecker.isWeak(password);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
+    }
     const verificationCode = await this.verificationService.getEmailVerificationCode(email);
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
@@ -532,13 +540,8 @@ export default class UserController {
    */
   @route()
   async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<void> {
-    const {
-      username,
-      oldPassword,
-      email,
-      code,
-      password,
-    } = ctx.request.body as IResetUserPasswordAndEmailReq;
+    const { username, oldPassword, email, code, password } = ctx.request
+      .body as IResetUserPasswordAndEmailReq;
     const oldPass = this.utils.misc.hashPassword(oldPassword);
     const pass = this.utils.misc.hashPassword(password);
     const user = await this.service.findOne({
