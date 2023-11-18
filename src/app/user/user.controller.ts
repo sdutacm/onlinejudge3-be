@@ -532,7 +532,13 @@ export default class UserController {
    */
   @route()
   async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<void> {
-    const { username, oldPassword, email, code, password } = ctx.request
+    const {
+      username,
+      oldPassword,
+      email,
+      code,
+      password,
+    } = ctx.request
       .body as IResetUserPasswordAndEmailReq;
     const oldPass = this.utils.misc.hashPassword(oldPassword);
     const pass = this.utils.misc.hashPassword(password);
