@@ -538,8 +538,7 @@ export default class UserController {
       email,
       code,
       password,
-    } = ctx.request
-      .body as IResetUserPasswordAndEmailReq;
+    } = ctx.request.body as IResetUserPasswordAndEmailReq;
     const oldPass = this.utils.misc.hashPassword(oldPassword);
     const pass = this.utils.misc.hashPassword(password);
     const user = await this.service.findOne({
