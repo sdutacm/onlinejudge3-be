@@ -937,7 +937,7 @@ DROP TABLE IF EXISTS `top`;
 /*!50001 DROP VIEW IF EXISTS `top`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `top` AS SELECT 
+/*!50001 CREATE VIEW `top` AS SELECT
  1 AS `user_id`,
  1 AS `user_name`,
  1 AS `accept`,
@@ -997,8 +997,8 @@ CREATE TABLE `user` (
   `accept` int NOT NULL,
   `pro_lang` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_ip` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `last_time` datetime NOT NULL,
-  `face_lang` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_time` datetime DEFAULT NULL,
+  `face_lang` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `level` tinyint NOT NULL,
   `forbidden` tinyint NOT NULL,
   `question1` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,

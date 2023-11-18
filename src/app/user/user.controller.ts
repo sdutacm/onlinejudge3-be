@@ -17,6 +17,7 @@ import { routesBe } from '@/common/routes';
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { IUtils } from '@/utils';
+import WeakPasswordChecker from '@/common/utils/weakpwd-check';
 import {
   ILoginReq,
   IRegisterReq,
@@ -24,6 +25,7 @@ import {
   IUpdateUserDetailReq,
   IUpdateUserPasswordReq,
   IResetUserPasswordReq,
+  IResetUserPasswordAndEmailReq,
   IUpdateUserEmailReq,
   IResetUserPasswordByAdminReq,
   IGetUserDetailResp,
@@ -146,6 +148,11 @@ export default class UserController {
     if (!user) {
       throw new ReqError(Codes.USER_INCORRECT_LOGIN_INFO);
     }
+    // 检查密码强度
+    const weak = WeakPasswordChecker.isWeak(password);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
+    }
     ctx.userId = user.userId;
     // @ts-ignore
     await ctx.session._sessCtx.initFromExternal();
@@ -207,6 +214,10 @@ export default class UserController {
       throw new ReqError(Codes.USER_NICKNAME_EXISTS);
     } else if (await this.service.isEmailExists(email)) {
       throw new ReqError(Codes.USER_EMAIL_EXISTS);
+    }
+    const weak = WeakPasswordChecker.isWeak(password);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
     }
     const verificationCode = await this.verificationService.getEmailVerificationCode(email);
     if (verificationCode?.code !== code) {
@@ -507,6 +518,10 @@ export default class UserController {
     if (!user) {
       throw new ReqError(Codes.USER_NOT_EXIST);
     }
+    const weak = WeakPasswordChecker.isWeak(password);
+    if (weak) {
+      throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
+    }
     const verificationCode = await this.verificationService.getEmailVerificationCode(email);
     if (verificationCode?.code !== code) {
       throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
@@ -515,6 +530,38 @@ export default class UserController {
       password: this.utils.misc.hashPassword(password),
     });
     this.verificationService.deleteEmailVerificationCode(email);
+    this.service.clearAllSessions(user.userId);
+  }
+
+  /**
+   * 重置弱密码。
+   *
+   * 通过账号密码重置密码. 根据账号密码验证用户身份, 强要求绑定邮箱, 需要验证码有效.
+   */
+  @route()
+  async [routesBe.resetUserPasswordAndEmail.i](ctx: Context): Promise<void> {
+    const { username, oldPassword, email, code, password } = ctx.request
+      .body as IResetUserPasswordAndEmailReq;
+    const oldPass = this.utils.misc.hashPassword(oldPassword);
+    const pass = this.utils.misc.hashPassword(password);
+    const user = await this.service.findOne({
+      username,
+      password: oldPass,
+    });
+    if (!user) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    const verificationCode = await this.verificationService.getEmailVerificationCode(email);
+    if (verificationCode?.code !== code) {
+      throw new ReqError(Codes.USER_INCORRECT_VERIFICATION_CODE);
+    }
+    await this.service.update(user.userId, {
+      password: pass,
+      email,
+      verified: true,
+    });
+    this.verificationService.deleteEmailVerificationCode(email);
+    this.service.clearAllSessions(user.userId);
   }
 
   /**
