@@ -57,6 +57,7 @@ import { CPromiseQueue } from '@/utils/libs/promise-queue';
 // import { CContentChecker } from '@/utils/content-check';
 import { CAuthService } from '../auth/auth.service';
 import { EPerm } from '@/common/configs/perm.config';
+import { CCosUploader } from '@/utils/cos';
 
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
@@ -104,6 +105,9 @@ export default class UserController {
 
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
+
+  @inject()
+  cosUploader: CCosUploader;
 
   // @inject()
   // contentChecker: CContentChecker;
@@ -641,25 +645,43 @@ export default class UserController {
         maxSize: this.uploadLimit.avatar,
       });
     }
+
     const ext = image.mime.split('/')[1];
     const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     const fullFileName = saveName;
     const sFileName = `s_${saveName}`;
-    // 压缩并存储图片
-    await Promise.all([
-      this.fs.copyFile(image.filepath, path.join(this.staticPath.avatar, fullFileName)),
-      await this.sharp(image.filepath)
-        .resize(128)
-        .toFile(path.join(this.staticPath.avatar, sFileName)),
-    ]);
-    // 清除旧文件
-    const { avatar: oldImage } = detail;
-    if (oldImage) {
-      await Promise.all([
-        this.fs.remove(path.join(this.staticPath.avatar, oldImage)),
-        this.fs.remove(path.join(this.staticPath.avatar, `s_${oldImage}`)),
-      ]);
+    const sImageInstance = this.sharp(image.filepath).resize(128);
+    switch (this.staticPath.useCloud) {
+      case 'cos': {
+        await Promise.all([
+          this.cosUploader.uploadFile(
+            this.fs.createReadStream(image.filepath),
+            path.join(this.staticPath.avatar, fullFileName),
+          ),
+          this.cosUploader.uploadFile(
+            await sImageInstance.toBuffer(),
+            path.join(this.staticPath.avatar, sFileName),
+          ),
+        ]);
+        break;
+      }
+      default: {
+        // 压缩并存储图片到本地
+        await Promise.all([
+          this.fs.copyFile(image.filepath, path.join(this.staticPath.avatar, fullFileName)),
+          await sImageInstance.toFile(path.join(this.staticPath.avatar, sFileName)),
+        ]);
+        // 清除旧文件
+        const { avatar: oldImage } = detail;
+        if (oldImage) {
+          await Promise.all([
+            this.fs.remove(path.join(this.staticPath.avatar, oldImage)),
+            this.fs.remove(path.join(this.staticPath.avatar, `s_${oldImage}`)),
+          ]);
+        }
+      }
     }
+
     // 更新
     await this.service.update(userId, {
       avatar: saveName,
@@ -702,6 +724,7 @@ export default class UserController {
         maxSize: this.uploadLimit.bannerImage,
       });
     }
+
     const ext = image.mime.split('/')[1];
     const saveName = `${userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     const fullFileName = saveName;
@@ -733,21 +756,44 @@ export default class UserController {
         minImageInstance = minImageInstance.png({ quality: 20 });
         break;
     }
-    // 存储图片
-    await Promise.all([
-      this.fs.copyFile(image.filepath, path.join(this.staticPath.bannerImage, fullFileName)),
-      sImageInstance.toFile(path.join(this.staticPath.bannerImage, sFileName)),
-      minImageInstance.toFile(path.join(this.staticPath.bannerImage, minFileName)),
-    ]);
-    // 清除旧文件
-    const { bannerImage: oldImage } = detail;
-    if (oldImage) {
-      await Promise.all([
-        this.fs.remove(path.join(this.staticPath.bannerImage, oldImage)),
-        this.fs.remove(path.join(this.staticPath.bannerImage, `s_${oldImage}`)),
-        this.fs.remove(path.join(this.staticPath.bannerImage, `min_${oldImage}`)),
-      ]);
+
+    switch (this.staticPath.useCloud) {
+      case 'cos': {
+        await Promise.all([
+          this.cosUploader.uploadFile(
+            this.fs.createReadStream(image.filepath),
+            path.join(this.staticPath.bannerImage, fullFileName),
+          ),
+          this.cosUploader.uploadFile(
+            await sImageInstance.toBuffer(),
+            path.join(this.staticPath.bannerImage, sFileName),
+          ),
+          this.cosUploader.uploadFile(
+            await minImageInstance.toBuffer(),
+            path.join(this.staticPath.bannerImage, minFileName),
+          ),
+        ]);
+        break;
+      }
+      default: {
+        // 存储图片
+        await Promise.all([
+          this.fs.copyFile(image.filepath, path.join(this.staticPath.bannerImage, fullFileName)),
+          sImageInstance.toFile(path.join(this.staticPath.bannerImage, sFileName)),
+          minImageInstance.toFile(path.join(this.staticPath.bannerImage, minFileName)),
+        ]);
+        // 清除旧文件
+        const { bannerImage: oldImage } = detail;
+        if (oldImage) {
+          await Promise.all([
+            this.fs.remove(path.join(this.staticPath.bannerImage, oldImage)),
+            this.fs.remove(path.join(this.staticPath.bannerImage, `s_${oldImage}`)),
+            this.fs.remove(path.join(this.staticPath.bannerImage, `min_${oldImage}`)),
+          ]);
+        }
+      }
     }
+
     // 更新
     await this.service.update(userId, {
       bannerImage: saveName,

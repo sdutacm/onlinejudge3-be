@@ -31,6 +31,7 @@
     "ajv": "^6.12.0",
     "alimail-sdk-fork": "^1.0.7",
     "chalk": "^4.0.0",
+    "cos-nodejs-sdk-v5": "^2.12.5",
     "crypto-random-string": "^3.2.0",
     "egg-alinode": "^2.0.1",
     "egg-redis": "^2.4.0",

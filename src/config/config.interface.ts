@@ -12,6 +12,7 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   durations: IDurationsConfig;
   judger: IJudgerConfig;
   staticPath: {
+    useCloud?: 'cos';
     base: string;
     avatar: string; // 必须在 base 下
     bannerImage: string; // 必须在 base 下
@@ -40,5 +41,11 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   tencentCloud: {
     secretId: string;
     secretKey: string;
+    cos?: {
+      secretId: string;
+      secretKey: string;
+      bucket: string;
+      region: string;
+    };
   };
 }

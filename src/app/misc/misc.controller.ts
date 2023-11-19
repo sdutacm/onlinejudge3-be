@@ -10,6 +10,7 @@ import path from 'path';
 import { IFs } from '@/utils/libs/fs-extra';
 import { IUploadMediaResp, IUploadAssetResp } from '@/common/contracts/misc';
 import { EPerm } from '@/common/configs/perm.config';
+import { CCosUploader } from '@/utils/cos';
 
 @provide()
 @controller('/')
@@ -28,6 +29,9 @@ export default class MiscController {
 
   @config()
   uploadLimit: IAppConfig['uploadLimit'];
+
+  @inject()
+  cosUploader: CCosUploader;
 
   /**
    * 上传媒体文件。
@@ -58,10 +62,23 @@ export default class MiscController {
         maxSize: this.uploadLimit.media,
       });
     }
+
     const ext = image.mime.split('/')[1];
     const saveName = `${ctx.session.userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
-    // 存储图片
-    await this.fs.copyFile(image.filepath, path.join(this.staticPath.media, saveName));
+    switch (this.staticPath.useCloud) {
+      case 'cos': {
+        await this.cosUploader.uploadFile(
+          this.fs.createReadStream(image.filepath),
+          path.join(this.staticPath.media, saveName),
+        );
+        break;
+      }
+      default: {
+        // 存储图片
+        await this.fs.copyFile(image.filepath, path.join(this.staticPath.media, saveName));
+      }
+    }
+
     return {
       url: path.join(path.relative(this.staticPath.base, this.staticPath.media), saveName),
     };
@@ -94,13 +111,26 @@ export default class MiscController {
         maxSize: this.uploadLimit.asset,
       });
     }
+
     const ext = image.mime.split('/')[1];
     let saveName = `${Date.now()}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     if (prefix) {
       saveName = `${prefix}_${saveName}`;
     }
-    // 存储图片
-    await this.fs.copyFile(image.filepath, path.join(this.staticPath.asset, saveName));
+    switch (this.staticPath.useCloud) {
+      case 'cos': {
+        await this.cosUploader.uploadFile(
+          this.fs.createReadStream(image.filepath),
+          path.join(this.staticPath.asset, saveName),
+        );
+        break;
+      }
+      default: {
+        // 存储图片
+        await this.fs.copyFile(image.filepath, path.join(this.staticPath.asset, saveName));
+      }
+    }
+
     return {
       url: path.join(path.relative(this.staticPath.base, this.staticPath.asset), saveName),
     };
