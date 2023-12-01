@@ -487,15 +487,15 @@ export interface IMContestServiceCreateContestUserOpt {
   unofficial: IContestUserModel['unofficial'];
   password: IContestUserModel['password'];
   members: Array<{
-    schoolNo: string;
+    schoolNo?: string;
     name: string;
     school: string;
-    college: string;
-    major: string;
-    class: string;
+    college?: string;
+    major?: string;
+    class?: string;
     tel: string;
     email: string;
-    clothing: string;
+    clothing?: string;
   }>;
 }
 
@@ -511,15 +511,15 @@ export interface IMContestServiceUpdateContestUserOpt {
   unofficial?: IContestUserModel['unofficial'];
   password?: IContestUserModel['password'];
   members?: Array<{
-    schoolNo: string;
+    schoolNo?: string;
     name: string;
     school: string;
-    college: string;
-    major: string;
-    class: string;
+    college?: string;
+    major?: string;
+    class?: string;
     tel: string;
     email: string;
-    clothing: string;
+    clothing?: string;
   }>;
 }
 

@@ -1089,7 +1089,7 @@ export default class ContestService {
     data: IMContestServiceCreateContestUserOpt,
   ): Promise<IMContestServiceCreateContestUserRes> {
     const res = await this.contestUserModel.create({
-      ...this._formatContestUser(data),
+      ...this._formatContestUser(data as Partial<IMContestUserDetailPlain>),
       contestId,
     });
     return res.contestUserId;
@@ -1104,11 +1104,14 @@ export default class ContestService {
     contestUserId: IContestUserModel['contestUserId'],
     data: IMContestServiceUpdateContestUserOpt,
   ): Promise<IMContestServiceUpdateContestUserRes> {
-    const res = await this.contestUserModel.update(this._formatContestUser(data), {
-      where: {
-        contestUserId,
+    const res = await this.contestUserModel.update(
+      this._formatContestUser(data as Partial<IMContestUserDetailPlain>),
+      {
+        where: {
+          contestUserId,
+        },
       },
-    });
+    );
     return res[0] > 0;
   }
 
