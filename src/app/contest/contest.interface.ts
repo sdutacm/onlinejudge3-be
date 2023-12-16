@@ -261,7 +261,8 @@ export type IMContestUserListPagination = defService.ServiceListOpt<TContestUser
 
 //#region contest problem model
 export interface IRatingContestModel {
-  contestId: number;
+  contestId: number | null;
+  competitionId: number | null;
   ratingUntil: Record<
     IUserModel['userId'],
     {
@@ -286,7 +287,7 @@ export type TRatingContestModelFields = keyof IRatingContestModel;
 
 export type TMContestRatingContestDetailFields = Extract<
   TRatingContestModelFields,
-  'contestId' | 'ratingUntil' | 'ratingChange' | 'createdAt' | 'updatedAt'
+  'contestId' | 'competitionId' | 'ratingUntil' | 'ratingChange' | 'createdAt' | 'updatedAt'
 >;
 
 export type IMContestRatingContestDetail = Pick<
@@ -297,9 +298,10 @@ export type IMContestRatingContestDetail = Pick<
 
 //#region ranklist
 export interface IMContestRanklistProblemResultStat {
-  result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
-  attempted: number; // 尝试次数。首次 AC 的那次提交也计入
-  time: number; // s
+  result: 'FB' | 'AC' | 'RJ' | '?' | null; // 结果。'?' 表示封榜后有新提交，null 表示未提交
+  tries: number; // 尝试次数。首次 AC 的那次提交也计入
+  time: number; // AC 时的时间。单位为 s
+  score?: number; // 得分
 }
 
 export interface IMContestRanklistRow {
@@ -309,7 +311,7 @@ export interface IMContestRanklistRow {
     oldRating?: number;
     newRating?: number;
   };
-  solved: number;
+  score: number;
   time: number; // s
   stats: IMContestRanklistProblemResultStat[];
 }

@@ -41,18 +41,19 @@ export default class RatingContestModel extends Model<RatingContestModel>
   })
   ratingContestId: number;
 
-  @AllowNull(false)
+  @AllowNull(true)
   @Column({
     field: 'contest_id',
     type: DataType.INTEGER,
   })
-  @Index({
-    name: 'rating_contest_contest_id_uindex',
-    using: 'BTREE',
-    order: 'ASC',
-    unique: true,
+  contestId: number | null;
+
+  @AllowNull(true)
+  @Column({
+    field: 'competition_id',
+    type: DataType.INTEGER,
   })
-  contestId: number;
+  competitionId: number | null;
 
   @AllowNull(false)
   @Default('')

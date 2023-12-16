@@ -51,6 +51,9 @@ import {
   IDeleteCompetitionNotificationReq,
   ICreateCompetitionQuestionReq,
   IReplyCompetitionQuestionReq,
+  IGetCompetitionRanklistReq,
+  IGetCompetitionRanklistResp,
+  IGetCompetitionRatingStatusResp,
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
@@ -1089,6 +1092,40 @@ export default class CompetitionController {
   }
 
   @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionRanklist.i](ctx: Context): Promise<IGetCompetitionRanklistResp> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    let { god = false } = ctx.request.body as IGetCompetitionRanklistReq;
+    if (
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ])
+    ) {
+      god = false;
+    }
+    const settings = await this.service.getCompetitionSettingDetail(competitionId);
+    return this.service.getRanklist(detail, settings!, god);
+  }
+
+  @route()
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionRatingStatus.i](
+    ctx: Context,
+  ): Promise<IGetCompetitionRatingStatusResp> {
+    const competitionId = ctx.id!;
+    const status = await this.service.getRatingStatus(competitionId);
+    if (!status) {
+      throw new ReqError(Codes.CONTEST_NOT_ENDED);
+    }
+    return status;
+  }
+
+  @route()
   @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
   @id()
   @getDetail(null)
@@ -1100,6 +1137,7 @@ export default class CompetitionController {
     } else if (detail.ended) {
       throw new ReqError(Codes.COMPETITION_ENDED);
     }
+    // TODO rating
     await this.service.update(competitionId, {
       ended: true,
     });

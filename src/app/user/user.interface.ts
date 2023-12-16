@@ -1,8 +1,13 @@
 import { IContestModel } from '../contest/contest.interface';
+import { ICompetitionModel } from '../competition/competition.interface';
 
 export interface IUserModelRatingHistoryItem {
-  contest: {
+  contest?: {
     contestId: IContestModel['contestId'];
+    title: string;
+  };
+  competition?: {
+    competitionId: ICompetitionModel['competitionId'];
     title: string;
   };
   rank: number;

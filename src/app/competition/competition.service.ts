@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { provide, inject, Context, config } from 'midway';
 import { Op } from 'sequelize';
+import ivm from 'isolated-vm';
 import { CCompetitionMeta } from './competition.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
@@ -74,6 +76,13 @@ import {
   IMCompetitionServiceUpdateCompetitionQuestionOpt,
   IMCompetitionServicegetCompetitionQuestionsOpt,
   IMCompetitionServiceGetCompetitionNotificationsRes,
+  IMCompetitionRanklist,
+  IMCompetitionServiceGetRanklistRes,
+  IMCompetitionRanklistRow,
+  IMCompetitionServiceGetRatingContestDetailRes,
+  IMCompetitionRatingStatus,
+  IMCompetitionRankData,
+  IMCompetitionServiceGetRatingStatusRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -87,6 +96,15 @@ import { CUserService } from '../user/user.service';
 import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
 import { TCompetitionNotificationModel } from '@/lib/models/competitionNotification.model';
 import { TCompetitionQuestionModel } from '@/lib/models/competitionQuestion.model';
+import { IUserModel } from '../user/user.interface';
+import {
+  IMContestRatingContestDetail,
+  TMContestRatingContestDetailFields,
+} from '../contest/contest.interface';
+import { TRatingContestModel } from '@/lib/models/ratingContest.model';
+import { ECompetitionRulePreset } from './competition.enum';
+import { ESolutionResult, ECompetitionUserRole } from '@/common/enums';
+import { compileVarScoreExpression } from '@/common/utils/competition';
 
 export type CCompetitionService = CompetitionService;
 
@@ -198,6 +216,14 @@ const competitionQuestionDetailFields: Array<TMCompetitionQuestionDetailFields> 
   'updatedAt',
 ];
 
+const ratingContestDetailFields: Array<TMContestRatingContestDetailFields> = [
+  'contestId',
+  'ratingUntil',
+  'ratingChange',
+  'createdAt',
+  'updatedAt',
+];
+
 const MEMBER_NUM = 3;
 
 @provide()
@@ -222,6 +248,9 @@ export default class CompetitionService {
 
   @inject()
   competitionQuestionModel: TCompetitionQuestionModel;
+
+  @inject()
+  ratingContestModel: TRatingContestModel;
 
   @inject()
   problemService: CProblemService;
@@ -443,6 +472,70 @@ export default class CompetitionService {
       [competitionId],
       data,
       this.durations.cacheDetailMedium,
+    );
+  }
+
+  /**
+   * 获取比赛 Ranklist 缓存。
+   * @param competitionId competitionId
+   * @param god 是否上帝视角
+   */
+  private async _getCompetitionRanklistCache(
+    competitionId: ICompetitionModel['competitionId'],
+    god: boolean,
+  ): Promise<IMCompetitionRanklist | null> {
+    return this.ctx.helper.redisGet<IMCompetitionRanklist>(this.redisKey.competitionRanklist, [
+      competitionId,
+      god,
+    ]);
+  }
+
+  /**
+   * 设置比赛 Ranklist 缓存。
+   * @param competitionId competitionId
+   * @param god 是否上帝视角
+   * @param data 数据
+   */
+  private async _setCompetitionRanklistCache(
+    competitionId: ICompetitionModel['competitionId'],
+    god: boolean,
+    data: IMCompetitionRanklist,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.competitionRanklist,
+      [competitionId, god],
+      data,
+      this.durations.cacheDetailShort,
+    );
+  }
+
+  /**
+   * 获取 Rating 比赛详情缓存。
+   * @param competitionId competitionId
+   */
+  private async _getRatingContestDetailCache(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<IMContestRatingContestDetail | null> {
+    return this.ctx.helper.redisGet<IMContestRatingContestDetail>(
+      this.redisKey.ratingContestDetailForCompetition,
+      [competitionId],
+    );
+  }
+
+  /**
+   * 设置 Rating 比赛详情缓存。
+   * @param competitionId competitionId
+   * @param data 数据
+   */
+  private async _setRatingContestDetailCache(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMContestRatingContestDetail,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.ratingContestDetailForCompetition,
+      [competitionId],
+      data,
+      this.durations.cacheDetail,
     );
   }
 
@@ -1339,5 +1432,336 @@ export default class CompetitionService {
     competitionId: ICompetitionSettingModel['competitionId'],
   ): Promise<void> {
     return this.ctx.helper.redisDel(this.redisKey.competitionSettingDetail, [competitionId]);
+  }
+
+  /**
+   * 获取比赛 Ranklist。
+   * @param competition 比赛详情对象
+   * @param competitionSettings 比赛设置对象
+   * @param ignoreFrozen 是否忽略封榜
+   */
+  async getRanklist(
+    competition: RequireSome<
+      IMCompetitionDetail,
+      'competitionId' | 'rule' | 'isRating' | 'isTeam' | 'startAt' | 'endAt' | 'ended'
+    >,
+    competitionSettings: IMCompetitionSettingDetail,
+    ignoreFrozen = false,
+  ): Promise<IMCompetitionServiceGetRanklistRes> {
+    const { competitionId } = competition;
+    const displayAll = competitionSettings.frozenLength <= 0 || ignoreFrozen || competition.ended;
+    const god = competitionSettings.frozenLength > 0 && ignoreFrozen;
+    let res: IMCompetitionRanklist | null = null;
+    const cached = await this._getCompetitionRanklistCache(competitionId, god);
+    cached && (res = cached);
+
+    if (!res) {
+      const getScoreExpressionVM = async () => {
+        let vm: {
+          eval: (exp: string) => any;
+          drop: () => void;
+        };
+        // @ts-ignore
+        if (vm) {
+          return vm;
+        }
+        try {
+          const isolate = new ivm.Isolate({ memoryLimit: 16 });
+          const context = await isolate.createContext();
+          vm = {
+            eval: async (exp: string) => {
+              try {
+                const res = await context.eval(exp, {
+                  timeout: 100,
+                });
+                if (typeof res === 'number') {
+                  return res;
+                }
+                throw new Error(
+                  `invalid score value returned while evaling: ${exp}, return: ${res}`,
+                );
+              } catch (e) {
+                this.ctx.error('eval score expression failed:', e);
+                throw e;
+              }
+            },
+            drop: () => {
+              context.release();
+              isolate.dispose();
+            },
+          };
+        } catch (e) {
+          this.ctx.error('init score expression vm failed', e);
+          throw e;
+        }
+        return vm;
+      };
+      let vmToDrop: { drop: Function } | undefined;
+
+      const isICPCWithScore = [ECompetitionRulePreset.ICPCWithScore].includes(
+        competition.rule as ECompetitionRulePreset,
+      );
+      const solutions = await this.solutionService.getAllCompetitionSolutionList(competitionId);
+      const participants = (await this.getCompetitionUsers(competitionId)).rows.filter(
+        (u) => !u.banned && u.role === ECompetitionUserRole.participant,
+      );
+      const participantUserIdSet = new Set(participants.map((p) => p.userId));
+      const userIds = this.lodash.uniq(
+        solutions
+          .map((solution) => participantUserIdSet.has(solution.userId) && solution.userId)
+          .filter(Boolean) as number[],
+      );
+      const relativeUsers = await this.userService.getRelative(userIds, null);
+      const userRatingChangeInfo: Record<
+        number,
+        {
+          oldRating: number;
+          newRating: number;
+        }
+      > = {}; // 关联用户 id 到 rating change 的映射
+      if (competition.isRating) {
+        const ratingCompetitionDetail = await this.getRatingContestDetail(competitionId);
+        const ratingChange = ratingCompetitionDetail?.ratingChange || {};
+        Object.keys(relativeUsers).forEach((id) => {
+          const userId = +id;
+          userRatingChangeInfo[userId] = {
+            oldRating: ratingChange[userId]?.oldRating,
+            newRating: ratingChange[userId]?.newRating,
+          };
+        });
+      }
+      const problems = (await this.getCompetitionProblems(competitionId)).rows;
+      const rankMap = new Map<IUserModel['userId'], IMCompetitionRanklistRow>();
+      const problemIndexMap = new Map<number, number>();
+      problems.forEach((problem, index) => {
+        problemIndexMap.set(problem.problemId, index);
+      });
+      const fb = problems.map((_problem) => true);
+      // @ts-ignore
+      Object.keys(relativeUsers).forEach((_userId: string) => {
+        const userId = +_userId;
+        const user = relativeUsers[userId];
+        rankMap.set(userId, {
+          rank: -1,
+          user: {
+            userId,
+            username: user.username,
+            nickname: user.nickname,
+            avatar: user.avatar,
+            bannerImage: user.bannerImage || '',
+            rating: user.rating || 0,
+            oldRating: userRatingChangeInfo[userId]?.oldRating,
+            newRating: userRatingChangeInfo[userId]?.newRating,
+          },
+          score: 0,
+          time: 0,
+          stats: problems.map((_problem) => ({
+            result: null,
+            tries: 0,
+            time: 0,
+            score: undefined,
+          })),
+        });
+      });
+      const frozenStart = new Date(
+        competition.endAt.getTime() - competitionSettings.frozenLength * 1000,
+      );
+      for (const solution of solutions) {
+        if (solution.createdAt.getTime() >= competition.endAt.getTime()) {
+          continue;
+        }
+        const problemIndex = problemIndexMap.get(solution.problemId);
+        if (problemIndex === undefined) {
+          continue;
+        }
+        const { userId } = solution;
+        if (!rankMap.has(userId)) {
+          continue;
+        }
+        const curRankData = rankMap.get(userId)!;
+        const stat = curRankData.stats?.[problemIndex];
+        if (!stat) {
+          continue;
+        }
+        if (
+          [
+            ESolutionResult.RPD,
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.CE,
+            ESolutionResult.SE,
+          ].includes(solution.result)
+        ) {
+          // 非有效提交，忽略
+          continue;
+        } else if (stat.result === 'FB' || stat.result === 'AC') {
+          // 如果该用户这个题目之前已经 AC，则不处理
+          continue;
+        } else if (!displayAll && frozenStart <= solution.createdAt) {
+          // 如果封榜，则尝试 +1
+          stat.tries++;
+          stat.result = '?';
+        } else if (solution.result !== ESolutionResult.AC) {
+          // 如果为错误的提交
+          stat.tries++;
+          stat.result = 'RJ';
+          if (isICPCWithScore) {
+            stat.score = 0;
+          }
+        } else {
+          // 如果该次提交为 AC
+          const elapsedMs = solution.createdAt.getTime() - competition.startAt.getTime();
+          // @ts-ignore
+          stat.time = Math.floor(elapsedMs / 1000);
+          const problemPenalty = isICPCWithScore ? 0 : 20 * 60 * stat.tries;
+          curRankData.time += stat.time + problemPenalty;
+          if (isICPCWithScore) {
+            // 计算得分
+            const problem = problems[problemIndex];
+            let score = problem.score || 0;
+            if (problem.varScoreExpression) {
+              const compiledExpression = compileVarScoreExpression(problem.varScoreExpression, {
+                score: problem.score!,
+                problemIndex,
+                elapsedTime: {
+                  h: Math.floor(elapsedMs / 1000 / 60 / 60),
+                  min: Math.floor(elapsedMs / 1000 / 60),
+                  s: Math.floor(elapsedMs / 1000),
+                },
+                tries: stat.tries,
+              });
+              const vm = await getScoreExpressionVM();
+              vmToDrop = vm;
+              score = await vm.eval(compiledExpression);
+            }
+            stat.score = score;
+          }
+          stat.tries++;
+          // 判断是否为 FB
+          // 因为提交是按顺序获得的，因此第一个 AC 的提交就是 FB
+          if (fb[problemIndex]) {
+            fb[problemIndex] = false;
+            stat.result = 'FB';
+          } else {
+            stat.result = 'AC';
+          }
+          // 更新总分
+          curRankData.score += isICPCWithScore ? stat.score! : 1;
+        }
+      }
+      const ranklist: IMCompetitionRanklist = [];
+      rankMap.forEach((r) => {
+        ranklist.push(r);
+      });
+      // 排序
+      ranklist.sort((a, b) => {
+        if (a.score !== b.score) {
+          return b.score - a.score;
+        }
+        return a.time - b.time;
+      });
+      if (ranklist.length) {
+        // 计算并列排名
+        ranklist[0].rank = 1;
+        for (let i = 1; i < ranklist.length; ++i) {
+          if (
+            ranklist[i].score === ranklist[i - 1].score &&
+            ranklist[i].time === ranklist[i - 1].time
+          ) {
+            ranklist[i].rank = ranklist[i - 1].rank;
+          } else {
+            ranklist[i].rank = i + 1;
+          }
+        }
+      }
+      res = ranklist;
+      vmToDrop?.drop();
+      await this._setCompetitionRanklistCache(competitionId, god, res);
+    }
+
+    return {
+      count: res.length,
+      rows: res,
+    };
+  }
+
+  /**
+   * 清除比赛 Ranklist 缓存。
+   * @param competitionId competitionId
+   * @param god 是否上帝视角（不传则清空全部）
+   */
+  async clearCompetitionRanklistCache(
+    competitionId: ICompetitionModel['competitionId'],
+    god?: boolean,
+  ): Promise<void | [void, void]> {
+    if (god === undefined) {
+      return Promise.all([
+        this.ctx.helper.redisDel(this.redisKey.competitionRanklist, [competitionId, true]),
+        this.ctx.helper.redisDel(this.redisKey.competitionRanklist, [competitionId, false]),
+      ]);
+    }
+    return this.ctx.helper.redisDel(this.redisKey.competitionRanklist, [competitionId, god]);
+  }
+
+  /**
+   * 获取比赛 Rating 计算状态。
+   * @param competitionId competitionId
+   */
+  async getRatingStatus(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<IMCompetitionServiceGetRatingStatusRes> {
+    return this.ctx.helper.redisGet<IMCompetitionRatingStatus>(
+      this.redisKey.competitionRatingStatus,
+      [competitionId],
+    );
+  }
+
+  /**
+   * 设置比赛 Rating 计算状态。
+   * @param competitionId competitionId
+   * @param data 数据
+   */
+  async setRatingStatus(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionRatingStatus,
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(this.redisKey.competitionRatingStatus, [competitionId], data);
+  }
+
+  /**
+   * 设置比赛 RankData。此数据将用于提供给计算脚本进行 rating 计算。
+   * @param competitionId competitionId
+   * @param data 数据
+   */
+  async setRankData(
+    competitionId: ICompetitionModel['competitionId'],
+    data: IMCompetitionRankData,
+  ) {
+    return this.ctx.helper.redisSet(this.redisKey.competitionRankData, [competitionId], data);
+  }
+
+  /**
+   * 获取 Rating 比赛详情。
+   * @param competitionId competitionId
+   */
+  async getRatingContestDetail(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<IMCompetitionServiceGetRatingContestDetailRes> {
+    let res: IMCompetitionServiceGetRatingContestDetailRes = null;
+    const cached = await this._getRatingContestDetailCache(competitionId);
+    if (cached) {
+      res = cached;
+    } else if (cached === null) {
+      res = await this.ratingContestModel
+        .findOne({
+          attributes: ratingContestDetailFields,
+          where: {
+            competitionId,
+          },
+        })
+        .then((d) => d && (d.get({ plain: true }) as IMContestRatingContestDetail));
+      res && (await this._setRatingContestDetailCache(competitionId, res));
+    }
+    return res;
   }
 }

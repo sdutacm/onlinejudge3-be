@@ -1196,11 +1196,11 @@ export default class ContestService {
             oldRating: userRatingChangeInfo[userId]?.oldRating,
             newRating: userRatingChangeInfo[userId]?.newRating,
           },
-          solved: 0,
+          score: 0,
           time: 0,
           stats: problems.map((_problem) => ({
-            result: '-',
-            attempted: 0,
+            result: null,
+            tries: 0,
             time: 0,
           })),
         };
@@ -1228,20 +1228,20 @@ export default class ContestService {
           continue;
         } else if (!displayAll && frozenStart <= solution.createdAt) {
           // 如果封榜，则尝试 +1
-          stat.attempted++;
+          stat.tries++;
           stat.result = '?';
         } else if (solution.result !== ESolutionResult.AC) {
           // 如果为错误的提交
-          stat.attempted++;
-          stat.result = 'X';
+          stat.tries++;
+          stat.result = 'RJ';
         } else if (solution.result === ESolutionResult.AC) {
           // 如果该次提交为 AC
-          rankMap[userId].solved++;
+          rankMap[userId].score++;
           // @ts-ignore
           stat.time = Math.floor((solution.createdAt - contest.startAt) / 1000);
-          const problemPenalty = 20 * 60 * stat.attempted;
+          const problemPenalty = 20 * 60 * stat.tries;
           rankMap[userId].time += stat.time + problemPenalty;
-          stat.attempted++;
+          stat.tries++;
           // 判断是否为 FB
           // 因为提交是按顺序获得的，因此第一个 AC 的提交就是 FB
           if (fb[problemIndex]) {
@@ -1259,8 +1259,8 @@ export default class ContestService {
       });
       // 排序
       ranklist.sort((a, b) => {
-        if (a.solved !== b.solved) {
-          return b.solved - a.solved;
+        if (a.score !== b.score) {
+          return b.score - a.score;
         }
         return a.time - b.time;
       });
@@ -1269,7 +1269,7 @@ export default class ContestService {
         ranklist[0].rank = 1;
         for (let i = 1; i < ranklist.length; ++i) {
           if (
-            ranklist[i].solved === ranklist[i - 1].solved &&
+            ranklist[i].score === ranklist[i - 1].score &&
             ranklist[i].time === ranklist[i - 1].time
           ) {
             ranklist[i].rank = ranklist[i - 1].rank;
@@ -1331,7 +1331,7 @@ export default class ContestService {
   }
 
   /**
-   * 设置比赛 RankData。
+   * 设置比赛 RankData。此数据将用于提供给计算脚本进行 rating 计算。
    * @param contestId contestId
    * @param data 数据
    */

@@ -21,6 +21,7 @@ const redisKey = {
   competitionUserDetail: 'cache:competition_user_detail:%d_%d',
   competitionSettingDetail: 'cache:competition_setting_detail:%d',
   competitionNotifications: 'cache:competition_notifications:%d',
+  competitionRanklist: 'cache:competition_ranklist:%d_%d',
   topicDetail: 'cache:topic_detail:%d',
   postDetail: 'cache:post_detail:%d',
   tagList: 'cache:tag_list',
@@ -29,6 +30,7 @@ const redisKey = {
   groupDetail: 'cache:group_detail:%s',
   groupMemberList: 'cache:group_member_list:%s',
   ratingContestDetail: 'cache:rating_contest_detail:%d',
+  ratingContestDetailForCompetition: 'cache:rating_contest_detail_competition:%d',
   judgerLanguageConfig: 'cache:judger_language_config',
   solutionJudgeInfo: 'cache:solution_judge_info:%d',
   userPermissions: 'cache:user_permissions:%d',
@@ -43,8 +45,10 @@ const redisKey = {
   userSubmittedProblemsStats: 'stats:user_submitted_problems:%d',
   activeUserCountStats: 'stats:active_user_count',
   contestRankData: 'temp:contest_rank_data:%d',
+  competitionRankData: 'temp:competition_rank_data:%d',
   solutionJudgeStatus: 'status:solution_judge_status:%d',
   contestRatingStatus: 'status:contest_rating_status:%d',
+  competitionRatingStatus: 'status:competition_rating_status:%d',
   rateIp: 'rateIp:%s:%s', // {interfaceName} {ip}
   rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
   session: 'session:%d:%s', // {userId} {sessionKey}

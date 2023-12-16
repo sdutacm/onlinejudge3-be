@@ -65,6 +65,7 @@ import Axios from 'axios';
 import http from 'http';
 import { IJudgerConfig } from '@/config/judger.config';
 import { CCompetitionService } from '../competition/competition.service';
+import { ICompetitionModel } from '../competition/competition.interface';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -1101,7 +1102,7 @@ export default class SolutionService {
    * @param competitionId competitionId
    */
   async getAllCompetitionSolutionList(
-    competitionId: ISolutionModel['competitionId'],
+    competitionId: ICompetitionModel['competitionId'],
   ): Promise<IMSolutionServiceGetAllCompetitionSolutionListRes> {
     const res = await this.model
       .findAll({

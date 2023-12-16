@@ -3,6 +3,7 @@ import { IMProblemDetail } from '../problem/problem.interface';
 import { ECompetitionUserRole, ECompetitionUserStatus, EContestRatingStatus } from '@/common/enums';
 import { ICompetitionUserInfo } from '@/common/interfaces/competition';
 import { ECompetitionLogAction } from './competition.enum';
+import { IMContestRatingContestDetail } from '../contest/contest.interface';
 
 export interface ICompetitionSession {
   userId: number;
@@ -356,19 +357,20 @@ export interface IMCompetitionQuestionDetail {
 
 //#region ranklist
 export interface IMCompetitionRanklistProblemResultStat {
-  result: 'FB' | 'AC' | 'X' | '-' | '?'; // 结果。'X' 表示提交但未通过，'-' 表示未提交，'?' 表示封榜后有新提交
-  attempted: number; // 尝试次数。首次 AC 的那次提交也计入
-  time: number; // s
+  result: 'FB' | 'AC' | 'RJ' | '?' | null; // 结果。'?' 表示封榜后有新提交，null 表示未提交
+  tries: number; // 尝试次数。首次 AC 的那次提交也计入
+  time: number; // AC 时的时间。单位为 s
+  score?: number; // 得分
 }
 
 export interface IMCompetitionRanklistRow {
-  rank: number; // 排名。solved 和 time 都相等时 rank 并列
+  rank: number; // 排名。score 和 time 都相等时 rank 并列
   user: IMCompetitionRelativeUser & {
     oldRating?: number;
     newRating?: number;
   };
-  solved: number;
-  time: number; // s
+  score: number; // 总得分
+  time: number; // 总时间（部分规则下可能包含罚时时间）。单位为 s
   stats: IMCompetitionRanklistProblemResultStat[];
 }
 
@@ -585,18 +587,22 @@ export type IMCompetitionServiceUpdateCompetitionUserRes = boolean;
 //#endregion
 
 // //#region service.getRanklist
-// export type IMCompetitionServiceGetRanklistRes = defModel.FullListModelRes<
-//   IMCompetitionRanklistRow
-// >;
+export type IMCompetitionServiceGetRanklistRes = defModel.FullListModelRes<
+  IMCompetitionRanklistRow
+>;
 // //#endregion
 
 // //#region service.getRatingStatus
-// export type IMCompetitionServiceGetRatingStatusRes = IMCompetitionRatingStatus | null;
+export type IMCompetitionServiceGetRatingStatusRes = IMCompetitionRatingStatus | null;
 // //#endregion
 
 // //#region service.getRatingCompetitionDetail
 // export type IMCompetitionServiceGetRatingCompetitionDetailRes = IMCompetitionRatingCompetitionDetail | null;
 // //#endregion
+
+//#region service.getRatingContestDetail
+export type IMCompetitionServiceGetRatingContestDetailRes = IMContestRatingContestDetail | null;
+//#endregion
 
 //#region service.createCompetitionSetting
 export interface IMCompetitionServiceCreateCompetitionSettingOpt {
