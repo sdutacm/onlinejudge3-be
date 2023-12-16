@@ -1505,7 +1505,12 @@ export default class CompetitionService {
       const participants = (await this.getCompetitionUsers(competitionId)).rows.filter(
         (u) => !u.banned && u.role === ECompetitionUserRole.participant,
       );
-      const participantUserIdSet = new Set(participants.map((p) => p.userId));
+      const participantUserIdSet = new Set<number>();
+      const participantUserIdMap = new Map<number, IMCompetitionUserLite>();
+      participants.forEach((p) => {
+        participantUserIdSet.add(p.userId);
+        participantUserIdMap.set(p.userId, p);
+      });
       const userIds = this.lodash.uniq(
         solutions
           .map((solution) => participantUserIdSet.has(solution.userId) && solution.userId)
@@ -1546,7 +1551,7 @@ export default class CompetitionService {
           user: {
             userId,
             username: user.username,
-            nickname: user.nickname,
+            nickname: participantUserIdMap.get(userId)?.info?.nickname ?? user.nickname,
             avatar: user.avatar,
             bannerImage: user.bannerImage || '',
             rating: user.rating || 0,
