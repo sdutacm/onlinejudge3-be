@@ -51,6 +51,25 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
   @AllowNull(false)
   @Default('')
   @Column({
+    field: 'allowed_join_methods',
+    type: DataType.STRING(256),
+  })
+  get allowedJoinMethods(): ICompetitionSettingModel['allowedJoinMethods'] {
+    // @ts-ignore
+    const value = (this.getDataValue('allowedJoinMethods') || '') as string;
+    if (!value) {
+      return [];
+    }
+    return value.split(',') as ICompetitionSettingModel['allowedJoinMethods'];
+  }
+  set allowedJoinMethods(value: ICompetitionSettingModel['allowedJoinMethods']) {
+    // @ts-ignore
+    this.setDataValue('allowedJoinMethods', (value || []).join(','));
+  }
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
     field: 'allowed_auth_methods',
     type: DataType.STRING(256),
   })
@@ -60,7 +79,7 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
     if (!value) {
       return [];
     }
-    return value.split(',');
+    return value.split(',') as ICompetitionSettingModel['allowedAuthMethods'];
   }
   set allowedAuthMethods(value: ICompetitionSettingModel['allowedAuthMethods']) {
     // @ts-ignore
@@ -85,6 +104,30 @@ export default class CompetitionSettingModel extends Model<CompetitionSettingMod
     // @ts-ignore
     this.setDataValue('allowedSolutionLanguages', (value || []).join(','));
   }
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    field: 'allow_any_observation',
+    type: DataType.BOOLEAN,
+  })
+  allowAnyObservation: boolean;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    field: 'use_onetime_password',
+    type: DataType.BOOLEAN,
+  })
+  useOnetimePassword: boolean;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'join_password',
+    type: DataType.STRING(32),
+  })
+  joinPassword: string;
 
   @AllowNull(false)
   @Default('')

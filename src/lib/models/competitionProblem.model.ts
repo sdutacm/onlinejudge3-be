@@ -65,6 +65,36 @@ export default class CompetitionProblemModel extends Model<CompetitionProblemMod
     type: DataType.STRING(32),
   })
   balloonColor: string;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  get score(): ICompetitionProblemModel['score'] {
+    return this.getDataValue('score') ?? null;
+  }
+  set score(value: ICompetitionProblemModel['score']) {
+    if (typeof value === 'number') {
+      // @ts-ignore
+      this.setDataValue('score', value);
+    } else {
+      // @ts-ignore
+      this.setDataValue('score', null);
+    }
+  }
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'var_score_expression',
+    type: DataType.TEXT,
+  })
+  get varScoreExpression(): ICompetitionProblemModel['varScoreExpression'] {
+    return this.getDataValue('varScoreExpression') || '';
+  }
+  set varScoreExpression(value: ICompetitionProblemModel['varScoreExpression']) {
+    this.setDataValue('varScoreExpression', value || '');
+  }
 }
 
 export type TCompetitionProblemModel = typeof CompetitionProblemModel;

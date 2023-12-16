@@ -96,7 +96,9 @@ const competitionLiteFields: Array<TMCompetitionLiteFields> = [
   'startAt',
   'endAt',
   'ended',
+  'rule',
   'isTeam',
+  'isRating',
   'registerStartAt',
   'registerEndAt',
   'createdBy',
@@ -110,7 +112,9 @@ const competitionDetailFields: Array<TMCompetitionDetailFields> = [
   'startAt',
   'endAt',
   'ended',
+  'rule',
   'isTeam',
+  'isRating',
   'registerStartAt',
   'registerEndAt',
   'createdBy',
@@ -121,6 +125,8 @@ const competitionProblemDetailFields: Array<TMCompetitionProblemDetailFields> = 
   'problemId',
   'balloonAlias',
   'balloonColor',
+  'score',
+  'varScoreExpression',
 ];
 
 const competitionUserLiteFields: Array<TMCompetitionUserLiteFields> = [
@@ -153,12 +159,22 @@ const competitionUserDetailFields: Array<TMCompetitionUserDetailFields> = [
 const competitionSettingDetailFields: Array<TMCompetitionSettingDetailFields> = [
   'competitionId',
   'frozenLength',
+  'allowedJoinMethods',
   'allowedAuthMethods',
   'allowedSolutionLanguages',
+  'allowAnyObservation',
+  'useOnetimePassword',
+  'joinPassword',
   'externalRanklistUrl',
   'createdAt',
   'updatedAt',
 ];
+
+// @ts-ignore
+const competitionSettingRelativeFields: Array<Exclude<
+  TMCompetitionSettingDetailFields,
+  'joinPassword'
+>> = competitionSettingDetailFields.filter((k) => k !== 'joinPassword');
 
 const competitionNotificationDetailFields: Array<TMCompetitionNotificationDetailFields> = [
   'competitionNotificationId',
@@ -433,7 +449,9 @@ export default class CompetitionService {
   private _formatListQuery(opts: IMCompetitionServiceGetListOpt) {
     const where: any = this.utils.misc.ignoreUndefined({
       competitionId: opts.competitionId,
+      rule: opts.rule,
       isTeam: opts.isTeam,
+      isRating: opts.isRating,
       createdBy: opts.createdBy,
       // hidden: opts.hidden,
       deleted: false,
@@ -581,7 +599,12 @@ export default class CompetitionService {
         ? {
             ...detailCached,
             settings: settingsCached
-              ? this.lodash.omit(settingsCached, ['competitionId', 'createdAt', 'updatedAt'])
+              ? this.lodash.omit(settingsCached, [
+                  'competitionId',
+                  'joinPassword',
+                  'createdAt',
+                  'updatedAt',
+                ])
               : undefined,
           }
         : null;
@@ -611,7 +634,7 @@ export default class CompetitionService {
         this.competitionSettingModel
           // .scope(scope || undefined)
           .findAll({
-            attributes: competitionSettingDetailFields,
+            attributes: competitionSettingRelativeFields,
             where: {
               competitionId: {
                 [Op.in]: uncached,
@@ -626,7 +649,7 @@ export default class CompetitionService {
           ...d,
           // @ts-ignore
           settings: s
-            ? this.lodash.omit(s, ['competitionId', 'createdAt', 'updatedAt'])
+            ? this.lodash.omit(s, ['competitionId', 'joinPassword', 'createdAt', 'updatedAt'])
             : undefined,
         };
         await this._setDetailCache(d.competitionId, d);
@@ -811,6 +834,8 @@ export default class CompetitionService {
         index,
         balloonAlias: problem.balloonAlias || '',
         balloonColor: problem.balloonColor || '',
+        score: problem.score ?? null,
+        varScoreExpression: problem.varScoreExpression || '',
       })),
     );
   }

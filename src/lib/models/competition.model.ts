@@ -85,12 +85,27 @@ export default class CompetitionModel extends Model<CompetitionModel> implements
   ended: boolean;
 
   @AllowNull(false)
+  @Default('')
+  @Column({
+    type: DataType.STRING(64),
+  })
+  rule: string;
+
+  @AllowNull(false)
   @Default(false)
   @Column({
     field: 'is_team',
     type: DataType.BOOLEAN,
   })
   isTeam: boolean;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    field: 'is_rating',
+    type: DataType.BOOLEAN,
+  })
+  isRating: boolean;
 
   @AllowNull(true)
   @Default(null)

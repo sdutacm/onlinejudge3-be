@@ -108,9 +108,9 @@ export type IMSolutionRelativeContest = Pick<
 >;
 export type IMSolutionRelativeCompetition = Pick<
   ICompetitionModel,
-  'competitionId' | 'title' | 'isTeam' | 'ended' | 'startAt' | 'endAt'
+  'competitionId' | 'title' | 'rule' | 'isTeam' | 'isRating' | 'ended' | 'startAt' | 'endAt'
 > & {
-  settings: Omit<ICompetitionSettingModel, 'competitionId' | 'createdAt' | 'updatedAt'>;
+  settings: Omit<ICompetitionSettingModel, 'competitionId' | 'joinPassword' | 'createdAt' | 'updatedAt'>;
 };
 
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;

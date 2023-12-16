@@ -433,6 +433,9 @@ export default class SolutionController {
       if (!competitionUser || competitionUser.role !== ECompetitionUserRole.participant) {
         throw new ReqError(Codes.SOLUTION_CONTEST_NO_PERMISSION);
       }
+      if (competitionUser.banned) {
+        throw new ReqError(Codes.COMPETITION_USER_BANNED);
+      }
       if (competitionUser.status === ECompetitionUserStatus.quitted) {
         throw new ReqError(Codes.COMPETITION_USER_QUITTED);
       }

@@ -17,7 +17,7 @@ import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { CCompetitionService } from './competition.service';
 import { ILodash } from '@/utils/libs/lodash';
-import { IMCompetitionDetail } from './competition.interface';
+import { IMCompetitionDetail, ICompetitionSession } from './competition.interface';
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import { CMailSender } from '@/utils/mail';
@@ -54,7 +54,7 @@ import {
 } from '@/common/contracts/competition';
 import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
-import { ECompetitionLogAction } from './competition.enum';
+import { ECompetitionLogAction, ECompetitionSettingAllowedAuthMethod } from './competition.enum';
 
 @provide()
 @controller('/')
@@ -110,6 +110,8 @@ export default class CompetitionController {
     if (ctx.helper.isCompetitionLoggedIn(competitionId)) {
       return ctx.helper.getCompetitionSession(competitionId)!;
     }
+
+    let session: ICompetitionSession | null = null;
     // 可以靠 OJ 登录态直接换取比赛登录态的情形
     if (ctx.helper.isGlobalLoggedIn()) {
       const competitionUser = await this.service.getCompetitionUserDetail(
@@ -119,8 +121,8 @@ export default class CompetitionController {
       if (!competitionUser) {
         return null;
       }
-      // 允许一部分角色凭借 OJ 登录态免密登录
-      // TODO 比赛被结束后均可以凭借 OJ 登录态免密登录
+
+      // 部分免密登录角色
       if (
         [
           ECompetitionUserRole.admin,
@@ -128,61 +130,40 @@ export default class CompetitionController {
           ECompetitionUserRole.auditor,
         ].includes(competitionUser.role)
       ) {
-        const session = {
+        session = {
           userId: competitionUser.userId,
           nickname: competitionUser.info?.nickname || '',
           subname: competitionUser.info?.subname || '',
           role: competitionUser.role,
         };
-        if (ctx.session?.competitions) {
-          ctx.session.competitions[competitionId] = session;
-        } else {
-          // @ts-ignore
-          ctx.session = {
-            competitions: {
-              [competitionId]: session,
-            },
-          };
-        }
-        return session;
+      }
+
+      const detail = await this.service.getDetail(competitionId, null);
+      const settings = await this.service.getCompetitionSettingDetail(competitionId);
+      if (!detail || !settings) {
+        return null;
+      }
+
+      // 是选手时
+      if (
+        [ECompetitionUserRole.participant].includes(competitionUser.role) &&
+        !competitionUser.banned &&
+        // 比赛开启了 session 登录或比赛已结束
+        (settings.allowedAuthMethods.includes(ECompetitionSettingAllowedAuthMethod.Session) ||
+          ctx.helper.isContestEnded(detail))
+      ) {
+        session = {
+          userId: competitionUser.userId,
+          nickname: competitionUser.info?.nickname || '',
+          subname: competitionUser.info?.subname || '',
+          role: competitionUser.role,
+        };
       }
     }
-    return null;
-  }
 
-  @route()
-  @id()
-  // @getDetail(null)
-  async [routesBe.loginCompetition.i](ctx: Context): Promise<ILoginCompetitionResp> {
-    const competitionId = ctx.id!;
-    const { userId, password } = ctx.request.body as ILoginCompetitionReq;
-    const competitionUser = await this.service.findOneCompetitionUser(competitionId, {
-      userId,
-      password,
-    });
-    if (!competitionUser) {
-      throw new ReqError(Codes.COMPETITION_INCORRECT_PASSWORD);
-    } else if (
-      ![
-        ECompetitionUserStatus.available,
-        ECompetitionUserStatus.entered,
-        ECompetitionUserStatus.quitted,
-      ].includes(competitionUser.status)
-    ) {
-      throw new ReqError(Codes.COMPETITION_USER_STATUS_CANNOT_ACCESS);
+    if (!session) {
+      return null;
     }
-    if (competitionUser.role === ECompetitionUserRole.participant) {
-      await this.service.updateCompetitionUser(competitionId, userId, {
-        password: null,
-      });
-      await this.service.clearCompetitionUserDetailCache(competitionId, userId);
-    }
-    const session = {
-      userId: competitionUser.userId,
-      nickname: competitionUser.info?.nickname || '',
-      subname: competitionUser.info?.subname || '',
-      role: competitionUser.role,
-    };
     if (ctx.session?.competitions) {
       ctx.session.competitions[competitionId] = session;
     } else {
@@ -193,14 +174,75 @@ export default class CompetitionController {
         },
       };
     }
+    return session;
+  }
+
+  @route()
+  @id()
+  // @getDetail(null)
+  async [routesBe.loginCompetition.i](ctx: Context): Promise<ILoginCompetitionResp> {
+    const competitionId = ctx.id!;
+    const { userId, password } = ctx.request.body as ILoginCompetitionReq;
+    const settings = await this.service.getCompetitionSettingDetail(competitionId);
+    if (!settings) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+
+    let session: ICompetitionSession | null = null;
+
+    if (settings.allowedAuthMethods.includes(ECompetitionSettingAllowedAuthMethod.Password)) {
+      const competitionUser = await this.service.findOneCompetitionUser(competitionId, {
+        userId,
+        password,
+      });
+      if (!competitionUser) {
+        throw new ReqError(Codes.COMPETITION_INCORRECT_PASSWORD);
+      } else if (competitionUser.banned) {
+        throw new ReqError(Codes.COMPETITION_USER_BANNED);
+      } else if (
+        ![
+          ECompetitionUserStatus.available,
+          ECompetitionUserStatus.entered,
+          ECompetitionUserStatus.quitted,
+        ].includes(competitionUser.status)
+      ) {
+        throw new ReqError(Codes.COMPETITION_USER_STATUS_CANNOT_ACCESS);
+      }
+      // 一次性密码策略，清空密码
+      if (
+        competitionUser.role === ECompetitionUserRole.participant &&
+        settings.useOnetimePassword
+      ) {
+        await this.service.updateCompetitionUser(competitionId, userId, {
+          password: null,
+        });
+        await this.service.clearCompetitionUserDetailCache(competitionId, userId);
+      }
+      session = {
+        userId: competitionUser.userId,
+        nickname: competitionUser.info?.nickname || '',
+        subname: competitionUser.info?.subname || '',
+        role: competitionUser.role,
+      };
+      if (ctx.session?.competitions) {
+        ctx.session.competitions[competitionId] = session;
+      } else {
+        // @ts-ignore
+        ctx.session = {
+          competitions: {
+            [competitionId]: session,
+          },
+        };
+      }
+    }
+
+    if (!session) {
+      throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    }
+
     try {
       this.competitionLogService.log(competitionId, ECompetitionLogAction.Login, {
-        detail: {
-          userId: competitionUser.userId,
-          nickname: competitionUser.info?.nickname || '',
-          subname: competitionUser.info?.subname || '',
-          role: competitionUser.role,
-        },
+        detail: session,
       });
     } catch (e) {
       console.error(e);
@@ -277,7 +319,9 @@ export default class CompetitionController {
         endAt: data.endAt,
         registerStartAt: data.registerStartAt,
         registerEndAt: data.registerEndAt,
+        rule: data.rule,
         isTeam: data.isTeam,
+        isRating: data.isRating,
         hidden: data.hidden,
       },
     });
@@ -900,6 +944,15 @@ export default class CompetitionController {
     const res = await this.service.getCompetitionSettingDetail(competitionId);
     if (!res) {
       throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    // 无权限时删除 joinPassword
+    if (
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+      ])
+    ) {
+      delete res.joinPassword;
     }
     delete res.competitionId;
     delete res.createdAt;

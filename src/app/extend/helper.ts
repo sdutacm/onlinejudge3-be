@@ -5,7 +5,8 @@ import { Application } from 'egg';
 import { consoleColors, getString } from '@/utils/format';
 import { EUserPermission, ECompetitionUserRole } from '@/common/enums';
 import { EPerm, checkPermExpr } from '@/common/configs/perm.config';
-import checkCompetitionUserRole from '@/common/utils/competition';
+import { checkCompetitionUserRole } from '@/common/utils/competition';
+import { ICompetitionSession } from '@/app/competition/competition.interface';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -666,7 +667,7 @@ export default {
    * 获取比赛 session。
    * @param competitionId competitionId
    */
-  getCompetitionSession(competitionId: number) {
+  getCompetitionSession(competitionId: number): ICompetitionSession | null {
     const { ctx } = getThis.call(this);
     return ctx.session?.competitions?.[competitionId] ?? null;
   },

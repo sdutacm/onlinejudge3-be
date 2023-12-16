@@ -435,9 +435,7 @@ export default class SolutionService {
     return data.map((d) => {
       const relativeProblem = relativeProblems[d.problemId];
       const relativeContest = relativeContests[d.contestId];
-      const relativeCompetition = d.competitionId
-        ? relativeCompetitions[d.competitionId]
-        : undefined;
+      const relativeCompetition = relativeCompetitions[d.competitionId!];
       const relativeJudgeInfo = relativeJudgeInfos[d.solutionId];
       let user: IMSolutionRelativeUser;
       if (d.isContestUser) {
@@ -451,24 +449,25 @@ export default class SolutionService {
           rating: relativeUser?.rating || 0,
         };
       } else if (d.competitionId) {
+        const relativeUser = relativeUsers[d.userId];
         const relativeCompetitionUser = relativeCompetitionUsers[`${d.competitionId}_${d.userId}`];
         user = {
           userId: d.userId,
-          username: '',
-          nickname: relativeCompetitionUser?.info?.nickname || '',
-          avatar: '',
-          bannerImage: '',
-          rating: 0,
+          username: relativeUser?.username || '',
+          nickname: relativeCompetitionUser?.info?.nickname || relativeUser?.nickname || '',
+          avatar: relativeUser?.avatar || '',
+          bannerImage: relativeUser?.bannerImage || '',
+          rating: relativeUser?.rating || 0,
         };
       } else {
         const relativeUser = relativeUsers[d.userId];
         user = {
           userId: relativeUser?.userId,
-          username: relativeUser?.username,
-          nickname: relativeUser?.nickname,
-          avatar: relativeUser?.avatar,
-          bannerImage: relativeUser?.bannerImage,
-          rating: relativeUser?.rating,
+          username: relativeUser?.username || '',
+          nickname: relativeUser?.nickname || '',
+          avatar: relativeUser?.avatar || '',
+          bannerImage: relativeUser?.bannerImage || '',
+          rating: relativeUser?.rating || 0,
         };
       }
 
@@ -497,7 +496,9 @@ export default class SolutionService {
           ? {
               competitionId: relativeCompetition.competitionId,
               title: relativeCompetition.title,
+              rule: relativeCompetition.rule,
               isTeam: relativeCompetition.isTeam,
+              isRating: relativeCompetition.isRating,
               ended: relativeCompetition.ended,
               startAt: relativeCompetition.startAt,
               endAt: relativeCompetition.endAt,

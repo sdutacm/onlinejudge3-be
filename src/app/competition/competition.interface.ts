@@ -3,7 +3,13 @@ import { IMProblemDetail } from '../problem/problem.interface';
 import { ECompetitionUserRole, ECompetitionUserStatus, EContestRatingStatus } from '@/common/enums';
 import { ICompetitionUserInfo } from '@/common/interfaces/competition';
 import { ECompetitionLogAction } from './competition.enum';
-import { TCompetitionSettingModel } from '@/lib/models/competitionSetting.model';
+
+export interface ICompetitionSession {
+  userId: number;
+  nickname: string;
+  subname: string;
+  role: ECompetitionUserRole;
+}
 
 //#region competition model
 export interface ICompetitionModel {
@@ -12,8 +18,10 @@ export interface ICompetitionModel {
   introduction: string;
   startAt: Date;
   endAt: Date;
+  rule: string;
   ended: boolean;
   isTeam: boolean;
+  isRating: boolean;
   registerStartAt: Date | null;
   registerEndAt: Date | null;
   createdBy: number;
@@ -32,7 +40,9 @@ export type TMCompetitionLiteFields = Extract<
   | 'startAt'
   | 'endAt'
   | 'ended'
+  | 'rule'
   | 'isTeam'
+  | 'isRating'
   | 'registerStartAt'
   | 'registerEndAt'
   | 'createdBy'
@@ -47,7 +57,9 @@ export type TMCompetitionDetailFields = Extract<
   | 'startAt'
   | 'endAt'
   | 'ended'
+  | 'rule'
   | 'isTeam'
+  | 'isRating'
   | 'registerStartAt'
   | 'registerEndAt'
   | 'createdBy'
@@ -70,13 +82,15 @@ export interface ICompetitionProblemModel {
   index: number;
   balloonAlias: string;
   balloonColor: string;
+  score: number | null;
+  varScoreExpression: string;
 }
 
 export type TCompetitionProblemModelFields = keyof ICompetitionProblemModel;
 
 export type TMCompetitionProblemDetailFields = Extract<
   TCompetitionProblemModelFields,
-  'problemId' | 'title' | 'balloonAlias' | 'balloonColor'
+  'problemId' | 'title' | 'balloonAlias' | 'balloonColor' | 'score' | 'varScoreExpression'
 >;
 
 export type IMCompetitionProblemLite = Pick<
@@ -226,8 +240,12 @@ export interface ICompetitionLogModel {
 export interface ICompetitionSettingModel {
   competitionId: number;
   frozenLength: number;
-  allowedAuthMethods: string[];
-  allowedSolutionLanguages: string[];
+  allowedJoinMethods: string[]; // ECompetitionSettingAllowedJoinMethod[];
+  allowedAuthMethods: string[]; // ECompetitionSettingAllowedAuthMethod[];
+  allowedSolutionLanguages: string[]; // judger available languages
+  allowAnyObservation: boolean;
+  useOnetimePassword: boolean;
+  joinPassword: string;
   externalRanklistUrl: string;
   createdAt: Date;
   updatedAt: Date;
@@ -239,8 +257,12 @@ export type TMCompetitionSettingDetailFields = Extract<
   TCompetitionSettingModelFields,
   | 'competitionId'
   | 'frozenLength'
+  | 'allowedJoinMethods'
   | 'allowedAuthMethods'
   | 'allowedSolutionLanguages'
+  | 'allowAnyObservation'
+  | 'useOnetimePassword'
+  | 'joinPassword'
   | 'externalRanklistUrl'
   | 'createdAt'
   | 'updatedAt'
@@ -249,8 +271,12 @@ export type TMCompetitionSettingDetailFields = Extract<
 export interface IMCompetitionSettingDetail {
   competitionId: ICompetitionSettingModel['competitionId'];
   frozenLength: ICompetitionSettingModel['frozenLength'];
+  allowedJoinMethods: ICompetitionSettingModel['allowedJoinMethods'];
   allowedAuthMethods: ICompetitionSettingModel['allowedAuthMethods'];
   allowedSolutionLanguages: ICompetitionSettingModel['allowedSolutionLanguages'];
+  allowAnyObservation: ICompetitionSettingModel['allowAnyObservation'];
+  useOnetimePassword: ICompetitionSettingModel['useOnetimePassword'];
+  joinPassword: ICompetitionSettingModel['joinPassword'];
   externalRanklistUrl: ICompetitionSettingModel['externalRanklistUrl'];
   createdAt: ICompetitionSettingModel['createdAt'];
   updatedAt: ICompetitionSettingModel['updatedAt'];
@@ -370,7 +396,9 @@ export type IMCompetitionRankData = IMCompetitionRankDataItem[];
 export interface IMCompetitionServiceGetListOpt {
   competitionId?: ICompetitionModel['competitionId'];
   title?: ICompetitionModel['title'];
+  rule?: ICompetitionModel['rule'];
   isTeam?: ICompetitionModel['isTeam'];
+  isRating?: ICompetitionModel['isRating'];
   createdBy?: ICompetitionModel['createdBy'];
 }
 
@@ -385,7 +413,10 @@ export type IMCompetitionServiceGetDetailRes = defModel.DetailModelRes<IMCompeti
 export type IMCompetitionServiceGetRelativeRes = Record<
   ICompetitionModel['competitionId'],
   IMCompetitionDetail & {
-    settings: Omit<ICompetitionSettingModel, 'competitionId' | 'createdAt' | 'updatedAt'>;
+    settings: Omit<
+      ICompetitionSettingModel,
+      'competitionId' | 'joinPassword' | 'createdAt' | 'updatedAt'
+    >;
   }
 >;
 //#endregion
@@ -405,7 +436,9 @@ export interface IMCompetitionServiceCreateOpt {
   introduction?: ICompetitionModel['introduction'];
   startAt?: ICompetitionModel['startAt'] | string;
   endAt?: ICompetitionModel['endAt'] | string;
+  rule?: ICompetitionModel['rule'];
   isTeam?: ICompetitionModel['isTeam'];
+  isRating?: ICompetitionModel['isRating'];
   registerStartAt?: ICompetitionModel['registerStartAt'] | string;
   registerEndAt?: ICompetitionModel['registerEndAt'] | string;
   hidden?: ICompetitionModel['hidden'];
@@ -422,7 +455,9 @@ export interface IMCompetitionServiceUpdateOpt {
   startAt?: ICompetitionModel['startAt'] | string;
   endAt?: ICompetitionModel['endAt'] | string;
   ended?: ICompetitionModel['ended'];
+  rule?: ICompetitionModel['rule'];
   isTeam?: ICompetitionModel['isTeam'];
+  isRating?: ICompetitionModel['isRating'];
   registerStartAt?: ICompetitionModel['registerStartAt'] | string;
   registerEndAt?: ICompetitionModel['registerEndAt'] | string;
   hidden?: ICompetitionModel['hidden'];
@@ -455,6 +490,8 @@ export type IMCompetitionServiceSetCompetitionProblemsOpt = Array<{
   problemId: ICompetitionProblemModel['problemId'];
   balloonAlias?: ICompetitionProblemModel['balloonAlias'];
   balloonColor?: ICompetitionProblemModel['balloonColor'];
+  score?: ICompetitionProblemModel['score'];
+  varScoreExpression?: ICompetitionProblemModel['varScoreExpression'];
 }>;
 //#endregion
 
@@ -564,8 +601,12 @@ export type IMCompetitionServiceUpdateCompetitionUserRes = boolean;
 //#region service.createCompetitionSetting
 export interface IMCompetitionServiceCreateCompetitionSettingOpt {
   frozenLength?: ICompetitionSettingModel['frozenLength'];
+  allowedJoinMethods?: ICompetitionSettingModel['allowedJoinMethods'];
   allowedAuthMethods?: ICompetitionSettingModel['allowedAuthMethods'];
   allowedSolutionLanguages?: ICompetitionSettingModel['allowedSolutionLanguages'];
+  allowAnyObservation?: ICompetitionSettingModel['allowAnyObservation'];
+  useOnetimePassword?: ICompetitionSettingModel['useOnetimePassword'];
+  joinPassword?: ICompetitionSettingModel['joinPassword'];
   externalRanklistUrl?: ICompetitionSettingModel['externalRanklistUrl'];
 }
 //#endregion
@@ -573,8 +614,12 @@ export interface IMCompetitionServiceCreateCompetitionSettingOpt {
 //#region service.updateCompetitionSetting
 export interface IMCompetitionServiceUpdateCompetitionSettingOpt {
   frozenLength?: ICompetitionSettingModel['frozenLength'];
+  allowedJoinMethods?: ICompetitionSettingModel['allowedJoinMethods'];
   allowedAuthMethods?: ICompetitionSettingModel['allowedAuthMethods'];
   allowedSolutionLanguages?: ICompetitionSettingModel['allowedSolutionLanguages'];
+  allowAnyObservation?: ICompetitionSettingModel['allowAnyObservation'];
+  useOnetimePassword?: ICompetitionSettingModel['useOnetimePassword'];
+  joinPassword?: ICompetitionSettingModel['joinPassword'];
   externalRanklistUrl?: ICompetitionSettingModel['externalRanklistUrl'];
 }
 

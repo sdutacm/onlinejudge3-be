@@ -59,6 +59,8 @@ import { CAuthService } from '../auth/auth.service';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCosUploader } from '@/utils/cos';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // const mw: Middleware = async (ctx, next) => {
 //   ctx.home = '123';
 //   await next();
@@ -153,7 +155,7 @@ export default class UserController {
       throw new ReqError(Codes.USER_INCORRECT_LOGIN_INFO);
     }
     // 检查密码强度
-    const weak = WeakPasswordChecker.isWeak(password);
+    const weak = isProd ? WeakPasswordChecker.isWeak(password) : false;
     if (weak) {
       throw new ReqError(Codes.USER_PASSWORD_STRENGTH_TOO_WEAK);
     }
