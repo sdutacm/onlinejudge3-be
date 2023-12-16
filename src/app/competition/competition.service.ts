@@ -505,7 +505,7 @@ export default class CompetitionService {
       this.redisKey.competitionRanklist,
       [competitionId, god],
       data,
-      this.durations.cacheDetailShort,
+      this.durations.cacheDetailVeryShort,
     );
   }
 
@@ -1601,12 +1601,15 @@ export default class CompetitionService {
           // 如果封榜，则尝试 +1
           stat.tries++;
           stat.result = '?';
+          if (isICPCWithScore) {
+            stat.score = stat.score ?? 0;
+          }
         } else if (solution.result !== ESolutionResult.AC) {
           // 如果为错误的提交
           stat.tries++;
           stat.result = 'RJ';
           if (isICPCWithScore) {
-            stat.score = 0;
+            stat.score = stat.score ?? 0;
           }
         } else {
           // 如果该次提交为 AC
