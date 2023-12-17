@@ -1135,6 +1135,7 @@ export default class SolutionService {
           competitionId,
           userId,
         },
+        order: [[this.meta.pk, 'ASC']],
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
     return res;
@@ -1159,24 +1160,24 @@ export default class SolutionService {
     );
   }
 
-  /**
-   * 根据条件获取所有提交的 ID。
-   * @param options 查询条件
-   */
-  async findAllSolutionIds(
-    options: IMSolutionServiceFindAllSolutionIdsOpt,
-  ): Promise<IMSolutionServiceFindAllSolutionIdsRes> {
-    if (Object.keys(options).length === 0) {
-      return [];
-    }
-    const res = await this.model
-      .findAll({
-        attributes: ['solutionId'],
-        where: options as any,
-      })
-      .then((r) => r.map((d) => d.solutionId));
-    return res;
-  }
+  // /**
+  //  * 根据条件获取所有提交的 ID。
+  //  * @param options 查询条件
+  //  */
+  // async findAllSolutionIds(
+  //   options: IMSolutionServiceFindAllSolutionIdsOpt,
+  // ): Promise<IMSolutionServiceFindAllSolutionIdsRes> {
+  //   if (Object.keys(options).length === 0) {
+  //     return [];
+  //   }
+  //   const res = await this.model
+  //     .findAll({
+  //       attributes: ['solutionId'],
+  //       where: options as any,
+  //     })
+  //     .then((r) => r.map((d) => d.solutionId));
+  //   return res;
+  // }
 
   /**
    * 根据条件获取所有提交的各项 ID。
@@ -1192,6 +1193,7 @@ export default class SolutionService {
       .findAll({
         attributes: ['solutionId', 'problemId', 'userId', 'contestId', 'competitionId'],
         where: options as any,
+        order: [[this.meta.pk, 'ASC']],
       })
       .then((r) =>
         r.map((d) => ({
@@ -1248,6 +1250,7 @@ export default class SolutionService {
       where: {
         result: ESolutionResult.RPD,
       },
+      order: [[this.meta.pk, 'ASC']],
       limit,
     });
     // @ts-ignore
