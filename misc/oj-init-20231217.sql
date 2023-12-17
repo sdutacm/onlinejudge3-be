@@ -1,6 +1,6 @@
 -- MariaDB dump 10.19  Distrib 10.6.5-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: localhost    Database: oj
+-- Host: localhost    Database: oj_init
 -- ------------------------------------------------------
 -- Server version	10.6.5-MariaDB-1:10.6.5+maria~focal
 
@@ -93,10 +93,13 @@ CREATE TABLE `competition` (
   `competition_id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `introduction` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `announcement` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `start_at` datetime NOT NULL,
   `end_at` datetime NOT NULL,
   `ended` tinyint(1) NOT NULL DEFAULT 0,
+  `rule` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'rule preset',
   `is_team` tinyint(1) NOT NULL DEFAULT 0,
+  `is_rating` tinyint(1) NOT NULL DEFAULT 0,
   `register_start_at` datetime DEFAULT NULL,
   `register_end_at` datetime DEFAULT NULL,
   `created_by` int(11) NOT NULL COMMENT 'creator user id',
@@ -194,6 +197,8 @@ CREATE TABLE `competition_problem` (
   `index` tinyint(1) NOT NULL,
   `balloon_alias` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `balloon_color` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `score` int(11) DEFAULT NULL,
+  `var_score_expression` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`competition_id`,`problem_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -249,8 +254,12 @@ DROP TABLE IF EXISTS `competition_setting`;
 CREATE TABLE `competition_setting` (
   `competition_id` int(11) NOT NULL,
   `frozen_length` int(11) NOT NULL DEFAULT 0 COMMENT 'unit: s',
+  `allowed_join_methods` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'array format: A,B,C',
   `allowed_auth_methods` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'array format: A,B,C',
   `allowed_solution_languages` varchar(256) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'array format: A,B,C',
+  `allow_any_observation` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'whether anyone is allowed to observe',
+  `use_onetime_password` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'whether to clear participant password after logged in',
+  `join_password` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `external_ranklist_url` varchar(1024) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
@@ -780,13 +789,13 @@ DROP TABLE IF EXISTS `rating_contest`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `rating_contest` (
   `rating_contest_id` int(11) NOT NULL AUTO_INCREMENT,
-  `contest_id` int(11) NOT NULL,
+  `contest_id` int(11) DEFAULT NULL,
+  `competition_id` int(11) DEFAULT NULL,
   `rating_until` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `rating_change` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
-  PRIMARY KEY (`rating_contest_id`),
-  UNIQUE KEY `rating_contest_contest_id_uindex` (`contest_id`)
+  PRIMARY KEY (`rating_contest_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1081,4 +1090,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-12-07  2:31:41
+-- Dump completed on 2023-12-17 11:45:07
