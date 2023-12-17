@@ -46,6 +46,7 @@ import {
   IMSolutionServiceGetCompetitionProblemSolutionStatsRes,
   IMSolutionServiceGetAllCompetitionSolutionListRes,
   IMSolutionRelativeCompetition,
+  IMSolutionServiceGetAllCompetitionSolutionListByUserIdRes,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -66,6 +67,7 @@ import http from 'http';
 import { IJudgerConfig } from '@/config/judger.config';
 import { CCompetitionService } from '../competition/competition.service';
 import { ICompetitionModel } from '../competition/competition.interface';
+import { IUserModel } from '../user/user.interface';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -1109,6 +1111,27 @@ export default class SolutionService {
         attributes: solutionLiteFields,
         where: {
           competitionId,
+        },
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
+    return res;
+  }
+
+  /**
+   * 获取指定用户在指定比赛的所有提交。
+   * @param competitionId competitionId
+   * @param userId userId
+   */
+  async getAllCompetitionSolutionListByUserId(
+    competitionId: ICompetitionModel['competitionId'],
+    userId: IUserModel['userId'],
+  ): Promise<IMSolutionServiceGetAllCompetitionSolutionListByUserIdRes> {
+    const res = await this.model
+      .findAll({
+        attributes: solutionLiteFields,
+        where: {
+          competitionId,
+          userId,
         },
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));

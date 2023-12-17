@@ -55,7 +55,7 @@ import {
   IGetCompetitionRanklistResp,
   IGetCompetitionRatingStatusResp,
 } from '@/common/contracts/competition';
-import { ECompetitionUserStatus, ECompetitionUserRole } from '@/common/enums';
+import { ECompetitionUserStatus, ECompetitionUserRole, ESolutionResult } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
 import { ECompetitionLogAction, ECompetitionSettingAllowedAuthMethod } from './competition.enum';
 
@@ -276,7 +276,24 @@ export default class CompetitionController {
   @route()
   @id()
   @getDetail(null, {
-    afterGetDetail: (ctx) => {},
+    afterGetDetail: (ctx) => {
+      if (
+        !(
+          ctx.helper.checkCompetitionRole(ctx.id!, [
+            ECompetitionUserRole.admin,
+            ECompetitionUserRole.principal,
+            ECompetitionUserRole.judge,
+          ]) ||
+          (ctx.helper.checkCompetitionRole(ctx.id!, [
+            ECompetitionUserRole.participant,
+            ECompetitionUserRole.observer,
+          ]) &&
+            !ctx.helper.isContestPending(ctx.detail))
+        )
+      ) {
+        delete ctx.detail.announcement;
+      }
+    },
   })
   @respDetail()
   async [routesBe.getCompetitionDetail.i](_ctx: Context) {}
@@ -932,11 +949,67 @@ export default class CompetitionController {
         ECompetitionUserRole.principal,
         ECompetitionUserRole.judge,
       ]);
-    return this.solutionService.getCompetitionProblemSolutionStats(
+    // TODO move to service and add cache
+    let stats: Record<
+      number,
+      {
+        accepted: number;
+        submitted: number;
+        selfTries?: number;
+        selfAccepted?: boolean;
+        selfAcceptedTime?: string | null;
+      }
+    > = {};
+    const partialStats = await this.solutionService.getCompetitionProblemSolutionStats(
       competitionId,
       problemIds,
       useFrozen,
     );
+    Object.keys(partialStats).forEach((k) => {
+      stats[+k] = {
+        ...partialStats[+k],
+      };
+      if (ctx.helper.isCompetitionLoggedIn(competitionId)) {
+        stats[+k] = {
+          ...stats[+k],
+          selfTries: 0,
+          selfAccepted: false,
+          selfAcceptedTime: null,
+        };
+      }
+    });
+    if (ctx.helper.checkCompetitionRole(competitionId, [ECompetitionUserRole.participant])) {
+      const solutions = (
+        await this.solutionService.getAllCompetitionSolutionListByUserId(
+          competitionId,
+          ctx.helper.getCompetitionSession(competitionId)!.userId,
+        )
+      ).filter(
+        (s) =>
+          ![
+            ESolutionResult.RPD,
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.CE,
+            ESolutionResult.SE,
+          ].includes(s.result) && s.createdAt.getTime() < detail.endAt.getTime(),
+      );
+      for (const solution of solutions) {
+        if (!partialStats[solution.problemId]) {
+          continue;
+        }
+        if (stats[solution.problemId].selfAccepted) {
+          continue;
+        }
+        stats[solution.problemId].selfTries!++;
+        if (solution.result === ESolutionResult.AC) {
+          stats[solution.problemId].selfAccepted! = true;
+          // @ts-ignore
+          stats[solution.problemId].selfAcceptedTime! = solution.createdAt;
+        }
+      }
+    }
+    return stats;
   }
 
   @route()

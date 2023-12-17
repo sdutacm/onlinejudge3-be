@@ -110,7 +110,10 @@ export type IMSolutionRelativeCompetition = Pick<
   ICompetitionModel,
   'competitionId' | 'title' | 'rule' | 'isTeam' | 'isRating' | 'ended' | 'startAt' | 'endAt'
 > & {
-  settings: Omit<ICompetitionSettingModel, 'competitionId' | 'joinPassword' | 'createdAt' | 'updatedAt'>;
+  settings: Omit<
+    ICompetitionSettingModel,
+    'competitionId' | 'joinPassword' | 'createdAt' | 'updatedAt'
+  >;
 };
 
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
@@ -266,6 +269,10 @@ export type IMSolutionServiceGetAllContestSolutionListRes = IMSolutionLitePlain[
 
 //#region service.getAllCompetitionSolutionList
 export type IMSolutionServiceGetAllCompetitionSolutionListRes = IMSolutionLitePlain[];
+//#endregion
+
+//#region service.getAllCompetitionSolutionListByUserId
+export type IMSolutionServiceGetAllCompetitionSolutionListByUserIdRes = IMSolutionLitePlain[];
 //#endregion
 
 //#region service.findAllSolutionIds

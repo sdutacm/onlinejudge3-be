@@ -157,6 +157,7 @@ const competitionContract = {
       competitionId: { type: 'number' },
       title: { type: 'string' },
       introduction: { type: 'string' },
+      announcement: { type: 'string' },
       startAt: { type: 'string', format: 'date-time' },
       endAt: { type: 'string', format: 'date-time' },
       registerStartAt: {
@@ -194,6 +195,7 @@ const competitionContract = {
     properties: {
       title: { type: 'string' },
       introduction: { type: 'string' },
+      announcement: { type: 'string' },
       startAt: { type: 'string', format: 'date-time' },
       endAt: { type: 'string', format: 'date-time' },
       registerStartAt: {
@@ -235,6 +237,7 @@ const competitionContract = {
       competitionId: { type: 'number' },
       title: { type: 'string' },
       introduction: { type: 'string' },
+      announcement: { type: 'string' },
       startAt: { type: 'string', format: 'date-time' },
       endAt: { type: 'string', format: 'date-time' },
       registerStartAt: {
@@ -1032,6 +1035,9 @@ const competitionContract = {
       properties: {
         accepted: { type: 'number' },
         submitted: { type: 'number' },
+        selfTries: { type: 'number' },
+        selfAccepted: { type: 'boolean' },
+        selfAcceptedTime: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
       },
       additionalProperties: false,
       required: ['accepted', 'submitted'],

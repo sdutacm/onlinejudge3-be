@@ -127,6 +127,7 @@ const competitionDetailFields: Array<TMCompetitionDetailFields> = [
   'competitionId',
   'title',
   'introduction',
+  'announcement',
   'startAt',
   'endAt',
   'ended',

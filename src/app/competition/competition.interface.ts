@@ -17,6 +17,7 @@ export interface ICompetitionModel {
   competitionId: number;
   title: string;
   introduction: string;
+  announcement: string;
   startAt: Date;
   endAt: Date;
   rule: string;
@@ -55,6 +56,7 @@ export type TMCompetitionDetailFields = Extract<
   | 'competitionId'
   | 'title'
   | 'introduction'
+  | 'announcement'
   | 'startAt'
   | 'endAt'
   | 'ended'
@@ -436,6 +438,7 @@ export type IMCompetitionServiceIsExistsOpt = Partial<ICompetitionModel>;
 export interface IMCompetitionServiceCreateOpt {
   title?: ICompetitionModel['title'];
   introduction?: ICompetitionModel['introduction'];
+  announcement?: ICompetitionModel['announcement'];
   startAt?: ICompetitionModel['startAt'] | string;
   endAt?: ICompetitionModel['endAt'] | string;
   rule?: ICompetitionModel['rule'];
@@ -454,6 +457,7 @@ export type IMCompetitionServiceCreateRes = ICompetitionModel['competitionId'];
 export interface IMCompetitionServiceUpdateOpt {
   title?: ICompetitionModel['title'];
   introduction?: ICompetitionModel['introduction'];
+  announcement?: ICompetitionModel['announcement'];
   startAt?: ICompetitionModel['startAt'] | string;
   endAt?: ICompetitionModel['endAt'] | string;
   ended?: ICompetitionModel['ended'];

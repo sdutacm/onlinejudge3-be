@@ -63,6 +63,18 @@ export default class CompetitionModel extends Model<CompetitionModel> implements
   introduction: string;
 
   @AllowNull(false)
+  @Default('')
+  @Column({
+    type: DataType.TEXT({ length: 'long' }),
+  })
+  get announcement(): ICompetitionModel['announcement'] {
+    return this.getDataValue('announcement') || '';
+  }
+  set announcement(value: ICompetitionModel['announcement']) {
+    this.setDataValue('announcement', value || '');
+  }
+
+  @AllowNull(false)
   @Column({
     field: 'start_at',
     type: DataType.DATE,
