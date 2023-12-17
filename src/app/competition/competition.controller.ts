@@ -55,9 +55,17 @@ import {
   IGetCompetitionRanklistResp,
   IGetCompetitionRatingStatusResp,
 } from '@/common/contracts/competition';
-import { ECompetitionUserStatus, ECompetitionUserRole, ESolutionResult } from '@/common/enums';
+import {
+  ECompetitionUserStatus,
+  ECompetitionUserRole,
+  ESolutionResult,
+  EContestRatingStatus,
+} from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
 import { ECompetitionLogAction, ECompetitionSettingAllowedAuthMethod } from './competition.enum';
+import { exec } from 'child_process';
+import path from 'path';
+import { IAppConfig } from '@/config/config.interface';
 
 @provide()
 @controller('/')
@@ -94,6 +102,9 @@ export default class CompetitionController {
 
   @config()
   siteTeam: string;
+
+  @config('scripts')
+  scriptsConfig: IAppConfig['scripts'];
 
   @route()
   @pagination()
@@ -1193,7 +1204,7 @@ export default class CompetitionController {
     const competitionId = ctx.id!;
     const status = await this.service.getRatingStatus(competitionId);
     if (!status) {
-      throw new ReqError(Codes.CONTEST_NOT_ENDED);
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
     }
     return status;
   }
@@ -1210,14 +1221,44 @@ export default class CompetitionController {
     } else if (detail.ended) {
       throw new ReqError(Codes.COMPETITION_ENDED);
     }
-    // TODO rating
+    const settings = (await this.service.getCompetitionSettingDetail(competitionId))!;
     await this.service.update(competitionId, {
       ended: true,
     });
     await Promise.all([
       this.service.clearDetailCache(competitionId),
-      // this.service.clearCompetitionRanklistCache(competitionId),
+      this.service.clearCompetitionRanklistCache(competitionId),
       this.solutionService.clearCompetitionProblemSolutionStatsCache(competitionId),
     ]);
+    // 根据比赛模式判断相应处理逻辑
+    if (detail.isRating) {
+      if (!this.scriptsConfig?.dirPath || !this.scriptsConfig?.logPath) {
+        throw new Error('ConfigNotFoundError: scripts');
+      }
+      const ranklist = (await this.service.getRanklist(detail, settings, true)).rows;
+      const rankData = ranklist.map((row) => ({
+        rank: row.rank,
+        userId: row.user.userId,
+      }));
+      await Promise.all([
+        this.service.setRankData(competitionId, rankData),
+        this.service.setRatingStatus(competitionId, {
+          status: EContestRatingStatus.PD,
+          progress: 0,
+        }),
+      ]);
+      // 调用 calRating 脚本
+      const cmd = `nohup node ${path.join(
+        this.scriptsConfig.dirPath,
+        'calRating.js',
+      )} competition ${competitionId} >> ${path.join(
+        this.scriptsConfig.logPath,
+        'calRating.log',
+      )} 2>&1 &`;
+      ctx.logger.info('exec:', cmd);
+      exec(cmd, {
+        cwd: this.scriptsConfig.dirPath,
+      });
+    }
   }
 }

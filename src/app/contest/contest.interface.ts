@@ -324,6 +324,7 @@ export interface IMContestRatingStatus {
   status: EContestRatingStatus;
   progress?: number; // 进度
   used?: number; // 完成耗时
+  totalUsed?: number; // 完成总耗时（包括数据库写入等 IO）
 }
 //#endregion
 

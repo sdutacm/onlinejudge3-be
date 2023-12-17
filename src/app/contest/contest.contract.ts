@@ -845,6 +845,7 @@ const contestContract = {
           status: { type: 'number' },
           progress: { type: 'number' },
           used: { type: 'number' },
+          totalUsed: { type: 'number' },
         },
         additionalProperties: false,
         required: ['status'],
