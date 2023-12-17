@@ -1082,7 +1082,7 @@ export default class SolutionService {
   }
 
   /**
-   * 获取比赛的所有提交。
+   * 获取比赛的所有提交。按 solutionId 递增。
    * @param contestId contestId
    */
   async getAllContestSolutionList(
@@ -1094,13 +1094,14 @@ export default class SolutionService {
         where: {
           contestId,
         },
+        order: [[this.meta.pk, 'ASC']],
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
     return res;
   }
 
   /**
-   * 获取比赛的所有提交。
+   * 获取比赛的所有提交。按 solutionId 递增。
    * @param competitionId competitionId
    */
   async getAllCompetitionSolutionList(
@@ -1112,6 +1113,7 @@ export default class SolutionService {
         where: {
           competitionId,
         },
+        order: [[this.meta.pk, 'ASC']],
       })
       .then((r) => r.map((d) => d.get({ plain: true }) as IMSolutionLitePlain));
     return res;
