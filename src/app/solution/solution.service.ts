@@ -47,6 +47,9 @@ import {
   IMSolutionServiceGetAllCompetitionSolutionListRes,
   IMSolutionRelativeCompetition,
   IMSolutionServiceGetAllCompetitionSolutionListByUserIdRes,
+  IMSolutionServiceGetLiteSolutionSliceOpt,
+  IMSolutionServiceGetLiteSolutionSliceRes,
+  IMSolutionServiceLiteSolution,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -1481,5 +1484,41 @@ export default class SolutionService {
       console.error('Judger error', e);
       logger.error(`[${solutionId}/${problemId}/${userId}] error`, e);
     }
+  }
+
+  /**
+   * 获取精简提交列表分片。
+   * @param options 查询参数
+   * @param afterSolutionId 从哪个 Solution ID 开始（大于此 ID）
+   * @param limit 拉取数量
+   */
+  async getLiteSolutionSlice(
+    options: IMSolutionServiceGetLiteSolutionSliceOpt,
+    afterSolutionId = 1,
+    limit: number,
+  ): Promise<IMSolutionServiceGetLiteSolutionSliceRes> {
+    const res = await this.model.findAll({
+      attributes: [
+        'solutionId',
+        'problemId',
+        'userId',
+        'contestId',
+        'competitionId',
+        'result',
+        'language',
+        'createdAt',
+      ],
+      // @ts-ignore
+      where: {
+        solutionId: {
+          [Op.gt]: afterSolutionId,
+        },
+        ...options,
+      },
+      order: [[this.meta.pk, 'ASC']],
+      limit,
+    });
+    // @ts-ignore
+    return res.map((d) => d.get({ plain: true }) as IMSolutionServiceLiteSolution);
   }
 }

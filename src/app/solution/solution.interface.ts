@@ -335,3 +335,25 @@ export interface IMSolutionServiceJudgeOpt {
 
 export type IMSolutionServiceJudgeRes = void;
 //#endregion
+
+//#region service.getLiteSolutionSlice
+export interface IMSolutionServiceGetLiteSolutionSliceOpt {
+  problemId?: ISolutionModel['problemId'];
+  userId?: ISolutionModel['userId'];
+  contestId?: ISolutionModel['contestId'];
+  competitionId?: ISolutionModel['competitionId'];
+}
+
+export interface IMSolutionServiceLiteSolution {
+  solutionId: ISolutionModel['solutionId'];
+  problemId: ISolutionModel['problemId'];
+  userId: ISolutionModel['userId'];
+  contestId: ISolutionModel['contestId'];
+  competitionId: ISolutionModel['competitionId'];
+  result: ISolutionModel['result'];
+  language: ISolutionModel['language'];
+  createdAt: ISolutionModel['createdAt'];
+}
+
+export type IMSolutionServiceGetLiteSolutionSliceRes = IMSolutionServiceLiteSolution[];
+//#endregion

@@ -1363,6 +1363,16 @@ const competitionContract = {
       { type: 'null' },
     ],
   } as defContract.ContractSchema,
+
+  getAllCompetitionSolutionsForSrkLiteReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      lastSolutionId: { type: 'number', minimum: 1 },
+      stopOnUnsettled: { type: 'boolean' },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;
