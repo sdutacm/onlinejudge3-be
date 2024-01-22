@@ -17,7 +17,7 @@
     "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts",
     "dev-socket-io": "cd src/sub-app/socket-io && npm run dev",
     "lint": "eslint --fix {src,test}/**/*.ts",
-    "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be --framework=midway --ts",
+    "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be --framework=midway --ts --ignore-stderr",
     "start-build": "npm run build && cross-env NODE_ENV=development midway-bin dev",
     "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest",
