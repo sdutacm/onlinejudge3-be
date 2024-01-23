@@ -1273,6 +1273,9 @@ export default class SolutionService {
       url: `${this.judgerConfig.socketBridgeBaseUrl}/pushJudgeStatus`,
       method: 'POST',
       data: statusFormArray,
+      headers: {
+        'x-emit-auth': this.judgerConfig.socketBridgeEmitAuthKey,
+      },
     })
       .then((res) => {
         this.ctx.logger.info(

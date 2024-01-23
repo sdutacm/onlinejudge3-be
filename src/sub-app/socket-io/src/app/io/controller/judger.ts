@@ -42,8 +42,21 @@ module.exports = (app: Application) => {
     }
 
     async innerHttpAcceptPushStatus() {
+      const check = () => {
+        if (
+          this.config.emitAuthKey &&
+          this.config.emitAuthKey === this.ctx.request.headers['x-emit-auth']
+        ) {
+          return true;
+        }
+        if (isPrivateIp(this.ctx.ip)) {
+          return true;
+        }
+        return false;
+      };
+
       const statusFormArray = this.ctx.request.body as any[];
-      if (!isPrivateIp(this.ctx.ip)) {
+      if (!check()) {
         this.ctx.status = 403;
         this.ctx.body = {
           success: false,

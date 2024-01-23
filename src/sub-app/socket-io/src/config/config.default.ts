@@ -3,6 +3,7 @@ import path from 'path';
 import chalk from 'chalk';
 // @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
+import { IAppConfig } from './config.interface';
 
 type TLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
@@ -34,7 +35,7 @@ export function formatLoggerHelper(meta: any, customContent = '') {
 }
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as any;
+  const config = {} as IAppConfig;
 
   // use for cookie sign key, should change to your own and keep security
   config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
@@ -47,6 +48,8 @@ export default (appInfo: EggAppInfo) => {
       enable: false,
     },
   };
+
+  config.emitAuthKey = '';
 
   config.session = {
     renew: true,
