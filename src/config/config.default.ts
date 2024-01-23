@@ -121,7 +121,10 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
+  const logDir = path.join(appInfo.root, 'logs', process.env.APP_NAME || appInfo.name);
+
   config.logger = {
+    dir: logDir,
     // @ts-ignore
     formatter(meta: any) {
       return formatLoggerHelper(meta);
@@ -137,19 +140,19 @@ export default (appInfo: EggAppInfo) => {
 
   config.customLogger = {
     reqLogger: {
-      file: path.join(appInfo.root, 'logs', appInfo.name, 'req.log'),
+      file: path.join(logDir, 'req.log'),
     },
     redisLogger: {
-      file: path.join(appInfo.root, 'logs', appInfo.name, 'redis.log'),
+      file: path.join(logDir, 'redis.log'),
     },
     scheduleLogger: {
-      file: path.join(appInfo.root, 'logs', appInfo.name, 'schedule.log'),
+      file: path.join(logDir, 'schedule.log'),
     },
     judgerLogger: {
-      file: path.join(appInfo.root, 'logs', appInfo.name, 'judger.log'),
+      file: path.join(logDir, 'judger.log'),
     },
     contentCheckLogger: {
-      file: path.join(appInfo.root, 'logs', appInfo.name, 'content-check.log'),
+      file: path.join(logDir, 'content-check.log'),
     },
   };
 
