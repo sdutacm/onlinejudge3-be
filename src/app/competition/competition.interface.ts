@@ -29,6 +29,7 @@ export interface ICompetitionModel {
   createdBy: number;
   hidden: boolean;
   deleted: boolean;
+  spConfig: any;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +68,7 @@ export type TMCompetitionDetailFields = Extract<
   | 'registerEndAt'
   | 'createdBy'
   | 'hidden'
+  | 'spConfig'
 >;
 
 export type IMCompetitionLite = Pick<ICompetitionModel, TMCompetitionLiteFields>;
@@ -83,6 +85,7 @@ export interface ICompetitionProblemModel {
   competitionId: number;
   problemId: number;
   index: number;
+  alias: string;
   balloonAlias: string;
   balloonColor: string;
   score: number | null;
@@ -93,7 +96,7 @@ export type TCompetitionProblemModelFields = keyof ICompetitionProblemModel;
 
 export type TMCompetitionProblemDetailFields = Extract<
   TCompetitionProblemModelFields,
-  'problemId' | 'title' | 'balloonAlias' | 'balloonColor' | 'score' | 'varScoreExpression'
+  'problemId' | 'title' | 'alias' | 'balloonAlias' | 'balloonColor' | 'score' | 'varScoreExpression'
 >;
 
 export type IMCompetitionProblemLite = Pick<
@@ -448,6 +451,7 @@ export interface IMCompetitionServiceCreateOpt {
   registerStartAt?: ICompetitionModel['registerStartAt'] | string;
   registerEndAt?: ICompetitionModel['registerEndAt'] | string;
   hidden?: ICompetitionModel['hidden'];
+  spConfig?: ICompetitionModel['spConfig'];
   createdBy?: ICompetitionModel['createdBy'];
 }
 
@@ -469,6 +473,7 @@ export interface IMCompetitionServiceUpdateOpt {
   registerEndAt?: ICompetitionModel['registerEndAt'] | string;
   hidden?: ICompetitionModel['hidden'];
   deleted?: ICompetitionModel['deleted'];
+  spConfig?: ICompetitionModel['spConfig'];
 }
 
 export type IMCompetitionServiceUpdateRes = boolean;
@@ -495,11 +500,19 @@ export type IMCompetitionServiceGetCompetitionProblemConfigRes = defModel.FullLi
 //#region service.setCompetitionProblems
 export type IMCompetitionServiceSetCompetitionProblemsOpt = Array<{
   problemId: ICompetitionProblemModel['problemId'];
+  alias: ICompetitionProblemModel['alias'];
   balloonAlias?: ICompetitionProblemModel['balloonAlias'];
   balloonColor?: ICompetitionProblemModel['balloonColor'];
   score?: ICompetitionProblemModel['score'];
   varScoreExpression?: ICompetitionProblemModel['varScoreExpression'];
 }>;
+//#endregion
+
+//#region service.getRelativeCompetitionProblem
+export type IMCompetitionServiceGetRelativeCompetitionProblemRes = Record<
+  /** competitionId_problemId */ string,
+  IMCompetitionProblemDetail
+>;
 //#endregion
 
 //#region service.getCompetitionUserList

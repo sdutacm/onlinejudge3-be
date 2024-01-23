@@ -172,6 +172,7 @@ const competitionContract = {
       isRating: { type: 'boolean' },
       hidden: { type: 'boolean' },
       createdBy: { type: 'number' },
+      spConfig: { type: 'object' },
     },
     additionalProperties: false,
     required: [
@@ -188,6 +189,7 @@ const competitionContract = {
       'isRating',
       'hidden',
       'createdBy',
+      'spConfig',
     ],
   } as defContract.ContractSchema,
 
@@ -208,6 +210,7 @@ const competitionContract = {
       isTeam: { type: 'boolean' },
       isRating: { type: 'boolean' },
       hidden: { type: 'boolean' },
+      spConfig: { type: 'object' },
     },
     additionalProperties: false,
     required: [
@@ -250,6 +253,7 @@ const competitionContract = {
       isTeam: { type: 'boolean' },
       isRating: { type: 'boolean' },
       hidden: { type: 'boolean' },
+      spConfig: { type: 'object' },
     },
     additionalProperties: false,
     required: ['competitionId'],
@@ -303,6 +307,7 @@ const competitionContract = {
             updatedAt: {
               anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
             },
+            alias: { type: 'string' },
             balloonAlias: { type: 'string' },
             balloonColor: { type: 'string' },
             score: { anyOf: [{ type: 'number' }, { type: 'null' }] },
@@ -355,6 +360,7 @@ const competitionContract = {
           properties: {
             problemId: { type: 'number', minimum: 1 },
             title: { type: 'string' },
+            alias: { type: 'string' },
             balloonAlias: { type: 'string' },
             balloonColor: { type: 'string' },
             score: { anyOf: [{ type: 'number' }, { type: 'null' }] },
@@ -364,6 +370,7 @@ const competitionContract = {
           required: [
             'problemId',
             'title',
+            'alias',
             'balloonAlias',
             'balloonColor',
             'score',
@@ -385,13 +392,21 @@ const competitionContract = {
           type: 'object',
           properties: {
             problemId: { type: 'number', minimum: 1 },
+            alias: { type: 'string' },
             balloonAlias: { type: 'string' },
             balloonColor: { type: 'string' },
             score: { anyOf: [{ type: 'number' }, { type: 'null' }] },
             varScoreExpression: { type: 'string' },
           },
           additionalProperties: false,
-          required: ['problemId', 'balloonAlias', 'balloonColor', 'score', 'varScoreExpression'],
+          required: [
+            'problemId',
+            'alias',
+            'balloonAlias',
+            'balloonColor',
+            'score',
+            'varScoreExpression',
+          ],
         },
       },
     },

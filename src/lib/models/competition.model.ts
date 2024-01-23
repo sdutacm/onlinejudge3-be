@@ -178,6 +178,30 @@ export default class CompetitionModel extends Model<CompetitionModel> implements
   deleted: boolean;
 
   @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'sp_config',
+    type: DataType.TEXT({ length: 'medium' }),
+  })
+  get spConfig(): ICompetitionModel['spConfig'] {
+    try {
+      // @ts-ignore
+      return JSON.parse(this.getDataValue('spConfig')) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  set spConfig(value: ICompetitionModel['spConfig']) {
+    if (value) {
+      // @ts-ignore
+      this.setDataValue('spConfig', JSON.stringify(value));
+    } else {
+      // @ts-ignore
+      this.setDataValue('spConfig', '');
+    }
+  }
+
+  @AllowNull(false)
   @CreatedAt
   @Column({
     field: 'created_at',

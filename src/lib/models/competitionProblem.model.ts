@@ -53,6 +53,13 @@ export default class CompetitionProblemModel extends Model<CompetitionProblemMod
   @AllowNull(false)
   @Default('')
   @Column({
+    type: DataType.STRING(16),
+  })
+  alias: string;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
     field: 'balloon_alias',
     type: DataType.STRING(16),
   })

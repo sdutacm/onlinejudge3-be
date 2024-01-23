@@ -357,6 +357,7 @@ export default class CompetitionController {
         isTeam: data.isTeam,
         isRating: data.isRating,
         hidden: data.hidden,
+        spConfig: data.spConfig,
       },
     });
   }

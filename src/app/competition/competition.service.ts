@@ -83,6 +83,7 @@ import {
   IMCompetitionRatingStatus,
   IMCompetitionRankData,
   IMCompetitionServiceGetRatingStatusRes,
+  IMCompetitionServiceGetRelativeCompetitionProblemRes,
 } from './competition.interface';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
@@ -138,10 +139,12 @@ const competitionDetailFields: Array<TMCompetitionDetailFields> = [
   'registerEndAt',
   'createdBy',
   'hidden',
+  'spConfig',
 ];
 
 const competitionProblemDetailFields: Array<TMCompetitionProblemDetailFields> = [
   'problemId',
+  'alias',
   'balloonAlias',
   'balloonColor',
   'score',
@@ -926,6 +929,7 @@ export default class CompetitionService {
         competitionId,
         problemId: problem.problemId,
         index,
+        alias: problem.alias || '',
         balloonAlias: problem.balloonAlias || '',
         balloonColor: problem.balloonColor || '',
         score: problem.score ?? null,
@@ -960,6 +964,46 @@ export default class CompetitionService {
         },
       })
       .then((r) => r.map((d) => d.competitionId));
+  }
+
+  /**
+   * 按 pk 关联查询比赛题目详情。
+   * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 pk 列表，格式为 `${competitionId}_${problemId}`
+   */
+  async getRelativeCompetitionProblem(
+    keys: string[],
+  ): Promise<IMCompetitionServiceGetRelativeCompetitionProblemRes> {
+    const competitionIdSet = new Set<number>();
+    keys.forEach((k) => {
+      const [competitionId] = k.split('_').map((id) => +id);
+      competitionIdSet.add(competitionId);
+    });
+    const competitionIds = Array.from(competitionIdSet);
+    const competitionProblemsMap = new Map<number, IMCompetitionProblemDetail[]>();
+    await Promise.all(
+      competitionIds.map((competitionId) =>
+        this.getCompetitionProblems(competitionId)
+          .then((d) => {
+            d && competitionProblemsMap.set(competitionId, d.rows);
+          })
+          .catch(console.error),
+      ),
+    );
+
+    const ks = this.lodash.uniq(keys);
+    const res: IMCompetitionServiceGetRelativeCompetitionProblemRes = {};
+    ks.forEach((k) => {
+      const [competitionId, problemId] = k.split('_').map((id) => +id);
+      const problems = competitionProblemsMap.get(competitionId);
+      if (problems) {
+        const problem = problems.find((d) => d.problemId === problemId);
+        if (problem) {
+          res[k] = problem;
+        }
+      }
+    });
+    return res;
   }
 
   /**
@@ -1444,7 +1488,7 @@ export default class CompetitionService {
   async getRanklist(
     competition: RequireSome<
       IMCompetitionDetail,
-      'competitionId' | 'rule' | 'isRating' | 'isTeam' | 'startAt' | 'endAt' | 'ended'
+      'competitionId' | 'rule' | 'isRating' | 'isTeam' | 'startAt' | 'endAt' | 'ended' | 'spConfig'
     >,
     competitionSettings: IMCompetitionSettingDetail,
     ignoreFrozen = false,
