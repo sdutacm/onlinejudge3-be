@@ -1,8 +1,9 @@
 import { EggAppInfo } from 'midway';
 import { formatLoggerHelper } from './config.default';
+import { IAppConfig } from './config.interface';
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as any;
+  const config = {} as IAppConfig;
 
   config.proxy = true;
   config.maxIpsCount = 1;
@@ -16,6 +17,10 @@ export default (appInfo: EggAppInfo) => {
       return formatLoggerHelper(meta, `[${meta.hostname}:${meta.pid}] ${meta.paddingMessage}`);
     },
   };
+
+  //#region custom config
+
+  //#endregion
 
   //#region socket.io
 
