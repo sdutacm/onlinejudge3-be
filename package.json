@@ -49,7 +49,7 @@
     "http": "0.0.1-security",
     "ip": "^1.1.5",
     "isbinaryfile": "^4.0.6",
-    "isolated-vm": "^4.4.2",
+    "isolated-vm": "^4.7.2",
     "lodash": "^4.17.15",
     "long": "^4.0.0",
     "md5": "^2.2.1",
