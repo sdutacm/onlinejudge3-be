@@ -69,6 +69,7 @@ import path from 'path';
 import { IAppConfig } from '@/config/config.interface';
 import { IMSolutionServiceLiteSolution } from '../solution/solution.interface';
 import { unsettledResults, oj2SrkResultMap } from '@/common/configs/solution.config';
+import { ICompetitionSpConfigMemberInfoField } from '@/common/interfaces/competition';
 
 @provide()
 @controller('/')
@@ -589,6 +590,7 @@ export default class CompetitionController {
   @getDetail(null)
   async [routesBe.getPublicCompetitionParticipants.i](ctx: Context) {
     const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
     const list = await this.service.getCompetitionUsers(competitionId);
     const filtered = list.rows.filter(
       (user) =>
@@ -604,6 +606,15 @@ export default class CompetitionController {
       rows: filtered.map((user) => {
         const u = { ...user };
         if (u.info) {
+          if (detail.spConfig?.memberInfoFields) {
+            for (const item of detail.spConfig
+              .memberInfoFields as ICompetitionSpConfigMemberInfoField[]) {
+              if (item.private) {
+                // @ts-ignore
+                delete u.info[item.field];
+              }
+            }
+          }
           delete u.info.studentNo;
           delete u.info.tel;
           delete u.info.qq;
