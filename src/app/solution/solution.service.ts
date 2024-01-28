@@ -485,6 +485,7 @@ export default class SolutionService {
           timeLimit: relativeProblem?.timeLimit,
           memoryLimit: relativeProblem?.memoryLimit,
           spj: relativeProblem?.spj,
+          spConfig: relativeProblem?.spConfig,
         },
         user,
         contest: relativeContest
