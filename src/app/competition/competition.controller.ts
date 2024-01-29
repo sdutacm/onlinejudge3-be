@@ -375,40 +375,54 @@ export default class CompetitionController {
   @route()
   @id()
   @getDetail(null)
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.participant,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
   async [routesBe.getCompetitionProblems.i](ctx: Context) {
     const competitionId = ctx.id!;
     const detail = ctx.detail as IMCompetitionDetail;
-    if (
-      !ctx.helper.checkCompetitionRole(competitionId, [
-        ECompetitionUserRole.admin,
-        ECompetitionUserRole.principal,
-        ECompetitionUserRole.judge,
-      ]) &&
-      ctx.helper.isContestPending(detail)
-    ) {
+    const hasPermToViewAll = ctx.helper.checkCompetitionRole(competitionId, [
+      ECompetitionUserRole.admin,
+      ECompetitionUserRole.principal,
+      ECompetitionUserRole.judge,
+    ]);
+    if (!hasPermToViewAll && ctx.helper.isContestPending(detail)) {
       throw new ReqError(Codes.COMPETITION_PENDING);
     }
-    return this.service.getCompetitionProblems(competitionId);
+    const problems = await this.service.getCompetitionProblems(competitionId);
+    const spConfig = (detail.spConfig || {}) as ICompetitionSpConfig;
+    if (!hasPermToViewAll && spConfig.genshinConfig?.useExplorationMode) {
+      const unlockedProblemIndexes = await this.service.getSpGenshinParticipantCanViewProblemIndexes(
+        competitionId,
+        ctx.session.userId,
+        spConfig,
+      );
+      // @ts-ignore
+      problems.rows = problems.rows.map((p, index) => {
+        if (unlockedProblemIndexes.includes(index)) {
+          return p;
+        }
+        return null;
+      });
+    }
+    return problems;
   }
 
   @route()
   @id()
   @getDetail(null)
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
   async [routesBe.getCompetitionProblemConfig.i](
     ctx: Context,
   ): Promise<IGetCompetitionProblemConfigResp> {
     const competitionId = ctx.id!;
-    const detail = ctx.detail as IMCompetitionDetail;
-    if (
-      !ctx.helper.checkCompetitionRole(competitionId, [
-        ECompetitionUserRole.admin,
-        ECompetitionUserRole.principal,
-        ECompetitionUserRole.judge,
-      ]) &&
-      ctx.helper.isContestPending(detail)
-    ) {
-      throw new ReqError(Codes.COMPETITION_PENDING);
-    }
     const list = await this.service.getCompetitionProblemConfig(competitionId);
     const problemIds = list.rows.map((d) => d.problemId);
     const relativeProblems = await this.problemService.getRelative(problemIds, null);

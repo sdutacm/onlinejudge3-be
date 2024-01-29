@@ -103,9 +103,11 @@ import {
   TMContestRatingContestDetailFields,
 } from '../contest/contest.interface';
 import { TRatingContestModel } from '@/lib/models/ratingContest.model';
-import { ECompetitionRulePreset } from './competition.enum';
+import { ECompetitionRulePreset, ECompetitionLogAction } from './competition.enum';
 import { ESolutionResult, ECompetitionUserRole } from '@/common/enums';
 import { compileVarScoreExpression } from '@/common/utils/competition';
+import { ICompetitionSpConfig } from '@/common/interfaces/competition';
+import { CCompetitionLogService } from './competitionLog.service';
 
 export type CCompetitionService = CompetitionService;
 
@@ -264,6 +266,9 @@ export default class CompetitionService {
 
   @inject()
   solutionService: CSolutionService;
+
+  @inject()
+  competitionLogService: CCompetitionLogService;
 
   @inject()
   userModel: TUserModel;
@@ -1816,5 +1821,32 @@ export default class CompetitionService {
       res && (await this._setRatingContestDetailCache(competitionId, res));
     }
     return res;
+  }
+
+  async getSpGenshinParticipantCanViewProblemIndexes(
+    competitionId: ICompetitionModel['competitionId'],
+    userId: IUserModel['userId'],
+    spConfig: ICompetitionSpConfig,
+  ): Promise<number[]> {
+    const sections = spConfig?.genshinConfig?.explorationModeOptions?.sections || [];
+    const unlockRawRecords = await this.competitionLogService.findAllLogs(competitionId, {
+      action: ECompetitionLogAction.SpGenshinExplorationUnlock,
+      opUserId: userId,
+    });
+    const unlockedSectionIdSet = new Set<string>();
+    unlockRawRecords.rows.forEach((record) => {
+      const sectionId = record.detail?.sectionId as string;
+      if (!sections.some((section) => section.id === sectionId)) {
+        return;
+      }
+      unlockedSectionIdSet.add(sectionId);
+    });
+    const unlockedProblemIndexes: number[] = [];
+    for (const section of sections) {
+      if (section.unlockByDefault || unlockedSectionIdSet.has(section.id)) {
+        unlockedProblemIndexes.push(...section.problemIndexes);
+      }
+    }
+    return unlockedProblemIndexes;
   }
 }
