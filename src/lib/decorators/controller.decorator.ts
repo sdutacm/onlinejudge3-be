@@ -160,6 +160,7 @@ export function validate<T>(
               msg: err.message,
             })),
           });
+          ctx.logger?.info('[ReqValidation] failed', errorMessage, ctx.request.body);
           return;
         }
       }
