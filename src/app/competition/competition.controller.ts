@@ -55,6 +55,8 @@ import {
   IGetCompetitionRanklistResp,
   IGetCompetitionRatingStatusResp,
   IGetAllCompetitionSolutionsForSrkLiteReq,
+  IGetCompetitionSpGenshinExplorationUnlockRecordsResp,
+  IDoCompetitionSpGenshinExplorationUnlockReq,
 } from '@/common/contracts/competition';
 import {
   ECompetitionUserStatus,
@@ -69,7 +71,14 @@ import path from 'path';
 import { IAppConfig } from '@/config/config.interface';
 import { IMSolutionServiceLiteSolution } from '../solution/solution.interface';
 import { unsettledResults, oj2SrkResultMap } from '@/common/configs/solution.config';
-import { ICompetitionSpConfigMemberInfoField } from '@/common/interfaces/competition';
+import {
+  ICompetitionSpConfigMemberInfoField,
+  ICompetitionSpConfig,
+} from '@/common/interfaces/competition';
+import {
+  checkSpGenshinUnlockSection,
+  ESpGenshinSectionCheckUnlockResult,
+} from '@/common/utils/competition-genshin';
 
 @provide()
 @controller('/')
@@ -1394,5 +1403,141 @@ export default class CompetitionController {
     });
 
     return solutionsForSrkList;
+  }
+
+  @route()
+  @authCompetitionRole([
+    ECompetitionUserRole.admin,
+    ECompetitionUserRole.participant,
+    ECompetitionUserRole.principal,
+    ECompetitionUserRole.judge,
+  ])
+  @id()
+  @getDetail(null)
+  async [routesBe.getCompetitionSpGenshinExplorationUnlockRecords.i](
+    ctx: Context,
+  ): Promise<IGetCompetitionSpGenshinExplorationUnlockRecordsResp> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    const spConfig = (detail.spConfig || {}) as ICompetitionSpConfig;
+    if (
+      !spConfig.genshinConfig?.useExplorationMode ||
+      !ctx.helper.checkCompetitionRole(competitionId, [ECompetitionUserRole.participant])
+    ) {
+      return {
+        records: [],
+      };
+    }
+
+    const sections = spConfig.genshinConfig.explorationModeOptions?.sections || [];
+    const unlockRawRecords = await this.competitionLogService.findAllLogs(competitionId, {
+      action: ECompetitionLogAction.SpGenshinExplorationUnlock,
+      opUserId: ctx.session.userId,
+    });
+    const unlockedSectionIdSet = new Set<string>();
+    const records: any[] = [];
+    unlockRawRecords.rows.forEach((record) => {
+      const sectionId = record.detail?.sectionId as string;
+      if (!sections.some((section) => section.id === sectionId)) {
+        return;
+      }
+      if (unlockedSectionIdSet.has(sectionId)) {
+        return;
+      }
+      unlockedSectionIdSet.add(sectionId);
+      records.push({
+        sectionId,
+        unlockedAt: record.createdAt,
+        relativeUnlockedSecond: Math.floor(
+          (record.createdAt.getTime() - detail.startAt.getTime()) / 1000,
+        ),
+      });
+    });
+    return {
+      records,
+    };
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.participant])
+  @id()
+  @getDetail(null)
+  async [routesBe.doCompetitionSpGenshinExplorationUnlockReq.i](ctx: Context): Promise<void> {
+    const data = ctx.request.body as IDoCompetitionSpGenshinExplorationUnlockReq;
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    const spConfig = (detail.spConfig || {}) as ICompetitionSpConfig;
+    if (!spConfig.genshinConfig?.useExplorationMode) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+
+    const problems = await this.service.getCompetitionProblems(competitionId);
+    const problemIdToIndexMap = new Map<number, number>();
+    problems.rows.forEach((problem, index) => {
+      problemIdToIndexMap.set(problem.problemId, index);
+    });
+    const acceptedProblemIds = await this.solutionService.getUserSubmittedProblemIds(
+      ctx.session.userId,
+      undefined,
+      competitionId,
+      ESolutionResult.AC,
+    );
+    const acceptedProblemIndexes = acceptedProblemIds
+      .map((problemId) => problemIdToIndexMap.get(problemId)!)
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+
+    const sections = spConfig.genshinConfig.explorationModeOptions?.sections || [];
+    const unlockRawRecords = await this.competitionLogService.findAllLogs(competitionId, {
+      action: ECompetitionLogAction.SpGenshinExplorationUnlock,
+      opUserId: ctx.session.userId,
+    });
+    const unlockedSectionIdSet = new Set<string>();
+    unlockRawRecords.rows.forEach((record) => {
+      const sectionId = record.detail?.sectionId as string;
+      if (!sections.some((section) => section.id === sectionId)) {
+        return;
+      }
+      unlockedSectionIdSet.add(sectionId);
+    });
+    const unlockedSectionIds = Array.from(unlockedSectionIdSet);
+
+    const elapsedTimeSecond = Math.floor(
+      (Math.min(Date.now(), detail.endAt.getTime()) - detail.startAt.getTime()) / 1000,
+    );
+    const checkResult = checkSpGenshinUnlockSection(
+      detail,
+      elapsedTimeSecond,
+      acceptedProblemIndexes,
+      unlockedSectionIds,
+      data.sectionId,
+    );
+    switch (checkResult.result) {
+      case ESpGenshinSectionCheckUnlockResult.InvalidConfig:
+      case ESpGenshinSectionCheckUnlockResult.SectionNotFound:
+        throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+      case ESpGenshinSectionCheckUnlockResult.NotEnoughKeys:
+        throw new ReqError(Codes.COMPETITION_SP_GENSHIN_NOT_ENOUGH_KEYS);
+      case ESpGenshinSectionCheckUnlockResult.SectionAlreadyUnlocked:
+        break;
+      case ESpGenshinSectionCheckUnlockResult.OK: {
+        await this.competitionLogService.log(
+          competitionId,
+          ECompetitionLogAction.SpGenshinExplorationUnlock,
+          {
+            userId: ctx.session.userId,
+            detail: {
+              sectionId: data.sectionId,
+              keyCost: checkResult.keyCost,
+              keyNumBefore: checkResult.keyNumBefore,
+              keyNumAfter: checkResult.keyNumAfter,
+            },
+          },
+        );
+        break;
+      }
+      default:
+        throw new ReqError(Codes.GENERAL_UNKNOWN_ERROR);
+    }
   }
 }

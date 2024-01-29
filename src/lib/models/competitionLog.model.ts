@@ -41,7 +41,7 @@ export default class CompetitionLogModel extends Model<CompetitionLogModel>
   @AllowNull(false)
   @Default('')
   @Column({
-    type: DataType.STRING(32),
+    type: DataType.STRING(64),
   })
   action: ECompetitionLogAction;
 

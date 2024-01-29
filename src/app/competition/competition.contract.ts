@@ -1388,6 +1388,43 @@ const competitionContract = {
     additionalProperties: false,
     required: ['competitionId'],
   } as defContract.ContractSchema,
+
+  getCompetitionSpGenshinExplorationUnlockRecordsReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
+  getCompetitionSpGenshinExplorationUnlockRecordsResp: {
+    properties: {
+      records: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            sectionId: { type: 'string' },
+            unlockedAt: { type: 'string', format: 'date-time' },
+            relativeUnlockedSecond: { type: 'number' },
+          },
+          additionalProperties: false,
+          required: ['sectionId', 'unlockedAt', 'relativeUnlockedSecond'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['records'],
+  } as defContract.ContractSchema,
+
+  doCompetitionSpGenshinExplorationUnlockReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+      sectionId: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['competitionId', 'sectionId'],
+  } as defContract.ContractSchema,
 };
 
 export type ICompetitionContract = typeof competitionContract;

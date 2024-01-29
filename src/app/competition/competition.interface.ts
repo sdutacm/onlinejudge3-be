@@ -240,6 +240,17 @@ export interface ICompetitionLogModel {
   userAgent: string;
   createdAt: Date;
 }
+
+export interface IMCompetitionLogLite {
+  competitionLogId: ICompetitionLogModel['competitionLogId'];
+  action: ICompetitionLogModel['action'];
+  opUserId: ICompetitionLogModel['opUserId'];
+  userId: ICompetitionLogModel['userId'];
+  problemId: ICompetitionLogModel['problemId'];
+  solutionId: ICompetitionLogModel['solutionId'];
+  detail: ICompetitionLogModel['detail'];
+  createdAt: ICompetitionLogModel['createdAt'];
+}
 //#endregion
 
 //#region competition setting model

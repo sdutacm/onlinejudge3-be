@@ -35,4 +35,5 @@ export enum ECompetitionLogAction {
   RequestPassword = 'RequestPassword',
   RandomAllUserPasswords = 'RandomAllUserPasswords',
   CreateNotification = 'CreateNotification',
+  SpGenshinExplorationUnlock = 'SpGenshinExplorationUnlock',
 }
