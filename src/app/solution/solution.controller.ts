@@ -100,6 +100,9 @@ export default class SolutionController {
     for (const d of list) {
       const isSelf = this.service.isSolutionSelf(ctx, d);
       let hasPermission = ctx.helper.checkPerms(EPerm.ReadSolution);
+      if (d.contest) {
+        hasPermission = hasPermission || ctx.helper.checkPerms(EPerm.ReadContest);
+      }
       if (d.competition) {
         hasPermission = ctx.helper.checkCompetitionRole(d.competition.competitionId, [
           ECompetitionUserRole.admin,
@@ -179,6 +182,7 @@ export default class SolutionController {
     let canSharedView = ctx.loggedIn && detail.shared;
     if (detail.contest) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
+      hasPermission = hasPermission || ctx.helper.checkPerms(EPerm.ReadContest);
     }
     if (detail.competition) {
       canSharedView = canSharedView && ctx.helper.isContestEnded(detail.competition);
@@ -251,6 +255,7 @@ export default class SolutionController {
         let hasPermission = ctx.helper.checkPerms(EPerm.ReadSolution);
         let canSharedView = ctx.loggedIn && detail.shared;
         if (detail.contest) {
+          hasPermission = hasPermission || ctx.helper.checkPerms(EPerm.ReadContest);
           canSharedView = canSharedView && ctx.helper.isContestEnded(detail.contest);
         }
         if (detail.competition) {
