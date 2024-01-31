@@ -75,7 +75,8 @@ export class JudgerCron implements CommonSchedule {
     });
     // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);
     this.logger.info('[judger] to judge solutionIds:', toJudgeSolutionIds);
-    judgerLogger.info('[judger] scheduled to judge solutionIds:', toJudgeSolutionIds);
+    toJudgeSolutionIds.length > 0 &&
+      judgerLogger.info('[judger] scheduled to judge solutionIds:', toJudgeSolutionIds);
     await Promise.all(
       toResetJudgeStatusSolutionIds.map((solutionId) =>
         this.solutionService.delSolutionJudgeStatus(solutionId),
