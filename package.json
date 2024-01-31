@@ -58,7 +58,7 @@
     "promise-queue": "^2.2.5",
     "protobufjs": "^6.10.2",
     "sequelize-typescript": "^1.1.0",
-    "sharp": "^0.25.3",
+    "sharp": "^0.29.3",
     "simple-git": "^2.9.0",
     "sleep-promise": "^8.0.1",
     "tencentcloud-sdk-nodejs": "^4.0.259",
