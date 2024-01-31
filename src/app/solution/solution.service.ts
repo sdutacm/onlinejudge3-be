@@ -801,6 +801,25 @@ export default class SolutionService {
   }
 
   /**
+   * 批量根据 ID 更新提交（部分更新）。
+   * @param solutionIds solutionIds
+   * @param data 更新数据（不包含 compileInfo）
+   */
+  async batchUpdateBySolutionIds(
+    solutionIds: ISolutionModel['solutionId'][],
+    data: IMSolutionServiceUpdateOpt,
+  ): Promise<number> {
+    const res = await this.model.update(this.lodash.omit(data, ['compileInfo']), {
+      where: {
+        solutionId: {
+          [Op.in]: solutionIds,
+        },
+      },
+    });
+    return res[0];
+  }
+
+  /**
    * 清除详情缓存。
    * @param solutionId solutionId
    */
@@ -1328,84 +1347,91 @@ export default class SolutionService {
    * @param options
    */
   async judge(options: IMSolutionServiceJudgeOpt): Promise<IMSolutionServiceJudgeRes> {
-    const language = this.utils.judger.convertOJLanguageToRiver(options.language);
-    if (!language) {
-      throw new Error(`Invalid Language ${options.language}`);
-    }
-    if (!options.code) {
-      throw new Error(`No Code`);
-    }
-    if (!options.problemId) {
-      throw new Error(`No Problem Specified`);
-    }
     const { solutionId, problemId, userId } = options;
-    const logger = this.ctx.getLogger('judgerLogger');
-    const createdAt = Math.floor(Date.now() / 1000);
-    logger.info(`[${solutionId}/${problemId}/${userId}] begin`);
-    await this.setSolutionJudgeStatus(solutionId, {
-      hostname: os.hostname(),
-      pid: process.pid,
-      status: 'pending',
-      createdAt,
-      updatedAt: createdAt,
-    });
-    // @ts-ignore
-    const judger = this.ctx.app.judger as Judger;
     const judgeType = options.spj ? river.JudgeType.Special : river.JudgeType.Standard;
-    const spjFile = options.spj ? 'spj' : undefined;
-    logger.info(
-      `[${solutionId}/${problemId}/${userId}] getJudgeCall`,
-      JSON.stringify({
+    const logger = this.ctx.getLogger('judgerLogger');
+
+    try {
+      const language = this.utils.judger.convertOJLanguageToRiver(options.language);
+      if (!language) {
+        throw new Error(`Invalid Language ${options.language}`);
+      }
+      if (!options.code) {
+        throw new Error(`No Code`);
+      }
+      if (!options.problemId) {
+        throw new Error(`No Problem Specified`);
+      }
+
+      const createdAt = Math.floor(Date.now() / 1000);
+      logger.info(`[${solutionId}/${problemId}/${userId}] begin`);
+      await this.setSolutionJudgeStatus(solutionId, {
+        hostname: os.hostname(),
+        pid: process.pid,
+        status: 'pending',
+        createdAt,
+        updatedAt: createdAt,
+      });
+
+      // @ts-ignore
+      const judger = this.ctx.app.judger as Judger;
+      const spjFile = options.spj ? 'spj' : undefined;
+      logger.info(
+        `[${solutionId}/${problemId}/${userId}] getJudgeCall`,
+        JSON.stringify({
+          problemId,
+          language,
+          code: `string(${options.code.length})`,
+          timeLimit: options.timeLimit,
+          memoryLimit: options.memoryLimit,
+          judgeType,
+          spjFile,
+        }),
+      );
+
+      const call = judger.getJudgeCall({
         problemId,
         language,
-        code: `string(${options.code.length})`,
+        code: options.code,
         timeLimit: options.timeLimit,
         memoryLimit: options.memoryLimit,
         judgeType,
         spjFile,
-      }),
-    );
-    const call = judger.getJudgeCall({
-      problemId,
-      language,
-      code: options.code,
-      timeLimit: options.timeLimit,
-      memoryLimit: options.memoryLimit,
-      judgeType,
-      spjFile,
-      onStart: () => {
-        console.log(process.pid, 'start judge', solutionId);
-        logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);
-        this.pushJudgeStatus(solutionId, [solutionId, judgeType, ESolutionResult.JG]);
-      },
-      onJudgeCaseStart: (current, total) => {
-        console.log(`${current}/${total} Running`);
-        logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseStart ${current}/${total}`);
+        onStart: () => {
+          console.log(process.pid, 'start judge', solutionId);
+          logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);
+          this.pushJudgeStatus(solutionId, [solutionId, judgeType, ESolutionResult.JG]);
+        },
+        onJudgeCaseStart: (current, total) => {
+          console.log(`${current}/${total} Running`);
+          logger.info(
+            `[${solutionId}/${problemId}/${userId}] onJudgeCaseStart ${current}/${total}`,
+          );
 
-        this.setSolutionJudgeStatus(solutionId, {
-          hostname: os.hostname(),
-          pid: process.pid,
-          status: 'running',
-          createdAt,
-          updatedAt: Math.floor(Date.now() / 1000),
-          current,
-          total,
-        });
-        this.pushJudgeStatus(solutionId, [
-          solutionId,
-          judgeType,
-          ESolutionResult.JG,
-          current,
-          total,
-        ]);
-      },
-      onJudgeCaseDone: (current, total, res) => {
-        console.log(`${current}/${total} Done:`, res);
-        logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseDone ${current}/${total}`);
-        return res.result === river.JudgeResultEnum.Accepted;
-      },
-    });
-    try {
+          this.setSolutionJudgeStatus(solutionId, {
+            hostname: os.hostname(),
+            pid: process.pid,
+            status: 'running',
+            createdAt,
+            updatedAt: Math.floor(Date.now() / 1000),
+            current,
+            total,
+          });
+          this.pushJudgeStatus(solutionId, [
+            solutionId,
+            judgeType,
+            ESolutionResult.JG,
+            current,
+            total,
+          ]);
+        },
+        onJudgeCaseDone: (current, total, res) => {
+          console.log(`${current}/${total} Done:`, res);
+          logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseDone ${current}/${total}`);
+          return res.result === river.JudgeResultEnum.Accepted;
+        },
+      });
+
       const jResult = await call.run();
       console.log('call res', jResult);
       logger.info(`[${solutionId}/${problemId}/${userId}] done`, JSON.stringify(jResult));
@@ -1489,7 +1515,7 @@ export default class SolutionService {
         }
       }
     } catch (e) {
-      console.error('Judger error', e);
+      console.error('Failed to judge', e);
       logger.error(`[${solutionId}/${problemId}/${userId}] Caught error`, e);
       const result = ESolutionResult.SE;
       await this.update(solutionId, {

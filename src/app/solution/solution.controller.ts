@@ -542,15 +542,18 @@ export default class SolutionController {
     if (solutionIds.length === 0) {
       throw new ReqError(Codes.SOLUTION_NO_SOLUTION_REJUDGED);
     }
-    const pq = new this.PromiseQueue(5, Infinity);
-    const queueTasks = solutionIds.map((solutionId) =>
-      pq.add(async () => {
-        await this.service.update(solutionId, {
-          result: ESolutionResult.RPD,
-        });
-        await this.service.clearDetailCache(solutionId);
-      }),
-    );
-    await Promise.all(queueTasks);
+    ctx.logger.info('[rejudgeSolution] to rejudge num:', solutionIds.length);
+    const chunks = this.lodash.chunk(solutionIds, 200);
+    for (const chunk of chunks) {
+      await this.service.batchUpdateBySolutionIds(chunk, {
+        result: ESolutionResult.RPD,
+      });
+      const clearCacheChunks = this.lodash.chunk(chunk, 20);
+      for (const clearCacheChunk of clearCacheChunks) {
+        await Promise.all(
+          clearCacheChunk.map((solutionId) => this.service.clearDetailCache(solutionId)),
+        );
+      }
+    }
   }
 }

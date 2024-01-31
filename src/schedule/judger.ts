@@ -43,11 +43,11 @@ export class JudgerCron implements CommonSchedule {
       const { solutionId } = solution;
       const judgeStatus = await this.solutionService.getSolutionJudgeStatus(solutionId);
       const isCurrentHostButDiedJudging =
-        judgeStatus &&
+        !!judgeStatus &&
         os.hostname() === judgeStatus.hostname &&
         !workerPids.includes(judgeStatus.pid);
       const isTimeoutDiedJudging =
-        judgeStatus &&
+        !!judgeStatus &&
         Math.floor(Date.now() / 1000) - (judgeStatus.updatedAt || 0) >= MAX_GUESS_DIED_TIMEOUT;
       const canAccept = !judgeStatus || isCurrentHostButDiedJudging || isTimeoutDiedJudging;
       if (!canAccept) {
