@@ -1482,7 +1482,7 @@ export default class CompetitionController {
   @authCompetitionRole([ECompetitionUserRole.participant])
   @id()
   @getDetail(null)
-  async [routesBe.doCompetitionSpGenshinExplorationUnlockReq.i](ctx: Context): Promise<void> {
+  async [routesBe.doCompetitionSpGenshinExplorationUnlock.i](ctx: Context): Promise<void> {
     const data = ctx.request.body as IDoCompetitionSpGenshinExplorationUnlockReq;
     const competitionId = ctx.id!;
     const detail = ctx.detail as IMCompetitionDetail;
