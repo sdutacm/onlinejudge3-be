@@ -400,12 +400,18 @@ export default class CompetitionController {
         ctx.session.userId,
         spConfig,
       );
-      // @ts-ignore
-      problems.rows = problems.rows.map((p, index) => {
-        if (unlockedProblemIndexes.includes(index)) {
-          return p;
+      problems.rows.forEach((p, index) => {
+        if (!unlockedProblemIndexes.includes(index)) {
+          p.title = '？？？';
+          p.description = '';
+          p.input = '';
+          p.output = '';
+          p.hint = '';
+          p.samples = [];
+          p.difficulty = 0;
+          p.authors = [];
+          p.source = '';
         }
-        return null;
       });
     }
     return problems;
