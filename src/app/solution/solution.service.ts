@@ -1340,11 +1340,14 @@ export default class SolutionService {
     }
     const { solutionId, problemId, userId } = options;
     const logger = this.ctx.getLogger('judgerLogger');
+    const createdAt = Math.floor(Date.now() / 1000);
     logger.info(`[${solutionId}/${problemId}/${userId}] begin`);
     await this.setSolutionJudgeStatus(solutionId, {
       hostname: os.hostname(),
       pid: process.pid,
       status: 'pending',
+      createdAt,
+      updatedAt: createdAt,
     });
     // @ts-ignore
     const judger = this.ctx.app.judger as Judger;
@@ -1378,10 +1381,13 @@ export default class SolutionService {
       onJudgeCaseStart: (current, total) => {
         console.log(`${current}/${total} Running`);
         logger.info(`[${solutionId}/${problemId}/${userId}] onJudgeCaseStart ${current}/${total}`);
+
         this.setSolutionJudgeStatus(solutionId, {
           hostname: os.hostname(),
           pid: process.pid,
           status: 'running',
+          createdAt,
+          updatedAt: Math.floor(Date.now() / 1000),
           current,
           total,
         });
@@ -1403,7 +1409,6 @@ export default class SolutionService {
       const jResult = await call.run();
       console.log('call res', jResult);
       logger.info(`[${solutionId}/${problemId}/${userId}] done`, JSON.stringify(jResult));
-      await this.delSolutionJudgeStatus(solutionId);
       switch (jResult.type) {
         case 'CompileError': {
           const result = ESolutionResult.CE;
@@ -1484,9 +1489,16 @@ export default class SolutionService {
         }
       }
     } catch (e) {
-      this.delSolutionJudgeStatus(solutionId);
       console.error('Judger error', e);
-      logger.error(`[${solutionId}/${problemId}/${userId}] error`, e);
+      logger.error(`[${solutionId}/${problemId}/${userId}] Caught error`, e);
+      const result = ESolutionResult.SE;
+      await this.update(solutionId, {
+        result,
+      });
+      await this.clearDetailCache(solutionId);
+      this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
+    } finally {
+      await this.delSolutionJudgeStatus(solutionId);
     }
   }
 

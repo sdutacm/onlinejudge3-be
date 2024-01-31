@@ -6,9 +6,15 @@ import * as os from 'os';
 
 const MAX_FETCH_PENDING_SOLUTIONS = 100;
 const MAX_JUDGE_PENDING_SOLUTIONS = 10;
+const MAX_GUESS_DIED_TIMEOUT = 3 * 60;
 
 const isProd = process.env.NODE_ENV === 'production';
 
+/**
+ * 重新捞起评测任务的定时触发器。
+ *
+ * 对未被接管的任务或长时间未结束的任务，重新触发评测。
+ */
 @provide()
 @schedule({
   interval: isProd ? 5000 : 60000,
@@ -29,20 +35,28 @@ export class JudgerCron implements CommonSchedule {
       MAX_FETCH_PENDING_SOLUTIONS,
     );
     const toJudgeSolutionIds: ISolutionModel['solutionId'][] = [];
+    const toResetJudgeStatusSolutionIds: ISolutionModel['solutionId'][] = [];
     for (const solution of pendingSolutions) {
+      if (toJudgeSolutionIds.length >= MAX_JUDGE_PENDING_SOLUTIONS) {
+        break;
+      }
       const { solutionId } = solution;
       const judgeStatus = await this.solutionService.getSolutionJudgeStatus(solutionId);
-      // @ts-ignore
-      if (
+      const isCurrentHostButDiedJudging =
         judgeStatus &&
         os.hostname() === judgeStatus.hostname &&
-        workerPids.includes(judgeStatus.pid)
-      ) {
+        !workerPids.includes(judgeStatus.pid);
+      const isTimeoutDiedJudging =
+        judgeStatus &&
+        Math.floor(Date.now() / 1000) - (judgeStatus.updatedAt || 0) >= MAX_GUESS_DIED_TIMEOUT;
+      const canAccept = !judgeStatus || isCurrentHostButDiedJudging || isTimeoutDiedJudging;
+      if (!canAccept) {
         continue;
       }
-      if (toJudgeSolutionIds.length < MAX_JUDGE_PENDING_SOLUTIONS) {
-        toJudgeSolutionIds.push(solutionId);
+      if (judgeStatus) {
+        toResetJudgeStatusSolutionIds.push(solutionId);
       }
+      toJudgeSolutionIds.push(solutionId);
     }
     const relativeSolutions = await this.solutionService.getRelative(toJudgeSolutionIds);
     const toJudgeSolutions: IMSolutionServiceJudgeOpt[] = toJudgeSolutionIds.map((solutionId) => {
@@ -60,6 +74,11 @@ export class JudgerCron implements CommonSchedule {
     });
     // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);
     this.logger.info('[judger] to judge solutionIds:', toJudgeSolutionIds);
+    await Promise.all(
+      toResetJudgeStatusSolutionIds.map((solutionId) =>
+        this.solutionService.delSolutionJudgeStatus(solutionId),
+      ),
+    );
     toJudgeSolutions.forEach((s) => this.solutionService.judge(s));
   }
 }

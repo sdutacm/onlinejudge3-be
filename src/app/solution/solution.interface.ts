@@ -181,6 +181,8 @@ export interface IMSolutionJudgeStatus {
   hostname: string;
   pid: number;
   status: 'pending' | 'running';
+  createdAt: number; // s
+  updatedAt: number; // s
   current?: number; // 当前运行的测试点
   total?: number; // 总测试点数量
 }
