@@ -1504,7 +1504,7 @@ export default class CompetitionController {
     );
     const acceptedProblemIndexes = acceptedProblemIds
       .map((problemId) => problemIdToIndexMap.get(problemId)!)
-      .filter(Boolean)
+      .filter((p) => typeof p === 'number')
       .sort((a, b) => a - b);
 
     const sections = spConfig.genshinConfig.explorationModeOptions?.sections || [];

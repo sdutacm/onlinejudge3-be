@@ -306,7 +306,7 @@ export default class SolutionService {
         : this.redisKey.competitionProblemResultStats,
       [competitionId],
       data,
-      this.durations.cacheDetailMedium,
+      this.durations.cacheDetailShort,
     );
   }
 
