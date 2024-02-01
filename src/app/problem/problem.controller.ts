@@ -23,6 +23,7 @@ import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { EPerm } from '@/common/configs/perm.config';
+import { CCompetitionService } from '../competition/competition.service';
 
 @provide()
 @controller('/')
@@ -35,6 +36,9 @@ export default class ProblemController {
 
   @inject()
   contestService: CContestService;
+
+  @inject()
+  competitionService: CCompetitionService;
 
   @inject()
   utils: IUtils;
@@ -87,9 +91,15 @@ export default class ProblemController {
     await this.service.clearDetailCache(problemId);
     const pq = new this.PromiseQueue(20, Infinity);
     const contestIds = await this.contestService.getAllContestIdsByProblemId(problemId);
-    const queueTasks = contestIds.map((contestId) =>
-      pq.add(() => this.contestService.clearContestProblemsCache(contestId)),
-    );
+    const competitionIds = await this.competitionService.getAllCompetitionIdsByProblemId(problemId);
+    const queueTasks = [
+      ...contestIds.map((contestId) =>
+        pq.add(() => this.contestService.clearContestProblemsCache(contestId)),
+      ),
+      ...competitionIds.map((competitionId) =>
+        pq.add(() => this.competitionService.clearCompetitionProblemsCache(competitionId)),
+      ),
+    ];
     await Promise.all(queueTasks);
   }
 
