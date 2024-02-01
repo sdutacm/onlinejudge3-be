@@ -411,6 +411,8 @@ export default class CompetitionController {
           p.difficulty = 0;
           p.authors = [];
           p.source = '';
+          p.score = 0;
+          p.varScoreExpression = '';
         }
       });
     }
