@@ -1351,13 +1351,14 @@ export default class SolutionService {
     const judgeType = options.spj ? river.JudgeType.Special : river.JudgeType.Standard;
     const logger = this.ctx.getLogger('judgerLogger');
 
+    if (!options.code) {
+      throw new Error(`No Code`);
+    }
+
     try {
       const language = this.utils.judger.convertOJLanguageToRiver(options.language);
       if (!language) {
         throw new Error(`Invalid Language ${options.language}`);
-      }
-      if (!options.code) {
-        throw new Error(`No Code`);
       }
       if (!options.problemId) {
         throw new Error(`No Problem Specified`);
