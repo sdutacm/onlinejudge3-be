@@ -1442,39 +1442,54 @@ export default class CompetitionController {
     const competitionId = ctx.id!;
     const detail = ctx.detail as IMCompetitionDetail;
     const spConfig = (detail.spConfig || {}) as ICompetitionSpConfig;
-    if (
-      !spConfig.genshinConfig?.useExplorationMode ||
-      !ctx.helper.checkCompetitionRole(competitionId, [ECompetitionUserRole.participant])
-    ) {
+    if (!spConfig.genshinConfig?.useExplorationMode) {
       return {
         records: [],
       };
     }
 
     const sections = spConfig.genshinConfig.explorationModeOptions?.sections || [];
-    const unlockRawRecords = await this.competitionLogService.findAllLogs(competitionId, {
-      action: ECompetitionLogAction.SpGenshinExplorationUnlock,
-      opUserId: ctx.session.userId,
-    });
-    const unlockedSectionIdSet = new Set<string>();
+
     const records: any[] = [];
-    unlockRawRecords.rows.forEach((record) => {
-      const sectionId = record.detail?.sectionId as string;
-      if (!sections.some((section) => section.id === sectionId)) {
-        return;
-      }
-      if (unlockedSectionIdSet.has(sectionId)) {
-        return;
-      }
-      unlockedSectionIdSet.add(sectionId);
-      records.push({
-        sectionId,
-        unlockedAt: record.createdAt,
-        relativeUnlockedSecond: Math.floor(
-          (record.createdAt.getTime() - detail.startAt.getTime()) / 1000,
-        ),
+    if (
+      !ctx.helper.checkCompetitionRole(competitionId, [
+        ECompetitionUserRole.admin,
+        ECompetitionUserRole.principal,
+        ECompetitionUserRole.judge,
+      ])
+    ) {
+      const unlockRawRecords = await this.competitionLogService.findAllLogs(competitionId, {
+        action: ECompetitionLogAction.SpGenshinExplorationUnlock,
+        opUserId: ctx.session.userId,
       });
-    });
+      const unlockedSectionIdSet = new Set<string>();
+
+      unlockRawRecords.rows.forEach((record) => {
+        const sectionId = record.detail?.sectionId as string;
+        if (!sections.some((section) => section.id === sectionId)) {
+          return;
+        }
+        if (unlockedSectionIdSet.has(sectionId)) {
+          return;
+        }
+        unlockedSectionIdSet.add(sectionId);
+        records.push({
+          sectionId,
+          unlockedAt: record.createdAt,
+          relativeUnlockedSecond: Math.floor(
+            (record.createdAt.getTime() - detail.startAt.getTime()) / 1000,
+          ),
+        });
+      });
+    } else {
+      sections.forEach((section) => {
+        records.push({
+          sectionId: section.id,
+          unlockedAt: detail.startAt,
+          relativeUnlockedSecond: 0,
+        });
+      });
+    }
     return {
       records,
     };
