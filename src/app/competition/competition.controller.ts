@@ -1312,59 +1312,6 @@ export default class CompetitionController {
   @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
   @id()
   @getDetail(null)
-  async [routesBe.endCompetition.i](ctx: Context): Promise<void> {
-    const competitionId = ctx.id!;
-    const detail = ctx.detail as IMCompetitionDetail;
-    if (!ctx.helper.isContestEnded(detail)) {
-      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
-    } else if (detail.ended) {
-      throw new ReqError(Codes.COMPETITION_ENDED);
-    }
-    const settings = (await this.service.getCompetitionSettingDetail(competitionId))!;
-    await this.service.update(competitionId, {
-      ended: true,
-    });
-    await Promise.all([
-      this.service.clearDetailCache(competitionId),
-      this.service.clearCompetitionRanklistCache(competitionId),
-      this.solutionService.clearCompetitionProblemSolutionStatsCache(competitionId),
-    ]);
-    // 根据比赛模式判断相应处理逻辑
-    if (detail.isRating) {
-      if (!this.scriptsConfig?.dirPath || !this.scriptsConfig?.logPath) {
-        throw new Error('ConfigNotFoundError: scripts');
-      }
-      const ranklist = (await this.service.getRanklist(detail, settings, true)).rows;
-      const rankData = ranklist.map((row) => ({
-        rank: row.rank,
-        userId: row.user.userId,
-      }));
-      await Promise.all([
-        this.service.setRankData(competitionId, rankData),
-        this.service.setRatingStatus(competitionId, {
-          status: EContestRatingStatus.PD,
-          progress: 0,
-        }),
-      ]);
-      // 调用 calRating 脚本
-      const cmd = `nohup node ${path.join(
-        this.scriptsConfig.dirPath,
-        'calRating.js',
-      )} competition ${competitionId} >> ${path.join(
-        this.scriptsConfig.logPath,
-        'calRating.log',
-      )} 2>&1 &`;
-      ctx.logger.info('exec:', cmd);
-      exec(cmd, {
-        cwd: this.scriptsConfig.dirPath,
-      });
-    }
-  }
-
-  @route()
-  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
-  @id()
-  @getDetail(null)
   async [routesBe.getAllCompetitionSolutionsForSrkLite.i](ctx: Context): Promise<any> {
     const data = ctx.request.body as IGetAllCompetitionSolutionsForSrkLiteReq;
     const competitionId = ctx.id!;
