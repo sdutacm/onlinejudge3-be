@@ -1,6 +1,4 @@
 import { EggAppConfig, PowerPartial } from 'midway';
-import 'egg-sequelize/index';
-import 'egg-redis/index';
 import { IRedisKeyConfig } from './redisKey.config';
 import { IDurationsConfig } from './durations.config';
 import { IJudgerConfig } from './judger.config';
@@ -10,6 +8,13 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   siteTeam: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
+  pulsar: {
+    enable: boolean;
+    serviceUrl: string;
+    tenant: string;
+    namespace: string;
+    apiBase: string;
+  };
   judger: IJudgerConfig;
   staticPath: {
     useCloud?: 'cos';

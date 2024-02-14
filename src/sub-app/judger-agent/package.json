@@ -1,0 +1,38 @@
+{
+  "name": "onlinejudge3-be-judger-agent",
+  "version": "3.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc && copyfiles -u1 \"src/proto/**/*\" dist",
+    "start": "pm2 start",
+    "stop": "pm2 stop onlinejudge3-be-judger-agent",
+    "reload": "pm2 reload onlinejudge3-be-judger-agent",
+    "start:foreground": "pm2-runtime start ecosystem.config.js"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "@grpc/proto-loader": "^0.7.10",
+    "axios": "^0.27.2",
+    "fs-extra": "^9.1.0",
+    "ioredis": "^4.28.5",
+    "lodash": "^4.17.21",
+    "mysql2": "^3.9.1",
+    "p-queue": "^6.6.2",
+    "pm2": "^5.3.1",
+    "protobufjs": "^6.11.4",
+    "pulsar-client": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "cross-env": "^6.0.0",
+    "ts-node": "^8.3.0",
+    "typescript": "3.8.3"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "author": "bLue",
+  "license": ""
+}

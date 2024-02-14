@@ -46,6 +46,8 @@ const redisKey = {
   activeUserCountStats: 'stats:active_user_count',
   contestRankData: 'temp:contest_rank_data:%d',
   competitionRankData: 'temp:competition_rank_data:%d',
+  judgeStatus: 'status:judge_status:%d', // {judgeInfoId}
+  /** @deprecated */
   solutionJudgeStatus: 'status:solution_judge_status:%d',
   contestRatingStatus: 'status:contest_rating_status:%d',
   competitionRatingStatus: 'status:competition_rating_status:%d',

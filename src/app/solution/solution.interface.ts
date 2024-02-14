@@ -2,6 +2,7 @@ import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { IContestModel } from '../contest/contest.interface';
 import { ICompetitionModel, ICompetitionSettingModel } from '../competition/competition.interface';
+import { ESolutionResult } from '@/common/enums';
 
 export interface ISolutionModel {
   solutionId: number;
@@ -9,6 +10,7 @@ export interface ISolutionModel {
   userId: number;
   contestId: number;
   competitionId: number | null;
+  judgeInfoId: number | null;
   result: number;
   time: number;
   memory: number;
@@ -37,10 +39,14 @@ interface IJudgeInfoDetail {
 export interface IJudgeInfoModel {
   judgeInfoId: number;
   solutionId: number;
+  result: ESolutionResult;
+  time: number;
+  memory: number;
   lastCase: number;
   totalCase: number;
   detail: IJudgeInfoDetail | null;
-  finishedAt: Date;
+  createdAt: Date;
+  finishedAt: Date | null;
 }
 
 export type TSolutionModelFields = keyof ISolutionModel;
@@ -52,6 +58,7 @@ export type TMSolutionLiteFields = Extract<
   | 'userId'
   | 'contestId'
   | 'competitionId'
+  | 'judgeInfoId'
   | 'result'
   | 'time'
   | 'memory'
@@ -69,6 +76,7 @@ export type TMSolutionDetailFields = Extract<
   | 'userId'
   | 'contestId'
   | 'competitionId'
+  | 'judgeInfoId'
   | 'result'
   | 'time'
   | 'memory'
@@ -82,16 +90,34 @@ export type TMSolutionDetailFields = Extract<
 export type TJudgeInfoModelFields = keyof IJudgeInfoModel;
 export type TMJudgeInfoFields = Extract<
   TJudgeInfoModelFields,
-  'solutionId' | 'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+  | 'judgeInfoId'
+  | 'solutionId'
+  | 'result'
+  | 'time'
+  | 'memory'
+  | 'lastCase'
+  | 'totalCase'
+  | 'detail'
+  | 'createdAt'
+  | 'finishedAt'
 >;
 
 export type IMSolutionJudgeInfo = Pick<
   IJudgeInfoModel,
-  'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+  'result' | 'time' | 'memory' | 'lastCase' | 'totalCase' | 'detail' | 'createdAt' | 'finishedAt'
 >;
 export type IMSolutionJudgeInfoFull = Pick<
   IJudgeInfoModel,
-  'solutionId' | 'lastCase' | 'totalCase' | 'detail' | 'finishedAt'
+  | 'judgeInfoId'
+  | 'solutionId'
+  | 'result'
+  | 'time'
+  | 'memory'
+  | 'lastCase'
+  | 'totalCase'
+  | 'detail'
+  | 'createdAt'
+  | 'finishedAt'
 >;
 
 export type IMSolutionRelativeProblem = Pick<
@@ -119,7 +145,7 @@ export type IMSolutionRelativeCompetition = Pick<
 export type IMSolutionLitePlain = Pick<ISolutionModel, TMSolutionLiteFields>;
 export type IMSolutionLite = Omit<
   Pick<ISolutionModel, TMSolutionLiteFields>,
-  'problemId' | 'userId' | 'contestId' | 'competitionId'
+  'problemId' | 'userId' | 'contestId' | 'competitionId' | 'judgeInfoId'
 > & {
   problem: IMSolutionRelativeProblem;
 } & {
@@ -138,7 +164,7 @@ export type IMSolutionDetailPlainFull = Pick<ISolutionModel, TMSolutionDetailFie
 };
 export type IMSolutionDetail = Omit<
   Pick<ISolutionModel, TMSolutionDetailFields>,
-  'problemId' | 'userId' | 'contestId' | 'competitionId'
+  'problemId' | 'userId' | 'contestId' | 'competitionId' | 'judgeInfoId'
 > & {
   problem: IMSolutionRelativeProblem;
 } & {
@@ -243,6 +269,7 @@ export type IMSolutionServiceCreateRes = ISolutionModel['solutionId'];
 
 //#region service.update
 export interface IMSolutionServiceUpdateOpt {
+  judgeInfoId?: ISolutionModel['judgeInfoId'];
   result?: ISolutionModel['result'];
   time?: ISolutionModel['time'];
   memory?: ISolutionModel['time'];
@@ -314,17 +341,27 @@ export type IMSolutionServiceGetPendingSolutionsRes = Array<{
 }>;
 //#endregion
 
+//#region service.createJudgeInfo
+export interface IMSolutionServiceCreateJudgeInfoOpt {
+  result?: IJudgeInfoModel['result'];
+}
+//#endregion
+
 //#region service.updateJudgeInfo
 export interface IMSolutionServiceUpdateJudgeInfoOpt {
-  lastCase: number;
-  totalCase: number;
+  result: IJudgeInfoModel['result'];
+  time?: IJudgeInfoModel['time'];
+  memory?: IJudgeInfoModel['memory'];
+  lastCase: IJudgeInfoModel['lastCase'];
+  totalCase: IJudgeInfoModel['totalCase'];
   detail: IJudgeInfoDetail;
-  finishedAt: Date;
+  finishedAt: IJudgeInfoModel['finishedAt'];
 }
 //#endregion
 
 //#region service.judge
 export interface IMSolutionServiceJudgeOpt {
+  judgeInfoId: number;
   solutionId: ISolutionModel['solutionId'];
   problemId: ISolutionModel['problemId'];
   timeLimit: IProblemModel['timeLimit'];

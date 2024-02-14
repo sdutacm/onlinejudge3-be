@@ -26,7 +26,7 @@
     "restart:bak": "npm run stop:bak && npm run start:bak",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest",
     "gen:contract": "cross-env IS_EXEC_FROM_PKG_SCRIPT=1 ts-node -T scripts/contract2ts.ts",
-    "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js"
+    "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js && copyfiles --verbose src/proto/river/**/* src/sub-app/judger-agent/"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.6.7",
@@ -57,6 +57,7 @@
     "mysql2": "^2.1.0",
     "promise-queue": "^2.2.5",
     "protobufjs": "^6.10.2",
+    "pulsar-client": "^1.10.0",
     "sequelize-typescript": "^1.1.0",
     "sharp": "^0.29.3",
     "simple-git": "^2.9.0",
@@ -84,6 +85,7 @@
     "@types/validator": "^12.0.1",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
     "@typescript-eslint/parser": "^2.24.0",
+    "copyfiles": "^2.4.1",
     "cross-env": "^6.0.0",
     "egg-ci": "^1.8.0",
     "eslint": "^6.8.0",

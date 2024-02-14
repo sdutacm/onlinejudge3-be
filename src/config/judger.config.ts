@@ -20,6 +20,7 @@ const judgerConfig = {
   address: 'ipv4:127.0.0.1:4003',
   socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge',
   socketBridgeEmitAuthKey: '',
+  mqJudgeQueueTopic: 'judge-queue',
 };
 
 export default judgerConfig;

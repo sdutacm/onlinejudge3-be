@@ -148,34 +148,54 @@ const solutionContract = {
             judgeInfo: {
               type: 'object',
               properties: {
+                result: { type: 'number' },
+                time: { type: 'number' },
+                memory: { type: 'number' },
                 lastCase: { type: 'number' },
                 totalCase: { type: 'number' },
                 detail: {
-                  type: 'object',
-                  properties: {
-                    cases: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          result: { type: 'number' },
-                          time: { type: 'number' },
-                          memory: { type: 'number' },
-                          errMsg: { type: 'string' },
-                          outMsg: { type: 'string' },
+                  anyOf: [
+                    {
+                      type: 'object',
+                      properties: {
+                        cases: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              result: { type: 'number' },
+                              time: { type: 'number' },
+                              memory: { type: 'number' },
+                              errMsg: { type: 'string' },
+                              outMsg: { type: 'string' },
+                            },
+                            additionalProperties: false,
+                            required: ['result', 'time', 'memory'],
+                          },
                         },
-                        additionalProperties: false,
-                        required: ['result', 'time', 'memory'],
                       },
+                      additionalProperties: false,
+                      required: ['cases'],
                     },
-                  },
-                  additionalProperties: false,
-                  required: ['cases'],
+                    { type: 'null' },
+                  ],
                 },
-                finishedAt: { type: 'string', format: 'date-time' },
+                createdAt: { type: 'string', format: 'date-time' },
+                finishedAt: {
+                  anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+                },
               },
               additionalProperties: false,
-              required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+              required: [
+                'result',
+                'time',
+                'memory',
+                'lastCase',
+                'totalCase',
+                'detail',
+                'createdAt',
+                'finishedAt',
+              ],
             },
             createdAt: { type: 'string', format: 'date-time' },
           },
@@ -307,34 +327,54 @@ const solutionContract = {
       judgeInfo: {
         type: 'object',
         properties: {
+          result: { type: 'number' },
+          time: { type: 'number' },
+          memory: { type: 'number' },
           lastCase: { type: 'number' },
           totalCase: { type: 'number' },
           detail: {
-            type: 'object',
-            properties: {
-              cases: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    result: { type: 'number' },
-                    time: { type: 'number' },
-                    memory: { type: 'number' },
-                    errMsg: { type: 'string' },
-                    outMsg: { type: 'string' },
+            anyOf: [
+              {
+                type: 'object',
+                properties: {
+                  cases: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        result: { type: 'number' },
+                        time: { type: 'number' },
+                        memory: { type: 'number' },
+                        errMsg: { type: 'string' },
+                        outMsg: { type: 'string' },
+                      },
+                      additionalProperties: false,
+                      required: ['result', 'time', 'memory'],
+                    },
                   },
-                  additionalProperties: false,
-                  required: ['result', 'time', 'memory'],
                 },
+                additionalProperties: false,
+                required: ['cases'],
               },
-            },
-            additionalProperties: false,
-            required: ['cases'],
+              { type: 'null' },
+            ],
           },
-          finishedAt: { type: 'string', format: 'date-time' },
+          createdAt: { type: 'string', format: 'date-time' },
+          finishedAt: {
+            anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+          },
         },
         additionalProperties: false,
-        required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+        required: [
+          'result',
+          'time',
+          'memory',
+          'lastCase',
+          'totalCase',
+          'detail',
+          'createdAt',
+          'finishedAt',
+        ],
       },
       createdAt: { type: 'string', format: 'date-time' },
     },
@@ -472,34 +512,54 @@ const solutionContract = {
         judgeInfo: {
           type: 'object',
           properties: {
+            result: { type: 'number' },
+            time: { type: 'number' },
+            memory: { type: 'number' },
             lastCase: { type: 'number' },
             totalCase: { type: 'number' },
             detail: {
-              type: 'object',
-              properties: {
-                cases: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      result: { type: 'number' },
-                      time: { type: 'number' },
-                      memory: { type: 'number' },
-                      errMsg: { type: 'string' },
-                      outMsg: { type: 'string' },
+              anyOf: [
+                {
+                  type: 'object',
+                  properties: {
+                    cases: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          result: { type: 'number' },
+                          time: { type: 'number' },
+                          memory: { type: 'number' },
+                          errMsg: { type: 'string' },
+                          outMsg: { type: 'string' },
+                        },
+                        additionalProperties: false,
+                        required: ['result', 'time', 'memory'],
+                      },
                     },
-                    additionalProperties: false,
-                    required: ['result', 'time', 'memory'],
                   },
+                  additionalProperties: false,
+                  required: ['cases'],
                 },
-              },
-              additionalProperties: false,
-              required: ['cases'],
+                { type: 'null' },
+              ],
             },
-            finishedAt: { type: 'string', format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time' },
+            finishedAt: {
+              anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
+            },
           },
           additionalProperties: false,
-          required: ['lastCase', 'totalCase', 'detail', 'finishedAt'],
+          required: [
+            'result',
+            'time',
+            'memory',
+            'lastCase',
+            'totalCase',
+            'detail',
+            'createdAt',
+            'finishedAt',
+          ],
         },
         createdAt: { type: 'string', format: 'date-time' },
       },

@@ -39,4 +39,8 @@ export default class DB {
       throw error;
     }
   }
+
+  public static async closeDB() {
+    await DB.sequelize.close();
+  }
 }

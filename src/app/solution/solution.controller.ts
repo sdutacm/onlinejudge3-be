@@ -478,16 +478,27 @@ export default class SolutionController {
       code,
     };
     const newId = await this.service.create(data);
-    this.service.judge({
-      solutionId: newId,
+    const judgeInfoId = await this.service.createJudgeInfo(newId, { result: ESolutionResult.RPD });
+    await this.service.update(newId, { judgeInfoId });
+    this.service.sendToJudgeQueue(
+      judgeInfoId,
+      newId,
       problemId,
-      timeLimit: problem.timeLimit,
-      memoryLimit: problem.memoryLimit,
-      userId: ctx.session.userId,
+      sess.userId,
       language,
-      code,
-      spj: problem.spj,
-    });
+      problem.spj,
+    );
+    // this.service.judge({
+    //   judgeInfoId,
+    //   solutionId: newId,
+    //   problemId,
+    //   timeLimit: problem.timeLimit,
+    //   memoryLimit: problem.memoryLimit,
+    //   userId: ctx.session.userId,
+    //   language,
+    //   code,
+    //   spj: problem.spj,
+    // });
     try {
       if (competitionId) {
         this.competitionLogService.log(competitionId, ECompetitionLogAction.SubmitSolution, {

@@ -10,17 +10,19 @@ const MAX_GUESS_DIED_TIMEOUT = 3 * 60;
 
 const isProd = process.env.NODE_ENV === 'production';
 
+// TODO remove this
+
 /**
  * 重新捞起评测任务的定时触发器。
  *
  * 对未被接管的任务或长时间未结束的任务，重新触发评测。
  */
-@provide()
-@schedule({
-  interval: isProd ? 5000 : 60000,
-  type: 'worker',
-  immediate: true,
-})
+// @provide()
+// @schedule({
+//   interval: isProd ? 5000 : 60000,
+//   type: 'worker',
+//   immediate: true,
+// })
 export class JudgerCron implements CommonSchedule {
   @inject()
   solutionService: CSolutionService;
@@ -63,6 +65,7 @@ export class JudgerCron implements CommonSchedule {
     const toJudgeSolutions: IMSolutionServiceJudgeOpt[] = toJudgeSolutionIds.map((solutionId) => {
       const solution = relativeSolutions[solutionId];
       return {
+        judgeInfoId: 0,
         solutionId,
         problemId: solution.problem?.problemId,
         timeLimit: solution.problem?.timeLimit,

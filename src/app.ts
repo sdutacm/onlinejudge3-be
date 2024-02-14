@@ -1,51 +1,64 @@
-// import * as tsConfigPaths from 'tsconfig-paths';
-// import * as tsConfig from '../tsconfig.json';
-// import 'tsconfig-paths/register';
 import DB from '@/lib/models/db';
-import { Application } from 'midway';
+import { Application, IBoot } from 'midway';
 import fs from 'fs-extra';
+import Pulsar from 'pulsar-client';
 import { Judger } from '@/lib/services/judger';
 
-// const tsConfig = require('./tsconfig.json');
-// const tsConfigPaths = require('tsconfig-paths');
+class AppBootHook implements IBoot {
+  app: Application;
 
-// const { baseUrl, outDir, paths } = tsConfig.compilerOptions;
-// const outDirPaths = Object.entries(paths).reduce(
-//   (outDirPaths, [k, v]) =>
-//     Object.assign(outDirPaths, {
-//       [k]: (v as any).map((path: string) => path.replace(/^src\//, `./`)),
-//     }),
-//   {},
-// );
-// console.log('baseUrl', baseUrl, 'paths', outDirPaths);
+  constructor(app: Application) {
+    this.app = app;
+  }
 
-// tsConfigPaths.register({ baseUrl, paths: outDirPaths });
-// console.log(require);
+  async willReady() {
+    // @ts-ignore
+    const launchMsg = `App start... (NODE_ENV: ${process.env.NODE_ENV}, EGG_SERVER_ENV: ${process.env.EGG_SERVER_ENV}, node: ${process.versions.node}, alinode: ${process.versions.alinode})`;
+    this.logInfo(launchMsg);
 
-// build db connections when starting APP
-module.exports = (app: Application) => {
-  app.beforeStart(async () => {
-    console.log(
-      `🚀 App is launching... (NODE_ENV: ${process.env.NODE_ENV}, EGG_SERVER_ENV: ${process.env.EGG_SERVER_ENV})`,
-    );
-
-    const staticPath = app.getConfig('staticPath');
+    const staticPath = this.app.getConfig('staticPath');
     Object.keys(staticPath).forEach((key) => {
       fs.ensureDirSync(staticPath[key]);
     });
-    await DB.initDB(app.config.sequelize);
+    await DB.initDB(this.app.config.sequelize);
 
-    app.judger = new Judger({
-      address: app.config.judger.address,
+    this.app.judger = new Judger({
+      address: this.app.config.judger.address,
     });
 
-    console.log('✅ App launched');
-  });
+    if (this.app.config.pulsar.enable) {
+      this.app.pulsarClient = new Pulsar.Client({
+        serviceUrl: this.app.config.pulsar.serviceUrl,
+      });
+      this.app.judgerMqProducer = await this.app.pulsarClient.createProducer({
+        topic: `persistent://${this.app.config.pulsar.tenant}/${this.app.config.pulsar.namespace}/${this.app.config.judger.mqJudgeQueueTopic}`,
+      });
+    }
 
-  // @ts-ignore
-  app.logger.info(
-    'App start...',
-    // @ts-ignore
-    `(NODE_ENV: ${process.env.NODE_ENV}, node: ${process.versions.node}, alinode: ${process.versions.alinode})`,
-  );
-};
+    this.logInfo('✅ App launched');
+  }
+
+  async beforeClose() {
+    this.logInfo('App before close...');
+
+    await DB.closeDB();
+
+    if (this.app.config.pulsar.enable) {
+      await this.app.judgerMqProducer.flush();
+      await this.app.judgerMqProducer.close();
+      await this.app.pulsarClient.close();
+    }
+
+    this.logInfo('App closed');
+  }
+
+  private logInfo(...msgs: string[]) {
+    if (this.app.logger?.info) {
+      this.app.logger.info(...msgs);
+    } else {
+      console.info(...msgs);
+    }
+  }
+}
+
+module.exports = AppBootHook;

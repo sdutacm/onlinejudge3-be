@@ -38,6 +38,7 @@ import {
   IMSolutionServiceJudgeRes,
   IMSolutionServiceGetPendingSolutionsRes,
   IMSolutionJudgeStatus,
+  IMSolutionServiceCreateJudgeInfoOpt,
   IMSolutionServiceUpdateJudgeInfoOpt,
   IMSolutionJudgeInfo,
   IMSolutionServiceGetRelativeJudgeInfoRes,
@@ -86,6 +87,7 @@ const solutionLiteFields: Array<TMSolutionLiteFields> = [
   'userId',
   'contestId',
   'competitionId',
+  'judgeInfoId',
   'result',
   'time',
   'memory',
@@ -102,6 +104,7 @@ const solutionDetailFields: Array<TMSolutionDetailFields> = [
   'userId',
   'contestId',
   'competitionId',
+  'judgeInfoId',
   'result',
   'time',
   'memory',
@@ -113,10 +116,15 @@ const solutionDetailFields: Array<TMSolutionDetailFields> = [
 ];
 
 const solutionJudgeInfoFields: Array<TMJudgeInfoFields> = [
+  'judgeInfoId',
   'solutionId',
+  'result',
+  'time',
+  'memory',
   'lastCase',
   'totalCase',
   'detail',
+  'createdAt',
   'finishedAt',
 ];
 
@@ -348,28 +356,28 @@ export default class SolutionService {
   /**
    * 获取评测信息缓存。
    * 如果未找到缓存，则返回 `null`
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    */
   private async _getSolutionJudgeInfoCache(
-    solutionId: ISolutionModel['solutionId'],
+    judgeInfoId: number,
   ): Promise<IMSolutionJudgeInfo | null> {
     return this.ctx.helper.redisGet<IMSolutionJudgeInfo>(this.redisKey.solutionJudgeInfo, [
-      solutionId,
+      judgeInfoId,
     ]);
   }
 
   /**
    * 设置评测信息缓存。
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    * @param data 数据
    */
   private async _setSolutionJudgeInfoCache(
-    solutionId: ISolutionModel['solutionId'],
+    judgeInfoId: number,
     data: IMSolutionJudgeInfo | null,
   ): Promise<void> {
     return this.ctx.helper.redisSet(
       this.redisKey.solutionJudgeInfo,
-      [solutionId],
+      [judgeInfoId],
       data,
       data ? this.durations.cacheDetailMedium : this.durations.cacheDetailNull,
     );
@@ -399,7 +407,7 @@ export default class SolutionService {
     data: T[],
   ): Promise<
     Array<
-      Omit<T, 'problemId' | 'userId' | 'contestId' | 'competitionId'> & {
+      Omit<T, 'problemId' | 'userId' | 'contestId' | 'competitionId' | 'judgeInfoId'> & {
         problem: IMSolutionRelativeProblem;
       } & {
         user: IMSolutionRelativeUser;
@@ -407,6 +415,8 @@ export default class SolutionService {
         contest?: IMSolutionRelativeContest;
       } & {
         competition?: IMSolutionRelativeCompetition;
+      } & {
+        judgeInfo?: IMSolutionJudgeInfo;
       }
     >
   > {
@@ -420,7 +430,8 @@ export default class SolutionService {
     const competitionIds = data
       .filter((d) => d.competitionId)
       .map((d) => d.competitionId) as number[];
-    const solutionIds = data.map((d) => d.solutionId);
+    const judgeInfoIds = data.filter((d) => d.judgeInfoId).map((d) => d.judgeInfoId) as number[];
+
     const [
       relativeProblems,
       relativeUsers,
@@ -436,13 +447,14 @@ export default class SolutionService {
       this.contestService.getRelative(contestIds, null),
       this.competitionService.getRelativeCompetitionUser(competitionUserKeys),
       this.competitionService.getRelative(competitionIds, null),
-      this.getRelativeJudgeInfo(solutionIds),
+      this.getRelativeJudgeInfo(judgeInfoIds),
     ]);
+
     return data.map((d) => {
       const relativeProblem = relativeProblems[d.problemId];
       const relativeContest = relativeContests[d.contestId];
       const relativeCompetition = relativeCompetitions[d.competitionId!];
-      const relativeJudgeInfo = relativeJudgeInfos[d.solutionId];
+      const relativeJudgeInfo = relativeJudgeInfos[d.judgeInfoId!];
       let user: IMSolutionRelativeUser;
       if (d.isContestUser) {
         const relativeUser = relativeContestUsers[d.userId];
@@ -478,7 +490,13 @@ export default class SolutionService {
       }
 
       const ret = this.utils.misc.ignoreUndefined({
-        ...this.lodash.omit(d, ['problemId', 'userId', 'contestId', 'competitionId']),
+        ...this.lodash.omit(d, [
+          'problemId',
+          'userId',
+          'contestId',
+          'competitionId',
+          'judgeInfoId',
+        ]),
         problem: {
           problemId: relativeProblem?.problemId,
           title: relativeProblem?.title,
@@ -512,7 +530,7 @@ export default class SolutionService {
               settings: relativeCompetition.settings,
             }
           : undefined,
-        judgeInfo: relativeJudgeInfo,
+        judgeInfo: relativeJudgeInfo ?? undefined,
       });
       if (!relativeContest) {
         delete ret.contest;
@@ -704,13 +722,11 @@ export default class SolutionService {
   }
 
   /**
-   * 按 solutionId 关联查询评测信息。
-   * 如果部分查询的 solutionId 在未找到，则返回的对象中不会含有此 key
-   * @param keys 要关联查询的 solutionId 列表
+   * 按 judgeInfoId 关联查询评测信息。
+   * 如果部分查询的 judgeInfoId 在未找到，则返回的对象中不会含有此 key
+   * @param keys 要关联查询的 judgeInfoId 列表
    */
-  async getRelativeJudgeInfo(
-    keys: ISolutionModel['solutionId'][],
-  ): Promise<IMSolutionServiceGetRelativeJudgeInfoRes> {
+  async getRelativeJudgeInfo(keys: number[]): Promise<IMSolutionServiceGetRelativeJudgeInfoRes> {
     const ks = this.lodash.uniq(keys);
     const res: IMSolutionServiceGetRelativeJudgeInfoRes = {};
     let uncached: typeof keys = [];
@@ -728,7 +744,7 @@ export default class SolutionService {
         .findAll({
           attributes: solutionJudgeInfoFields,
           where: {
-            solutionId: {
+            judgeInfoId: {
               [Op.in]: uncached,
             },
           },
@@ -740,10 +756,11 @@ export default class SolutionService {
           }),
         );
       for (const d of dbRes) {
-        const { solutionId } = d;
+        const { judgeInfoId } = d;
+        delete d.judgeInfoId;
         delete d.solutionId;
-        res[solutionId] = d;
-        await this._setSolutionJudgeInfoCache(solutionId, d);
+        res[judgeInfoId] = d;
+        await this._setSolutionJudgeInfoCache(judgeInfoId, d);
       }
       for (const k of ks) {
         !res[k] && (await this._setSolutionJudgeInfoCache(k, null));
@@ -1233,34 +1250,29 @@ export default class SolutionService {
   /**
    * 获取评测状态。
    * 如果未找到，则返回 `null`
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    */
-  async getSolutionJudgeStatus(
-    solutionId: ISolutionModel['solutionId'],
-  ): Promise<IMSolutionJudgeStatus | null> {
-    return this.ctx.helper.redisGet<IMSolutionJudgeStatus>(this.redisKey.solutionJudgeStatus, [
-      solutionId,
+  async getSolutionJudgeStatus(judgeInfoId: number): Promise<IMSolutionJudgeStatus | null> {
+    return this.ctx.helper.redisGet<IMSolutionJudgeStatus>(this.redisKey.judgeStatus, [
+      judgeInfoId,
     ]);
   }
 
   /**
    * 设置评测状态。
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    * @param data 数据
    */
-  async setSolutionJudgeStatus(
-    solutionId: ISolutionModel['solutionId'],
-    data: IMSolutionJudgeStatus,
-  ): Promise<void> {
-    return this.ctx.helper.redisSet(this.redisKey.solutionJudgeStatus, [solutionId], data);
+  async setSolutionJudgeStatus(judgeInfoId: number, data: IMSolutionJudgeStatus): Promise<void> {
+    return this.ctx.helper.redisSet(this.redisKey.judgeStatus, [judgeInfoId], data);
   }
 
   /**
    * 删除评测状态。
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    */
-  async delSolutionJudgeStatus(solutionId: ISolutionModel['solutionId']): Promise<void> {
-    return this.ctx.helper.redisDel(this.redisKey.solutionJudgeStatus, [solutionId]);
+  async delSolutionJudgeStatus(judgeInfoId: number): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.judgeStatus, [judgeInfoId]);
   }
 
   /**
@@ -1308,38 +1320,49 @@ export default class SolutionService {
   }
 
   /**
-   * 更新 judge info 数据。
+   * 创建 judge info 数据。
    * @param solutionId
    * @param data
+   * @returns judgeInfoId
    */
-  async updateJudgerInfo(
+  async createJudgeInfo(
     solutionId: ISolutionModel['solutionId'],
-    data: IMSolutionServiceUpdateJudgeInfoOpt,
-  ) {
-    await this.judgeInfoModel.findOrCreate({
-      where: {
-        solutionId,
-      },
-      defaults: {
-        lastCase: 0,
-        totalCase: 0,
-        detail: null,
-        finishedAt: new Date(),
-      },
+    data: IMSolutionServiceCreateJudgeInfoOpt,
+  ): Promise<number> {
+    const res = await this.judgeInfoModel.create({
+      solutionId,
+      result: ESolutionResult.RPD,
+      time: 0,
+      memory: 0,
+      lastCase: 0,
+      totalCase: 0,
+      detail: null,
+      createdAt: new Date(),
+      finishedAt: null,
+      ...data,
     });
+    return res.judgeInfoId;
+  }
+
+  /**
+   * 更新 judge info 数据。
+   * @param judgeInfoId
+   * @param data
+   */
+  async updateJudgeInfo(judgeInfoId: number, data: IMSolutionServiceUpdateJudgeInfoOpt) {
     await this.judgeInfoModel.update(data, {
       where: {
-        solutionId,
+        judgeInfoId,
       },
     });
   }
 
   /**
    * 清除评测信息缓存。
-   * @param solutionId solutionId
+   * @param judgeInfoId judgeInfoId
    */
-  async clearSolutionJudgeInfoCache(solutionId: ISolutionModel['solutionId']): Promise<void> {
-    return this.ctx.helper.redisDel(this.redisKey.solutionJudgeInfo, [solutionId]);
+  async clearSolutionJudgeInfoCache(judgeInfoId: number): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.solutionJudgeInfo, [judgeInfoId]);
   }
 
   /**
@@ -1477,7 +1500,10 @@ export default class SolutionService {
           });
           await this.clearDetailCache(solutionId);
           // 更新评测信息
-          await this.updateJudgerInfo(solutionId, {
+          await this.updateJudgeInfo(solutionId, {
+            result,
+            time: maxTimeUsed,
+            memory: maxMemoryUsed,
             lastCase: jResult.last,
             totalCase: jResult.total,
             detail: {
@@ -1527,6 +1553,28 @@ export default class SolutionService {
     } finally {
       await this.delSolutionJudgeStatus(solutionId);
     }
+  }
+
+  async sendToJudgeQueue(
+    judgeInfoId: number,
+    solutionId: ISolutionModel['solutionId'],
+    problemId: ISolutionModel['problemId'],
+    userId: ISolutionModel['userId'],
+    language: string,
+  ) {
+    if (!this.ctx.app.judgerMqProducer) {
+      this.ctx.logger.error('No judger MQ producer');
+      return;
+    }
+    await this.ctx.app.judgerMqProducer?.send({
+      data: this.utils.judger.encodeJudgeQueueMessage(
+        judgeInfoId,
+        solutionId,
+        problemId,
+        userId,
+        language,
+      ),
+    });
   }
 
   /**

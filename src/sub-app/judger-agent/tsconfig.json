@@ -1,5 +1,4 @@
 {
-  "compileOnSave": true,
   "compilerOptions": {
     "declaration": false,
     "emitDecoratorMetadata": true,
@@ -18,10 +17,6 @@
     "target": "ES2018",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "noErrorTruncation": true
   },
   "include": [
@@ -29,9 +24,6 @@
     "test/**/*.ts"
   ],
   "exclude": [
-    "app/public",
-    "app/views",
-    "src/sub-app/**/*",
     "dist",
     "node_modules*",
     "**/*.spec.ts"

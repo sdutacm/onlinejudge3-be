@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { river } from '@/proto/river';
+import { river } from '../proto/river';
 
-const PROTO_PATH = path.join(__dirname, '../../proto/river/river.proto');
+const PROTO_PATH = path.join(__dirname, '../proto/river/river.proto');
 const DEBUG = false;
 
 const log = {

@@ -46,6 +46,24 @@ export function convertOJLanguageToRiver(language: string) {
   }
 }
 
+export function encodeJudgeQueueMessage(
+  judgeInfoId: number,
+  solutionId: ISolutionModel['solutionId'],
+  problemId: ISolutionModel['problemId'],
+  userId: ISolutionModel['userId'],
+  language: string,
+) {
+  return Buffer.from(
+    JSON.stringify({
+      judgeInfoId,
+      solutionId,
+      problemId,
+      userId,
+      language,
+    }),
+  );
+}
+
 /**
  * 编码评测状态。
  * @param solutionId

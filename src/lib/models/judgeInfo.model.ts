@@ -52,6 +52,29 @@ export default class JudgeInfoModel extends Model<JudgeInfoModel> implements IJu
   @AllowNull(false)
   @Default(0)
   @Column({
+    type: DataType.INTEGER,
+  })
+  result: number;
+
+  @AllowNull(false)
+  @Default(0)
+  @Column({
+    field: 'take_time',
+    type: DataType.INTEGER,
+  })
+  time: number;
+
+  @AllowNull(false)
+  @Default(0)
+  @Column({
+    field: 'take_memory',
+    type: DataType.INTEGER,
+  })
+  memory: number;
+
+  @AllowNull(false)
+  @Default(0)
+  @Column({
     field: 'last_case',
     type: DataType.INTEGER,
   })
@@ -89,12 +112,19 @@ export default class JudgeInfoModel extends Model<JudgeInfoModel> implements IJu
     }
   }
 
-  @AllowNull(false)
+  @AllowNull(true)
+  @Column({
+    field: 'created_at',
+    type: DataType.DATE,
+  })
+  createdAt: Date;
+
+  @AllowNull(true)
   @Column({
     field: 'finished_at',
     type: DataType.DATE,
   })
-  finishedAt: Date;
+  finishedAt: Date | null;
 }
 
 export type TJudgeInfoModel = typeof JudgeInfoModel;

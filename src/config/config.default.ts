@@ -12,6 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
 
+  config.container = {
+    ignore: 'sub-app/**', // ignore path in midway auto scan
+  };
+
   config.keys = appInfo.name;
 
   // add your config here
@@ -34,8 +38,8 @@ export default (appInfo: EggAppInfo) => {
   };
 
   config.bodyParser = {
-    formLimit: '1mb',
-    jsonLimit: '1mb',
+    formLimit: '4mb',
+    jsonLimit: '4mb',
   };
 
   config.multipart = {
@@ -63,6 +67,14 @@ export default (appInfo: EggAppInfo) => {
       password: null,
       db: 0,
     },
+  };
+
+  config.pulsar = {
+    enable: false,
+    serviceUrl: 'pulsar://127.0.0.1:6650',
+    tenant: 'public',
+    namespace: 'oj',
+    apiBase: 'http://127.0.0.1:8080',
   };
 
   // config.io = {
