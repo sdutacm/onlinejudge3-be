@@ -10,11 +10,13 @@ import {
   IGetUserAcceptedProblemsResp,
   IGetUserSubmittedProblemsReq,
   IGetUserSubmittedProblemsResp,
+  IGetJudgeQueueStatsResp,
 } from '@/common/contracts/stat';
 import { CStatService } from './stat.service';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { IUserModel } from '../user/user.interface';
 import { IMStatUserAcceptedProblems, IMStatUserSubmittedProblems } from './stat.interface';
+import sha1 from 'crypto-js/sha1';
 
 @provide()
 @controller('/')
@@ -110,5 +112,23 @@ export default class StatController {
       _updateEvery: runInfo?._updateEvery || -1,
       _updatedAt: runInfo?._updatedAt || -1,
     };
+  }
+
+  /**
+   * 获取当前评测队列统计数据。
+   */
+  @route()
+  async [routesBe.getJudgeQueueStats.i](ctx: Context): Promise<IGetJudgeQueueStatsResp> {
+    const res = (await this.service.getJudgeQueueStats()) || {
+      running: 0,
+      waiting: 0,
+      queueSize: 0,
+      deadQueueSize: 0,
+      workers: [],
+    };
+    res.workers.forEach((w) => {
+      w.id = sha1(w.id).toString().slice(0, 8);
+    });
+    return res;
   }
 }

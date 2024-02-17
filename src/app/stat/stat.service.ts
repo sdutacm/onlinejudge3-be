@@ -12,11 +12,19 @@ import {
   IMStatUserSubmittedProblems,
   IMStatServiceGetUASPRunInfoRes,
   IMStatUASPRunInfo,
+  IMStatJudgeQueue,
 } from './stat.interface';
 import { CUserService } from '../user/user.service';
 import { IUserModel } from '../user/user.interface';
+import Axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import { IPulsarConfig } from '@/config/config.interface';
+import { IJudgerConfig } from '@/config/judger.config';
+import { EStatJudgeQueueWorkerStatus } from '@/common/enums';
 
 export type CStatService = StatService;
+
+const pulsarApiHttpAgent = new http.Agent({ keepAlive: true });
 
 @provide()
 export default class StatService {
@@ -37,6 +45,23 @@ export default class StatService {
 
   @config()
   redisKey: IRedisKeyConfig;
+
+  @config('pulsar')
+  pulsarConfig: IPulsarConfig;
+
+  @config('judger')
+  judgerConfig: IJudgerConfig;
+
+  axiosPulsarApiInstance?: AxiosInstance;
+
+  constructor(@config('pulsar') pulsarConfig: IPulsarConfig) {
+    pulsarConfig.enable &&
+      (this.axiosPulsarApiInstance = Axios.create({
+        baseURL: pulsarConfig.apiBase,
+        httpAgent: pulsarApiHttpAgent,
+        timeout: 5000,
+      }));
+  }
 
   /**
    * 获取分时段用户 AC 数排名。
@@ -102,5 +127,48 @@ export default class StatService {
    */
   async getUASPRunInfo(): Promise<IMStatServiceGetUASPRunInfoRes> {
     return this.ctx.helper.redisGet<IMStatUASPRunInfo>(this.redisKey.userASProblemsStatsRunInfo);
+  }
+
+  async getJudgeQueueStats(): Promise<IMStatJudgeQueue | null> {
+    const cache = await this.ctx.helper.redisGet<IMStatJudgeQueue>(this.redisKey.judgeQueueStats);
+    if (cache) {
+      return cache;
+    }
+    if (!this.axiosPulsarApiInstance) {
+      return null;
+    }
+    const [jRes, dRes] = await Promise.all([
+      await this.axiosPulsarApiInstance.get(
+        `/admin/v2/persistent/${this.pulsarConfig.tenant}/${this.pulsarConfig.namespace}/${this.judgerConfig.mqJudgeQueueTopic}/stats`,
+      ),
+      await this.axiosPulsarApiInstance.get(
+        `/admin/v2/persistent/${this.pulsarConfig.tenant}/${this.pulsarConfig.namespace}/${this.judgerConfig.mqJudgeDeadQueueTopic}/stats`,
+      ),
+    ]);
+    const jSub = jRes.data.subscriptions?.[this.judgerConfig.mqJudgeQueueSubscription];
+    const dSub = dRes.data.subscriptions?.[this.judgerConfig.mqJudgeDeadQueueSubscription];
+    if (!jSub) {
+      this.ctx.logger.error('Pulsar judge queue subscription not found');
+      return null;
+    }
+    if (!dSub) {
+      this.ctx.logger.error('Pulsar judge dead queue subscription not found');
+      return null;
+    }
+    const stats: IMStatJudgeQueue = {
+      running: jSub.unackedMessages,
+      waiting: jSub.msgBacklog - jSub.unackedMessages,
+      queueSize: jSub.msgBacklog,
+      deadQueueSize: dSub.msgBacklog,
+      workers: jSub.consumers.map((c: any) => ({
+        id: c.consumerName,
+        status:
+          c.unackedMessages > 0
+            ? EStatJudgeQueueWorkerStatus.judging
+            : EStatJudgeQueueWorkerStatus.idle,
+      })),
+    };
+    await this.ctx.helper.redisSet(this.redisKey.judgeQueueStats, [], stats, 1);
+    return stats;
   }
 }

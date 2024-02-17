@@ -21,6 +21,9 @@ const judgerConfig = {
   socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge',
   socketBridgeEmitAuthKey: '',
   mqJudgeQueueTopic: 'judge-queue',
+  mqJudgeQueueSubscription: 'judge-subscription',
+  mqJudgeDeadQueueTopic: 'judge-dead-queue',
+  mqJudgeDeadQueueSubscription: 'judge-dead-subscription',
 };
 
 export default judgerConfig;

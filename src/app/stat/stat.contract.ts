@@ -162,6 +162,29 @@ const statContract = {
     additionalProperties: false,
     required: ['stats', 'truncated', '_updateEvery', '_updatedAt'],
   } as defContract.ContractSchema,
+
+  getJudgeQueueStatsResp: {
+    properties: {
+      running: { type: 'number' },
+      waiting: { type: 'number' },
+      queueSize: { type: 'number' },
+      deadQueueSize: { type: 'number' },
+      workers: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'number' },
+          },
+          additionalProperties: false,
+          required: ['id', 'status'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['running', 'waiting', 'queueSize', 'deadQueueSize', 'workers'],
+  } as defContract.ContractSchema,
 };
 
 export type IStatContract = typeof statContract;

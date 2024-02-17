@@ -480,14 +480,7 @@ export default class SolutionController {
     const newId = await this.service.create(data);
     const judgeInfoId = await this.service.createJudgeInfo(newId, { result: ESolutionResult.RPD });
     await this.service.update(newId, { judgeInfoId });
-    this.service.sendToJudgeQueue(
-      judgeInfoId,
-      newId,
-      problemId,
-      sess.userId,
-      language,
-      problem.spj,
-    );
+    this.service.sendToJudgeQueue(judgeInfoId, newId, problemId, sess.userId, language);
     // this.service.judge({
     //   judgeInfoId,
     //   solutionId: newId,
@@ -528,43 +521,64 @@ export default class SolutionController {
     const data = ctx.request.body as IRejudgeSolutionReq;
     const hasPermission = ctx.helper.checkPerms(EPerm.RejudgeSolution);
     const solutionWithIds = await this.service.findAllSolutionWithIds(data);
-    const solutionIds = solutionWithIds
-      .filter((sln) => {
-        if (hasPermission) {
-          return true;
-        } else if (
-          sln.competitionId &&
-          ctx.helper.checkCompetitionRole(sln.competitionId, [
-            ECompetitionUserRole.admin,
-            ECompetitionUserRole.participant,
-            ECompetitionUserRole.judge,
-          ])
-        ) {
-          this.competitionLogService.log(sln.competitionId, ECompetitionLogAction.RejudgeSolution, {
-            solutionId: sln.solutionId,
-            problemId: sln.problemId,
-            userId: sln.userId,
-          });
-          return true;
-        }
-        return false;
-      })
-      .map((sln) => sln.solutionId);
-    if (solutionIds.length === 0) {
+    const solutions = solutionWithIds.filter((sln) => {
+      if (hasPermission) {
+        return true;
+      } else if (
+        sln.competitionId &&
+        ctx.helper.checkCompetitionRole(sln.competitionId, [
+          ECompetitionUserRole.admin,
+          ECompetitionUserRole.participant,
+          ECompetitionUserRole.judge,
+        ])
+      ) {
+        this.competitionLogService.log(sln.competitionId, ECompetitionLogAction.RejudgeSolution, {
+          solutionId: sln.solutionId,
+          problemId: sln.problemId,
+          userId: sln.userId,
+        });
+        return true;
+      }
+      return false;
+    });
+    if (solutions.length === 0) {
       throw new ReqError(Codes.SOLUTION_NO_SOLUTION_REJUDGED);
     }
-    ctx.logger.info('[rejudgeSolution] to rejudge num:', solutionIds.length);
-    const chunks = this.lodash.chunk(solutionIds, 200);
-    for (const chunk of chunks) {
-      await this.service.batchUpdateBySolutionIds(chunk, {
-        result: ESolutionResult.RPD,
+
+    ctx.logger.info('[rejudgeSolution] to rejudge num:', solutions.length);
+    const judgeInfoIdMap = new Map<number, number>();
+    const rejudgeTask = async (s: typeof solutions[0]) => {
+      const newJudgeInfoId = await this.service.createJudgeInfo(s.solutionId);
+      await this.service.update(s.solutionId, {
+        judgeInfoId: newJudgeInfoId,
       });
-      const clearCacheChunks = this.lodash.chunk(chunk, 20);
-      for (const clearCacheChunk of clearCacheChunks) {
-        await Promise.all(
-          clearCacheChunk.map((solutionId) => this.service.clearDetailCache(solutionId)),
-        );
-      }
+      judgeInfoIdMap.set(s.solutionId, newJudgeInfoId);
+    };
+    const chunks = this.lodash.chunk(solutions, 100);
+    for (const chunk of chunks) {
+      await Promise.all(chunk.map((s) => rejudgeTask(s)));
+      // await this.service.batchUpdateBySolutionIds(chunk, {
+      //   result: ESolutionResult.RPD,
+      // });
+      // const clearCacheChunks = this.lodash.chunk(chunk, 20);
+      // for (const clearCacheChunk of clearCacheChunks) {
+      //   await Promise.all(
+      //     clearCacheChunk.map((solutionId) => this.service.clearDetailCache(solutionId)),
+      //   );
+      // }
+    }
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map((s) =>
+          this.service.sendToJudgeQueue(
+            judgeInfoIdMap.get(s.solutionId)!,
+            s.solutionId,
+            s.problemId,
+            s.userId,
+            this.utils.judger.convertOJLanguageToRiver(s.language) || '',
+          ),
+        ),
+      );
     }
   }
 }

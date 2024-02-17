@@ -3,18 +3,20 @@ import { IRedisKeyConfig } from './redisKey.config';
 import { IDurationsConfig } from './durations.config';
 import { IJudgerConfig } from './judger.config';
 
+export interface IPulsarConfig {
+  enable: boolean;
+  serviceUrl: string;
+  tenant: string;
+  namespace: string;
+  apiBase: string;
+}
+
 export interface IAppConfig extends PowerPartial<EggAppConfig> {
   siteName: string;
   siteTeam: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
-  pulsar: {
-    enable: boolean;
-    serviceUrl: string;
-    tenant: string;
-    namespace: string;
-    apiBase: string;
-  };
+  pulsar: IPulsarConfig;
   judger: IJudgerConfig;
   staticPath: {
     useCloud?: 'cos';

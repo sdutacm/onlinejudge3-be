@@ -8,6 +8,8 @@ import { IPulsarClient, getPulsarClient, IPulsarConsumer } from './utils/pulsar'
 import { JudgerService } from './services';
 
 const EXIT_TIMEOUT = 5000;
+const MAX_ACTIVE_TIMEOUT = 300 * 1000;
+const MAX_TIMEOUT_COUNT = 5;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,8 +34,9 @@ class JudgerAgent {
       receiverQueueSize: 0,
       nAckRedeliverTimeoutMs: 30 * 1000,
       deadLetterPolicy: {
-        maxRedeliverCount: 2,
+        maxRedeliverCount: 1,
         deadLetterTopic: `persistent://${config.pulsar.tenant}/${config.pulsar.namespace}/${config.pulsar.judgeDeadTopic}`,
+        initialSubscriptionName: config.pulsar.judgeDeadSubscription,
       },
     });
     process.on('SIGINT', this.handleExit.bind(this));
@@ -82,7 +85,13 @@ class JudgerAgent {
   public async run() {
     logger.info('Ready to receive messages');
 
+    let timeoutCount = 0;
     while (true) {
+      if (timeoutCount >= MAX_TIMEOUT_COUNT) {
+        logger.error('Exceeded max timeout count, exit after 36s...'); // nAckRedeliverTimeoutMs + 6s
+        await sleep(36000);
+        process.exit(1);
+      }
       let msg = null;
       const start = Date.now();
       try {
@@ -91,15 +100,32 @@ class JudgerAgent {
         // logic
         try {
           const options = decodeJudgeQueueMessage(msg.getData());
-          logger.info(`Received:`, msg.getMessageId().toString(), options);
+          logger.info(`Received:`, msg.getMessageId().toString(), JSON.stringify(options));
 
           const judgerService = new JudgerService(this.dbPool, this.redis);
-          await judgerService.judge({
+          const jsPromise = judgerService.judge({
             judgeInfoId: options.judgeInfoId,
             solutionId: options.solutionId,
             problemId: options.problemId,
             language: options.language,
             userId: options.userId,
+          });
+
+          const abortReason = `Aborted: No active event within ${MAX_ACTIVE_TIMEOUT}ms`;
+          let activeTimeout = setTimeout(() => {
+            jsPromise.cancel(abortReason);
+            timeoutCount++;
+          }, MAX_ACTIVE_TIMEOUT);
+          judgerService.on('active', () => {
+            clearTimeout(activeTimeout);
+            activeTimeout = setTimeout(() => {
+              jsPromise.cancel(abortReason);
+              timeoutCount++;
+            }, MAX_ACTIVE_TIMEOUT);
+          });
+
+          await jsPromise.finally(() => {
+            clearTimeout(activeTimeout);
           });
           await this.consumer.acknowledge(msg);
           logger.info(`Acked ${msg.getMessageId().toString()} in ${Date.now() - start}ms`);

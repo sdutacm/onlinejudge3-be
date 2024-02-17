@@ -1,8 +1,8 @@
 const apps = [
   {
-    name: 'onlinejudge3-be-judger-agent',
+    name: 'onlinejudge3-judger-agent',
     script: `./dist/index.js`,
-    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    // log_date_format: 'YYYY-MM-DD HH:mm:ss',
     exec_mode: 'cluster',
     max_memory_restart: '256M',
     instances: parseInt(process.env.WORKERS, 10) || 1,

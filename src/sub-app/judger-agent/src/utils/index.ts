@@ -16,8 +16,7 @@ export function decodeJudgeQueueMessage(
     !(obj.judgeInfoId > 0) ||
     !(obj.solutionId > 0) ||
     !(obj.problemId > 0) ||
-    !(obj.userId > 0) ||
-    !obj.language
+    !(obj.userId > 0)
   ) {
     throw new Error('Invalid message: ' + str);
   }

@@ -329,7 +329,7 @@ export interface IMSolutionServiceFindAllSolutionWithIdsOpt {
 
 export type IMSolutionServiceFindAllSolutionWithIdsRes = Pick<
   ISolutionModel,
-  'solutionId' | 'problemId' | 'userId' | 'contestId' | 'competitionId'
+  'solutionId' | 'problemId' | 'userId' | 'contestId' | 'competitionId' | 'judgeInfoId' | 'language'
 >[];
 //#endregion
 

@@ -44,6 +44,7 @@ const redisKey = {
   userAcceptedProblemsStats: 'stats:user_accepted_problems:%d',
   userSubmittedProblemsStats: 'stats:user_submitted_problems:%d',
   activeUserCountStats: 'stats:active_user_count',
+  judgeQueueStats: 'stats:judge_queue',
   contestRankData: 'temp:contest_rank_data:%d',
   competitionRankData: 'temp:competition_rank_data:%d',
   judgeStatus: 'status:judge_status:%d', // {judgeInfoId}

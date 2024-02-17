@@ -49,6 +49,7 @@ const config = {
     judgeQueueTopic: 'judge-queue',
     judgeDeadTopic: 'judge-dead-queue',
     judgeSubscription: 'judge-subscription',
+    judgeDeadSubscription: 'judge-dead-subscription',
   },
   judgerGrpc: {
     address: judgerGrpcAddress,

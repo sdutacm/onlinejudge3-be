@@ -1231,7 +1231,15 @@ export default class SolutionService {
     }
     const res = await this.model
       .findAll({
-        attributes: ['solutionId', 'problemId', 'userId', 'contestId', 'competitionId'],
+        attributes: [
+          'solutionId',
+          'problemId',
+          'userId',
+          'contestId',
+          'competitionId',
+          'judgeInfoId',
+          'language',
+        ],
         where: options as any,
         order: [[this.meta.pk, 'ASC']],
       })
@@ -1242,6 +1250,8 @@ export default class SolutionService {
           userId: d.userId,
           contestId: d.contestId,
           competitionId: d.competitionId,
+          judgeInfoId: d.judgeInfoId,
+          language: d.language,
         })),
       );
     return res;
@@ -1327,7 +1337,7 @@ export default class SolutionService {
    */
   async createJudgeInfo(
     solutionId: ISolutionModel['solutionId'],
-    data: IMSolutionServiceCreateJudgeInfoOpt,
+    data: IMSolutionServiceCreateJudgeInfoOpt = {},
   ): Promise<number> {
     const res = await this.judgeInfoModel.create({
       solutionId,

@@ -40,7 +40,9 @@ export function convertOJLanguageToRiver(language: string) {
     case 'python3':
       return 'Python';
     case 'c#':
-      return null;
+      return 'C#';
+    case 'go':
+      return 'Go';
     default:
       return language;
   }

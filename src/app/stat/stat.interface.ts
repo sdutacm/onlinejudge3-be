@@ -1,6 +1,7 @@
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { ISolutionModel } from '../solution/solution.interface';
+import { EStatJudgeQueueWorkerStatus } from '@/common/enums';
 
 export type IMStatRelativeUser = Pick<
   IUserModel,
@@ -57,6 +58,17 @@ export interface IMStatUASPRunInfo {
   lastSolutionId: ISolutionModel['solutionId'];
   _updateEvery: number; // ms
   _updatedAt: number; // timestamp ms
+}
+
+export interface IMStatJudgeQueue {
+  running: number;
+  waiting: number;
+  queueSize: number;
+  deadQueueSize: number;
+  workers: {
+    id: string;
+    status: EStatJudgeQueueWorkerStatus;
+  }[];
 }
 
 //#region service.getUserACRank

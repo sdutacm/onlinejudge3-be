@@ -32,6 +32,7 @@ class AppBootHook implements IBoot {
       });
       this.app.judgerMqProducer = await this.app.pulsarClient.createProducer({
         topic: `persistent://${this.app.config.pulsar.tenant}/${this.app.config.pulsar.namespace}/${this.app.config.judger.mqJudgeQueueTopic}`,
+        batchingEnabled: false,
       });
     }
 
