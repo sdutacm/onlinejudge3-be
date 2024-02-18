@@ -27,9 +27,15 @@ class AppBootHook implements IBoot {
     });
 
     if (this.app.config.pulsar.enable) {
-      this.app.pulsarClient = new Pulsar.Client({
+      const pulsarOptions: Pulsar.ClientConfig = {
         serviceUrl: this.app.config.pulsar.serviceUrl,
-      });
+      };
+      if (this.app.config.pulsar.authenticationToken) {
+        pulsarOptions.authentication = new Pulsar.AuthenticationToken({
+          token: this.app.config.pulsar.authenticationToken,
+        });
+      }
+      this.app.pulsarClient = new Pulsar.Client(pulsarOptions);
       this.app.judgerMqProducer = await this.app.pulsarClient.createProducer({
         topic: `persistent://${this.app.config.pulsar.tenant}/${this.app.config.pulsar.namespace}/${this.app.config.judger.mqJudgeQueueTopic}`,
         batchingEnabled: false,

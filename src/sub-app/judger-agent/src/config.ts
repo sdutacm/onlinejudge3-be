@@ -14,6 +14,7 @@ const pulsarPort = parseInt(process.env.PULSAR_PORT!, 10) || 6650;
 const pulsarApiBase = process.env.PULSAR_API_BASE || 'http://127.0.0.1:8080';
 const pulsarTenant = process.env.PULSAR_TENANT || 'public';
 const pulsarNamespace = process.env.PULSAR_NAMESPACE || 'oj';
+const pulsarAuthToken = process.env.PULSAR_AUTH_TOKEN || '';
 
 const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
 const judgerSocketBridgeBaseUrl =
@@ -43,6 +44,7 @@ const config = {
   },
   pulsar: {
     serviceUrl: `pulsar://${pulsarHost}:${pulsarPort}`,
+    authenticationToken: pulsarAuthToken,
     apiBase: pulsarApiBase,
     tenant: pulsarTenant,
     namespace: pulsarNamespace,

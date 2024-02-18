@@ -59,6 +59,11 @@ export default class StatService {
       (this.axiosPulsarApiInstance = Axios.create({
         baseURL: pulsarConfig.apiBase,
         httpAgent: pulsarApiHttpAgent,
+        headers: pulsarConfig.authenticationToken
+          ? {
+              Authorization: `Bearer ${pulsarConfig.authenticationToken}`,
+            }
+          : undefined,
         timeout: 5000,
       }));
   }

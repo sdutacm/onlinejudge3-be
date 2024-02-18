@@ -8,6 +8,7 @@ export interface IPulsarConfig {
   serviceUrl: string;
   tenant: string;
   namespace: string;
+  authenticationToken?: string;
   apiBase: string;
 }
 
