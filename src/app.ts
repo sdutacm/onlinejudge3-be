@@ -51,8 +51,8 @@ class AppBootHook implements IBoot {
     await DB.closeDB();
 
     if (this.app.config.pulsar.enable) {
-      await this.app.judgerMqProducer.flush();
-      await this.app.judgerMqProducer.close();
+      await this.app.judgerMqProducer?.flush();
+      await this.app.judgerMqProducer?.close();
       await this.app.pulsarClient.close();
     }
 
