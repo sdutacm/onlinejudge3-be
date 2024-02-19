@@ -11,7 +11,7 @@
     "outDir": "dist",
     "pretty": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "strictPropertyInitialization": false,
     "stripInternal": true,
     "target": "ES2018",
@@ -20,8 +20,7 @@
     "noErrorTruncation": true
   },
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "dist",

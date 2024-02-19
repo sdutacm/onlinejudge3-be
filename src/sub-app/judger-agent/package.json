@@ -26,7 +26,8 @@
     "pulsar-client": "^1.10.0"
   },
   "devDependencies": {
-    "@types/node": "^16.11.7",
+    "@types/lodash": "4.14.151",
+    "@types/node": "16.11.7",
     "copyfiles": "^2.4.1",
     "cross-env": "^6.0.0",
     "ts-node": "^8.3.0",
