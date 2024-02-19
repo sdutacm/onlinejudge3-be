@@ -62,6 +62,10 @@ export default (appInfo: EggAppInfo) => {
 
   //#endregion
 
+  //#region pulsar
+
+  //#endregion
+
   //#region staticPath
 
   //#endregion
