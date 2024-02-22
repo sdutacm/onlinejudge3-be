@@ -105,6 +105,7 @@ CREATE TABLE `competition` (
   `created_by` int(11) NOT NULL COMMENT 'creator user id',
   `hidden` tinyint(1) NOT NULL DEFAULT 0,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `sp_config` mediumtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'JSON format object',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`competition_id`)
@@ -130,7 +131,7 @@ DROP TABLE IF EXISTS `competition_log`;
 CREATE TABLE `competition_log` (
   `competition_log_id` int(11) NOT NULL AUTO_INCREMENT,
   `competition_id` int(11) NOT NULL,
-  `action` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `action` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `op_user_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
   `problem_id` int(11) DEFAULT NULL,
@@ -142,7 +143,9 @@ CREATE TABLE `competition_log` (
   PRIMARY KEY (`competition_log_id`),
   KEY `competition_log_competition_id_index` (`competition_id`),
   KEY `competition_log_action_index` (`action`),
-  KEY `competition_log_competition_id_op_user_id_index` (`competition_id`,`op_user_id`)
+  KEY `competition_log_competition_id_op_user_id_index` (`competition_id`,`op_user_id`),
+  KEY `competition_log_competition_id_action_index` (`competition_id`,`action`),
+  KEY `competition_log_competition_id_op_user_id_action_index` (`competition_id`,`op_user_id`,`action`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -195,6 +198,7 @@ CREATE TABLE `competition_problem` (
   `competition_id` int(11) NOT NULL,
   `problem_id` int(11) NOT NULL,
   `index` tinyint(1) NOT NULL,
+  `alias` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'alias for short',
   `balloon_alias` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `balloon_color` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `score` int(11) DEFAULT NULL,
@@ -600,12 +604,15 @@ DROP TABLE IF EXISTS `judge_info`;
 CREATE TABLE `judge_info` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `solution_id` int(11) NOT NULL,
+  `result` int(11) NOT NULL DEFAULT 0,
+  `take_time` int(11) NOT NULL DEFAULT 0,
+  `take_memory` int(11) NOT NULL DEFAULT 0,
   `last_case` int(11) NOT NULL DEFAULT 0,
   `total_case` int(11) NOT NULL DEFAULT 0,
   `detail` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `finished_at` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `judge_info_solution_id_uindex` (`solution_id`)
+  `created_at` datetime DEFAULT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -878,6 +885,7 @@ CREATE TABLE `solution` (
   `user_id` int(11) DEFAULT NULL,
   `contest_id` int(11) DEFAULT -1,
   `competition_id` int(11) DEFAULT NULL,
+  `judge_info_id` int(11) DEFAULT NULL,
   `take_time` int(11) NOT NULL,
   `take_memory` int(11) NOT NULL,
   `pro_lang` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -1090,4 +1098,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-12-17 11:45:07
+-- Dump completed on 2024-02-22  1:14:42

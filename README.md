@@ -55,7 +55,7 @@ npm run dev-socket-io
 - [onlinejudge3-scripts](https://github.com/sdutacm/onlinejudge3-scripts)：外部脚本，目前包含 Rating 计算脚本，clone 后在 `src/config/config.default.ts` 配置其路径
 - [onlinejudge3-schedules](https://github.com/sdutacm/onlinejudge3-schedules)：定时任务，部分离线数据需要定时任务计算
 - [judger-data_test](https://github.com/sdutacm/judger-data_test)：开发用评测数据，clone 后在 `src/config/judger.config.ts` 配置其路径
-- [river](https://github.com/MeiK2333/river)：强大、安全、领先的评测机，本地部署后在 `src/config/judger.config.ts` 配置 `address`
+- [river](https://github.com/MeiK2333/river)：强大、安全、领先的评测机，本地部署后在 `src/config/judger.config.ts` 配置 `address`。要在本地启动的 OJ 上提交评测，还需要安装消息队列 Pulsar 并在 `src/config/config.default.ts` 中配置相关连接参数（推荐运行 `misc/` 下的 pulsar 初始化脚本，这样多数配置无需修改）
 
 ## 部署
 
