@@ -237,6 +237,13 @@ export default class SolutionModel extends Model<SolutionModel> implements ISolu
   @Column({
     type: DataType.BOOLEAN,
   })
+  finished: boolean;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    type: DataType.BOOLEAN,
+  })
   shared: boolean;
 
   @AllowNull(false)
