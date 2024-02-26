@@ -140,7 +140,7 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
   @Default('')
   @Column({
     field: 'last_ip',
-    type: DataType.STRING(20),
+    type: DataType.STRING(40),
   })
   lastIp: string;
 

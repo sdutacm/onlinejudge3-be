@@ -222,7 +222,7 @@ export default class SolutionModel extends Model<SolutionModel> implements ISolu
   @Default('')
   @Column({
     field: 'sub_ip',
-    type: DataType.STRING(20),
+    type: DataType.STRING(40),
   })
   @Index({
     name: 'solution_id',
