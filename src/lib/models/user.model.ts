@@ -145,6 +145,7 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
   lastIp: string;
 
   @AllowNull(true)
+  @Default(null)
   @Column({
     field: 'last_time',
     type: DataType.DATE,
