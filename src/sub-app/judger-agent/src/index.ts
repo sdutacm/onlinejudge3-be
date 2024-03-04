@@ -1,8 +1,7 @@
-import os from 'os';
 import { omit } from 'lodash';
 import config from './config';
 import { judgerAgentLogger as logger } from './utils/logger';
-import { decodeJudgeQueueMessage } from './utils';
+import { decodeJudgeQueueMessage, getSystemInfo } from './utils';
 import { IRedisClient, getRedisClient } from './utils/redis';
 import { IDbPool, getPool } from './utils/mysql';
 import { IPulsarClient, getPulsarClient, IPulsarConsumer } from './utils/pulsar';
@@ -22,6 +21,7 @@ class JudgerAgent {
   private pulsarClient: IPulsarClient;
   private consumer: IPulsarConsumer;
   private closing = false;
+  private sysInfo = getSystemInfo();
 
   public async beforeReady() {
     this.dbPool = getPool();
@@ -29,7 +29,15 @@ class JudgerAgent {
     this.pulsarClient = getPulsarClient();
     this.consumer = await this.pulsarClient.subscribe({
       topic: `persistent://${config.pulsar.tenant}/${config.pulsar.namespace}/${config.pulsar.judgeQueueTopic}`,
-      consumerName: `judger-agent-${os.hostname()}-${process.pid}`,
+      consumerName:
+        'JudgerAgent-' +
+        [
+          this.sysInfo.hostname,
+          process.pid,
+          this.sysInfo.platform,
+          this.sysInfo.arch,
+          this.sysInfo.cpuModel,
+        ].join('|'),
       subscription: config.pulsar.judgeSubscription,
       subscriptionType: 'Shared',
       receiverQueueSize: 0,

@@ -1,8 +1,10 @@
+import os from 'os';
 import { omit } from 'lodash';
 import { decompress } from 'fflate';
 import { river } from '../proto/river';
 import { judge } from '../proto/judge';
 import { ESolutionResult } from '../enums';
+import { execSync } from 'child_process';
 
 export async function decodeJudgeQueueMessage(
   message: Buffer,
@@ -94,5 +96,23 @@ export function convertRiverResultToOJ(result: number) {
       return ESolutionResult.SE;
     default:
       return result;
+  }
+}
+
+export function getSystemInfo() {
+  const platform = os.platform();
+  switch (platform) {
+    case 'linux':
+    case 'darwin':
+      return {
+        platform,
+        arch: execSync('arch').toString().trim(),
+        cpuModel: os.cpus()[0].model,
+        cpuNum: os.cpus().length,
+        memory: os.totalmem(),
+        hostname: os.hostname(),
+      };
+    default:
+      throw new Error(`Unsupported platform: ${platform}`);
   }
 }

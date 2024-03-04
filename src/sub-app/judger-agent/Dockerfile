@@ -2,6 +2,8 @@ FROM node:16.15.0
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y vim && rm -rf /var/lib/apt/lists/*
+
 COPY package.json ./
 COPY package-lock.json ./
 COPY .npmrc ./
