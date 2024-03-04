@@ -165,13 +165,23 @@ export default class StatService {
       waiting: jSub.msgBacklog - jSub.unackedMessages,
       queueSize: jSub.msgBacklog,
       deadQueueSize: dSub.msgBacklog,
-      workers: jSub.consumers.map((c: any) => ({
-        id: c.consumerName,
-        status:
-          c.unackedMessages > 0
-            ? EStatJudgeQueueWorkerStatus.judging
-            : EStatJudgeQueueWorkerStatus.idle,
-      })),
+      workers: jSub.consumers.map((c: any) => {
+        const consumerName = c.consumerName || '';
+        const [hostname, , platform, arch, cpuModel] = (
+          consumerName.split('JudgerAgent-')[1] || ''
+        ).split('|');
+        return {
+          id: c.consumerName,
+          platform,
+          arch,
+          cpuModel,
+          group: hostname,
+          status:
+            c.unackedMessages > 0
+              ? EStatJudgeQueueWorkerStatus.judging
+              : EStatJudgeQueueWorkerStatus.idle,
+        };
+      }),
     };
     await this.ctx.helper.redisSet(this.redisKey.judgeQueueStats, [], stats, 1);
     return stats;

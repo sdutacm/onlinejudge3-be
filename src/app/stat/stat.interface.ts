@@ -67,6 +67,10 @@ export interface IMStatJudgeQueue {
   deadQueueSize: number;
   workers: {
     id: string;
+    platform: string;
+    arch: string;
+    cpuModel: string;
+    group: string;
     status: EStatJudgeQueueWorkerStatus;
   }[];
 }
