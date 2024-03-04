@@ -137,6 +137,7 @@ const problemContract = {
       spj: { type: 'boolean' },
       display: { type: 'boolean' },
       spConfig: { type: 'object' },
+      revision: { type: 'number' },
       tags: {
         type: 'array',
         items: {
@@ -177,6 +178,7 @@ const problemContract = {
       'spj',
       'display',
       'spConfig',
+      'revision',
       'tags',
       'createdAt',
       'updatedAt',

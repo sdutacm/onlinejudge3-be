@@ -1,0 +1,7 @@
+version: 1
+checker:
+  preset: testlib
+  prerequisites:
+   - g++
+  init: g++ spj.cpp -std=c++11 -O2 -o spj
+  file: spj

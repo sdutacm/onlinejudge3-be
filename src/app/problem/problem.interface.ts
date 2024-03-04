@@ -28,6 +28,7 @@ export interface IProblemModel {
   spj: boolean;
   difficulty: number;
   spConfig: any;
+  revision: number;
   createdAt: Date;
   updatedAt: Date | null;
 }
@@ -69,6 +70,7 @@ export type TMProblemDetailFields = Extract<
   | 'spj'
   | 'display'
   | 'spConfig'
+  | 'revision'
 >;
 
 export type IMProblemLite = Pick<IProblemModel, TMProblemLiteFields> & {

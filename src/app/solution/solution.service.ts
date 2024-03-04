@@ -72,6 +72,7 @@ import { IJudgerConfig } from '@/config/judger.config';
 import { CCompetitionService } from '../competition/competition.service';
 import { ICompetitionModel } from '../competition/competition.interface';
 import { IUserModel } from '../user/user.interface';
+import { IProblemModel } from '../problem/problem.interface';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -118,6 +119,7 @@ const solutionDetailFields: Array<TMSolutionDetailFields> = [
 const solutionJudgeInfoFields: Array<TMJudgeInfoFields> = [
   'judgeInfoId',
   'solutionId',
+  'problemRevision',
   'result',
   'time',
   'memory',
@@ -504,6 +506,7 @@ export default class SolutionService {
           memoryLimit: relativeProblem?.memoryLimit,
           spj: relativeProblem?.spj,
           spConfig: relativeProblem?.spConfig,
+          revision: relativeProblem?.revision,
         },
         user,
         contest: relativeContest
@@ -1337,7 +1340,7 @@ export default class SolutionService {
    */
   async createJudgeInfo(
     solutionId: ISolutionModel['solutionId'],
-    data: IMSolutionServiceCreateJudgeInfoOpt = {},
+    data: IMSolutionServiceCreateJudgeInfoOpt,
   ): Promise<number> {
     const res = await this.judgeInfoModel.create({
       solutionId,
@@ -1565,26 +1568,26 @@ export default class SolutionService {
     }
   }
 
-  async sendToJudgeQueue(
-    judgeInfoId: number,
-    solutionId: ISolutionModel['solutionId'],
-    problemId: ISolutionModel['problemId'],
-    userId: ISolutionModel['userId'],
-    language: string,
-  ) {
+  async sendToJudgeQueue(options: {
+    judgeInfoId: number;
+    solutionId: ISolutionModel['solutionId'];
+    problem: Required<
+      Pick<IProblemModel, 'problemId' | 'revision' | 'timeLimit' | 'memoryLimit' | 'spj'>
+    >;
+    user: Required<Pick<IUserModel, 'userId'>>;
+    competition?: Required<Pick<ICompetitionModel, 'competitionId'>>;
+    language: string;
+    code: string;
+  }) {
     if (!this.ctx.app.judgerMqProducer) {
       this.ctx.logger.error('No judger MQ producer');
       return;
     }
-    await this.ctx.app.judgerMqProducer?.send({
-      data: this.utils.judger.encodeJudgeQueueMessage(
-        judgeInfoId,
-        solutionId,
-        problemId,
-        userId,
-        language,
-      ),
+    const encoded = await this.utils.judger.encodeJudgeQueueMessage(options);
+    const messageId = await this.ctx.app.judgerMqProducer?.send({
+      data: Buffer.from(encoded),
     });
+    return messageId;
   }
 
   /**
@@ -1621,5 +1624,21 @@ export default class SolutionService {
     });
     // @ts-ignore
     return res.map((d) => d.get({ plain: true }) as IMSolutionServiceLiteSolution);
+  }
+
+  async batchGetSolutionCodeBySolutionIds(solutionIds: ISolutionModel['solutionId'][]) {
+    const res = await this.codeModel.findAll({
+      attributes: ['solutionId', 'code'],
+      where: {
+        solutionId: {
+          [Op.in]: solutionIds,
+        },
+      },
+    });
+    const codeMap: Record<number, string> = {};
+    res.forEach((d) => {
+      codeMap[d.solutionId] = d.code;
+    });
+    return codeMap;
   }
 }

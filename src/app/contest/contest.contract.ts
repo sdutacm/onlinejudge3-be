@@ -310,6 +310,7 @@ const contestContract = {
             spj: { type: 'boolean' },
             display: { type: 'boolean' },
             spConfig: { type: 'object' },
+            revision: { type: 'number' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: {
               anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],

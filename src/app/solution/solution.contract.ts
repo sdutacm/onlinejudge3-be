@@ -60,6 +60,7 @@ const solutionContract = {
                 memoryLimit: { type: 'number' },
                 spj: { type: 'boolean' },
                 spConfig: { type: 'object' },
+                revision: { type: 'number' },
               },
               additionalProperties: false,
               required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
@@ -148,6 +149,7 @@ const solutionContract = {
             judgeInfo: {
               type: 'object',
               properties: {
+                problemRevision: { anyOf: [{ type: 'number' }, { type: 'null' }] },
                 result: { type: 'number' },
                 time: { type: 'number' },
                 memory: { type: 'number' },
@@ -237,6 +239,7 @@ const solutionContract = {
           memoryLimit: { type: 'number' },
           spj: { type: 'boolean' },
           spConfig: { type: 'object' },
+          revision: { type: 'number' },
         },
         additionalProperties: false,
         required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
@@ -327,6 +330,7 @@ const solutionContract = {
       judgeInfo: {
         type: 'object',
         properties: {
+          problemRevision: { anyOf: [{ type: 'number' }, { type: 'null' }] },
           result: { type: 'number' },
           time: { type: 'number' },
           memory: { type: 'number' },
@@ -422,6 +426,7 @@ const solutionContract = {
             memoryLimit: { type: 'number' },
             spj: { type: 'boolean' },
             spConfig: { type: 'object' },
+            revision: { type: 'number' },
           },
           additionalProperties: false,
           required: ['problemId', 'timeLimit', 'memoryLimit', 'spj'],
@@ -512,6 +517,7 @@ const solutionContract = {
         judgeInfo: {
           type: 'object',
           properties: {
+            problemRevision: { anyOf: [{ type: 'number' }, { type: 'null' }] },
             result: { type: 'number' },
             time: { type: 'number' },
             memory: { type: 'number' },
@@ -598,7 +604,7 @@ const solutionContract = {
       competitionId: { type: 'number', minimum: 1 },
       language: { type: 'string' },
       codeFormat: { type: 'string', enum: ['raw', 'base64'] },
-      code: { type: 'string', minLength: 1, maxLength: 10 * 1024 * 1024 },
+      code: { type: 'string', minLength: 1 },
     },
     additionalProperties: false,
     required: ['problemId', 'language', 'code'],
@@ -623,6 +629,14 @@ const solutionContract = {
     },
     additionalProperties: false,
     required: [],
+  } as defContract.ContractSchema,
+
+  rejudgeSolutionResp: {
+    properties: {
+      rejudgedCount: { type: 'number' },
+    },
+    additionalProperties: false,
+    required: ['rejudgedCount'],
   } as defContract.ContractSchema,
 };
 

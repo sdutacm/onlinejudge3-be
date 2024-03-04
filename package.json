@@ -26,7 +26,8 @@
     "restart:bak": "npm run stop:bak && npm run start:bak",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest",
     "gen:contract": "cross-env IS_EXEC_FROM_PKG_SCRIPT=1 ts-node -T scripts/contract2ts.ts",
-    "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js && copyfiles --verbose src/proto/river/**/* src/sub-app/judger-agent/"
+    "gen:proto:river": "pbjs -t static-module -w commonjs -r river --force-long -o src/proto/river/index.js src/proto/river/river.proto && pbts -o src/proto/river/index.d.ts src/proto/river/index.js && copyfiles --verbose src/proto/river/**/* src/sub-app/judger-agent/",
+    "gen:proto:judge": "pbjs -t static-module -w commonjs -r judge --force-long -o src/proto/judge/index.js src/proto/judge/judge.proto && pbts -o src/proto/judge/index.d.ts src/proto/judge/index.js && copyfiles --verbose src/proto/judge/**/* src/sub-app/judger-agent/"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.6.7",
@@ -46,6 +47,7 @@
     "egg-sequelize": "^5.2.1",
     "egg-session-redis": "^2.1.0",
     "egg-socket.io": "^4.1.6",
+    "fflate": "^0.8.2",
     "fs-extra": "^9.0.0",
     "http": "0.0.1-security",
     "ip": "^1.1.5",

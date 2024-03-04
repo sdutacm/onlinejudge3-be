@@ -1,31 +1,74 @@
+import { omit } from 'lodash';
+import { decompress } from 'fflate';
 import { river } from '../proto/river';
+import { judge } from '../proto/judge';
 import { ESolutionResult } from '../enums';
 
-export function decodeJudgeQueueMessage(
+export async function decodeJudgeQueueMessage(
   message: Buffer,
-): {
+): Promise<{
   judgeInfoId: number;
   solutionId: number;
-  problemId: number;
-  userId: number;
+  problem: {
+    problemId: number;
+    revision: number;
+    timeLimit: number;
+    memoryLimit: number;
+    spj: boolean;
+  };
+  user: {
+    userId: number;
+  };
+  competition?: {
+    competitionId: number;
+  };
   language: string;
-} {
-  const str = message.toString();
-  const obj = JSON.parse(str);
+  code: string;
+}> {
+  const obj = judge.JudgeTask.decode(message);
   if (
     !(obj.judgeInfoId > 0) ||
     !(obj.solutionId > 0) ||
-    !(obj.problemId > 0) ||
-    !(obj.userId > 0)
+    !(obj.problem?.problemId > 0) ||
+    !(obj.user?.userId > 0)
   ) {
-    throw new Error('Invalid message: ' + str);
+    throw new Error(
+      `Invalid message: ${JSON.stringify({
+        ...omit(obj, 'code'),
+        code: `bytes(${obj.code.length})`,
+      })}`,
+    );
   }
+
+  const decompressPromise = (data: Uint8Array, encoding: judge.CodeEncodingEnum) =>
+    new Promise<string>((resolve, reject) => {
+      switch (encoding) {
+        case judge.CodeEncodingEnum.UTF8: {
+          resolve(new TextDecoder().decode(data));
+          break;
+        }
+        case judge.CodeEncodingEnum.GZIP: {
+          decompress(data, (err, result) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(new TextDecoder().decode(result));
+            }
+          });
+          break;
+        }
+        default:
+          reject(new Error(`Invalid encoding ${obj.codeEncoding}`));
+      }
+    });
+  const code = await decompressPromise(obj.code, obj.codeEncoding);
   return {
     judgeInfoId: obj.judgeInfoId,
     solutionId: obj.solutionId,
-    problemId: obj.problemId,
-    userId: obj.userId,
+    problem: obj.problem as Required<judge.IProblem>,
+    user: obj.user as Required<judge.IUser>,
     language: obj.language,
+    code,
   };
 }
 

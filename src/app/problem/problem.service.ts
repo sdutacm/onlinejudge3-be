@@ -23,7 +23,7 @@ import {
   IMProblemServiceUpdateRes,
 } from './problem.interface';
 import { TTagModel } from '@/lib/models/tag.model';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { TProblemTagModel } from '@/lib/models/problemTag.model';
@@ -63,6 +63,7 @@ const problemDetailFields: Array<TMProblemDetailFields> = [
   'spj',
   'display',
   'spConfig',
+  'revision',
 ];
 
 @provide()
@@ -398,11 +399,17 @@ export default class ProblemService {
     problemId: IProblemModel['problemId'],
     data: IMProblemServiceUpdateOpt,
   ): Promise<IMProblemServiceUpdateRes> {
-    const res = await this.model.update(data, {
-      where: {
-        problemId,
+    const res = await this.model.update(
+      {
+        ...data,
+        revision: literal('revision + 1'),
       },
-    });
+      {
+        where: {
+          problemId,
+        },
+      },
+    );
     return res[0] > 0;
   }
 

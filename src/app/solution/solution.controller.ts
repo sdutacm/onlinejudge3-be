@@ -20,6 +20,7 @@ import {
   ISubmitSolutionResp,
   IBatchGetSolutionDetailReq,
   IRejudgeSolutionReq,
+  IRejudgeSolutionResp,
 } from '@/common/contracts/solution';
 import { IMSolutionDetail, IMSolutionServiceCreateOpt, ISolutionModel } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
@@ -353,6 +354,10 @@ export default class SolutionController {
         throw new ReqError(Codes.GENERAL_REQUEST_PARAMS_ERROR);
       }
     }
+    const MAX_CODE_LENGTH = 1 * 1024 * 1024; // 1 MiB
+    if (code.length > MAX_CODE_LENGTH) {
+      throw new ReqError(Codes.SOLUTION_CODE_TOO_LONG);
+    }
     const judgerLanguage = this.utils.judger.convertOJLanguageToRiver(language);
     const languageConfig = await this.judgerService.getLanguageConfig();
     if (!languageConfig.find((l) => l.language === judgerLanguage)) {
@@ -478,9 +483,27 @@ export default class SolutionController {
       code,
     };
     const newId = await this.service.create(data);
-    const judgeInfoId = await this.service.createJudgeInfo(newId, { result: ESolutionResult.RPD });
+    const judgeInfoId = await this.service.createJudgeInfo(newId, {
+      problemRevision: problem.revision,
+      result: ESolutionResult.RPD,
+    });
     await this.service.update(newId, { judgeInfoId });
-    this.service.sendToJudgeQueue(judgeInfoId, newId, problemId, sess.userId, language);
+    this.service.sendToJudgeQueue({
+      judgeInfoId,
+      solutionId: newId,
+      problem: {
+        problemId,
+        revision: problem.revision,
+        timeLimit: problem.timeLimit,
+        memoryLimit: problem.memoryLimit,
+        spj: problem.spj,
+      },
+      user: {
+        userId: sess.userId,
+      },
+      language,
+      code,
+    });
     // this.service.judge({
     //   judgeInfoId,
     //   solutionId: newId,
@@ -517,11 +540,11 @@ export default class SolutionController {
   }
 
   @route()
-  async [routesBe.rejudgeSolution.i](ctx: Context) {
+  async [routesBe.rejudgeSolution.i](ctx: Context): Promise<IRejudgeSolutionResp> {
     const data = ctx.request.body as IRejudgeSolutionReq;
     const hasPermission = ctx.helper.checkPerms(EPerm.RejudgeSolution);
     const solutionWithIds = await this.service.findAllSolutionWithIds(data);
-    const solutions = solutionWithIds.filter((sln) => {
+    let solutions = solutionWithIds.filter((sln) => {
       if (hasPermission) {
         return true;
       } else if (
@@ -541,6 +564,13 @@ export default class SolutionController {
       }
       return false;
     });
+
+    const problemIds = this.lodash.uniq(solutions.map((s) => s.problemId));
+    const relativeProblems = await this.problemService.getRelative(problemIds, null);
+    solutions = solutions.filter((s) => {
+      return !!relativeProblems[s.problemId];
+    });
+
     if (solutions.length === 0) {
       throw new ReqError(Codes.SOLUTION_NO_SOLUTION_REJUDGED);
     }
@@ -548,15 +578,26 @@ export default class SolutionController {
     ctx.logger.info('[rejudgeSolution] to rejudge num:', solutions.length);
     const judgeInfoIdMap = new Map<number, number>();
     const rejudgeTask = async (s: typeof solutions[0]) => {
-      const newJudgeInfoId = await this.service.createJudgeInfo(s.solutionId);
+      const newJudgeInfoId = await this.service.createJudgeInfo(s.solutionId, {
+        problemRevision: relativeProblems[s.problemId]!.revision,
+        result: ESolutionResult.RPD,
+      });
       await this.service.update(s.solutionId, {
         judgeInfoId: newJudgeInfoId,
       });
       judgeInfoIdMap.set(s.solutionId, newJudgeInfoId);
     };
+    const codeMap = new Map<number, string>();
     const chunks = this.lodash.chunk(solutions, 100);
     for (const chunk of chunks) {
       await Promise.all(chunk.map((s) => rejudgeTask(s)));
+      const batchCodeRes = await this.service.batchGetSolutionCodeBySolutionIds(
+        chunk.map((s) => s.solutionId),
+      );
+      Object.keys(batchCodeRes).forEach((k) => {
+        // @ts-ignore
+        codeMap.set(+k, batchCodeRes[k]);
+      });
       // await this.service.batchUpdateBySolutionIds(chunk, {
       //   result: ESolutionResult.RPD,
       // });
@@ -570,15 +611,28 @@ export default class SolutionController {
     for (const chunk of chunks) {
       await Promise.all(
         chunk.map((s) =>
-          this.service.sendToJudgeQueue(
-            judgeInfoIdMap.get(s.solutionId)!,
-            s.solutionId,
-            s.problemId,
-            s.userId,
-            this.utils.judger.convertOJLanguageToRiver(s.language) || '',
-          ),
+          this.service.sendToJudgeQueue({
+            judgeInfoId: judgeInfoIdMap.get(s.solutionId)!,
+            solutionId: s.solutionId,
+            problem: {
+              problemId: s.problemId,
+              revision: relativeProblems[s.problemId]!.revision,
+              timeLimit: relativeProblems[s.problemId]!.timeLimit,
+              memoryLimit: relativeProblems[s.problemId]!.memoryLimit,
+              spj: relativeProblems[s.problemId]!.spj,
+            },
+            user: {
+              userId: s.userId,
+            },
+            language: this.utils.judger.convertOJLanguageToRiver(s.language) || '',
+            code: codeMap.get(s.solutionId) || '',
+          }),
         ),
       );
     }
+
+    return {
+      rejudgedCount: solutions.length,
+    };
   }
 }

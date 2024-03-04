@@ -40,9 +40,18 @@ export interface IJudgeStatus {
 export interface IJudgeOptions {
   judgeInfoId: number;
   solutionId: number;
-  problemId: number;
-  userId: number;
+  problem: {
+    problemId: number;
+    revision: number;
+    timeLimit: number;
+    memoryLimit: number;
+    spj: boolean;
+  };
+  user: {
+    userId: number;
+  };
   language: string;
+  code: string;
 }
 
 class InvalidSolutionError extends Error {
@@ -161,8 +170,11 @@ export class JudgerService extends EventEmitter {
 
       const logic = async () => {
         this.onAbortPoint();
-        const { judgeInfoId, solutionId, problemId, userId, language } = options;
-        let judgeType = river.JudgeType.Standard;
+        const { judgeInfoId, solutionId, problem, user, language, code } = options;
+        const { revision, problemId, timeLimit, memoryLimit, spj = false } = problem;
+        const { userId } = user;
+        const judgeType = spj ? river.JudgeType.Special : river.JudgeType.Standard;
+        const loggerPrefix = `[${judgeInfoId}/${solutionId}/${problemId}/${revision}]`;
 
         logger.info('Acquire DB connection');
         const connection = await this.dbPool.getConnection();
@@ -170,13 +182,16 @@ export class JudgerService extends EventEmitter {
 
         try {
           const createdAt = Math.floor(Date.now() / 1000);
-          logger.info(`[${judgeInfoId}/${solutionId}/${problemId}/${userId}] start`);
+          logger.info(`${loggerPrefix} start`);
 
           if (!language) {
             throw new InvalidSolutionError(`Invalid language "${options.language}"`);
           }
-          if (!problemId) {
+          if (!problemId || !timeLimit || !memoryLimit) {
             throw new InvalidSolutionError(`No problem specified`);
+          }
+          if (!code) {
+            throw new InvalidSolutionError(`No code`);
           }
           this.onAbortPoint();
 
@@ -191,28 +206,6 @@ export class JudgerService extends EventEmitter {
             );
             return;
           }
-
-          const [codeRes] = await connection.query<any[]>(
-            'SELECT code_content FROM code WHERE solution_id=?',
-            [solutionId],
-          );
-          this.onAbortPoint();
-          const code = codeRes[0]?.code_content as string;
-          if (!code) {
-            throw new InvalidSolutionError(`No code`);
-          }
-
-          const [problemRes] = await connection.query<any[]>(
-            'SELECT time_limit, memory_limit, is_special_judge FROM problem WHERE problem_id=?',
-            [problemId],
-          );
-          this.onAbortPoint();
-          if (!problemRes[0]) {
-            throw new InvalidSolutionError(`No such problem`);
-          }
-          const { time_limit: timeLimit, memory_limit: memoryLimit } = problemRes[0];
-          const isSpj = problemRes[0].is_special_judge === 1;
-          judgeType = isSpj ? river.JudgeType.Special : river.JudgeType.Standard;
 
           await this.setSolutionJudgeStatus(judgeInfoId, {
             hostname: os.hostname(),
@@ -229,9 +222,9 @@ export class JudgerService extends EventEmitter {
           this.onAbortPoint();
           this.emit('active');
 
-          const spjFile = isSpj ? 'spj' : undefined;
+          const spjFile = spj ? 'spj' : undefined;
           logger.info(
-            `[${judgeInfoId}/${solutionId}/${problemId}/${userId}] getJudgeCall`,
+            `${loggerPrefix} getJudgeCall`,
             JSON.stringify({
               problemId,
               language,
@@ -253,15 +246,13 @@ export class JudgerService extends EventEmitter {
             spjFile,
             onStart: () => {
               this.onAbortPoint();
-              logger.info(`[${judgeInfoId}/${solutionId}/${problemId}/${userId}] onStart`);
+              logger.info(`${loggerPrefix} onStart`);
               this.pushJudgeStatus(solutionId, [solutionId, judgeType, ESolutionResult.JG]);
               this.emit('active');
             },
             onJudgeCaseStart: (current, total) => {
               this.onAbortPoint();
-              logger.info(
-                `[${judgeInfoId}/${solutionId}/${problemId}/${userId}] onJudgeCaseStart ${current}/${total}`,
-              );
+              logger.info(`${loggerPrefix} onJudgeCaseStart ${current}/${total}`);
 
               this.setSolutionJudgeStatus(judgeInfoId, {
                 hostname: os.hostname(),
@@ -283,9 +274,7 @@ export class JudgerService extends EventEmitter {
             },
             onJudgeCaseDone: (current, total, res) => {
               this.onAbortPoint();
-              logger.info(
-                `[${judgeInfoId}/${solutionId}/${problemId}/${userId}] onJudgeCaseDone ${current}/${total}`,
-              );
+              logger.info(`${loggerPrefix} onJudgeCaseDone ${current}/${total}`);
               this.emit('active');
               return res.result === river.JudgeResultEnum.Accepted;
             },
@@ -293,10 +282,7 @@ export class JudgerService extends EventEmitter {
 
           const jResult = await call.run();
           this.onAbortPoint();
-          logger.info(
-            `[${judgeInfoId}/${solutionId}/${problemId}/${userId}] done`,
-            JSON.stringify(jResult),
-          );
+          logger.info(`${loggerPrefix} done`, JSON.stringify(jResult));
           this.emit('active');
 
           switch (jResult.type) {
@@ -386,11 +372,17 @@ export class JudgerService extends EventEmitter {
                 this.redis.sadd(config.redisKey.asyncSolutionProblemStatsTasks, `${problemId}`),
                 this.redis.sadd(config.redisKey.asyncSolutionUserStatsTasks, `${userId}`),
               ]);
-              logger.info(`[${judgeInfoId}/${solutionId}/${problemId}/${userId}] Judge all ok`);
+              logger.info(`${loggerPrefix} Judge all ok`);
             }
           }
         } catch (e) {
           const result = ESolutionResult.SE;
+          await connection.query('UPDATE judge_info SET result=?, finished_at=? WHERE id=?', [
+            result,
+            new Date(),
+            judgeInfoId,
+          ]);
+          await this.clearSolutionJudgeInfoCache(judgeInfoId);
           await connection.query(
             'UPDATE solution SET result=? WHERE solution_id=? AND judge_info_id=?',
             [result, solutionId, judgeInfoId],
@@ -398,15 +390,15 @@ export class JudgerService extends EventEmitter {
           await this.clearSolutionCache(solutionId);
           this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
           if (e instanceof InvalidSolutionError) {
-            logger.warn(`[${solutionId}/${problemId}/${userId}]`, e);
+            logger.warn(loggerPrefix, e);
           } else if (e instanceof JudgerSystemError) {
-            logger.error(`[${solutionId}/${problemId}/${userId}]`, e);
+            logger.error(loggerPrefix, e);
             throw e;
           } else if (e instanceof AbortError) {
-            logger.error(`[${solutionId}/${problemId}/${userId}]`, e);
+            logger.error(loggerPrefix, e);
             throw e;
           } else {
-            logger.error(`[${solutionId}/${problemId}/${userId}] Caught error:`, e);
+            logger.error(`${loggerPrefix} Caught error:`, e);
             throw e;
           }
         } finally {

@@ -268,6 +268,13 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
     }
   }
 
+  @AllowNull(false)
+  @Default(1)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  revision: number;
+
   @BelongsToMany(() => TagModel, () => ProblemTagModel)
   tags: Array<TagModel & { ProblemTagModel: ProblemTagModel }>;
 }

@@ -1,4 +1,5 @@
 import os from 'os';
+import { omit } from 'lodash';
 import config from './config';
 import { judgerAgentLogger as logger } from './utils/logger';
 import { decodeJudgeQueueMessage } from './utils';
@@ -99,16 +100,24 @@ class JudgerAgent {
 
         // logic
         try {
-          const options = decodeJudgeQueueMessage(msg.getData());
-          logger.info(`Received:`, msg.getMessageId().toString(), JSON.stringify(options));
+          const options = await decodeJudgeQueueMessage(msg.getData());
+          logger.info(
+            `Received:`,
+            msg.getMessageId().toString(),
+            JSON.stringify({
+              ...omit(options, 'code'),
+              code: `string(${options.code.length})`,
+            }),
+          );
 
           const judgerService = new JudgerService(this.dbPool, this.redis);
           const jsPromise = judgerService.judge({
             judgeInfoId: options.judgeInfoId,
             solutionId: options.solutionId,
-            problemId: options.problemId,
+            problem: options.problem,
+            user: options.user,
             language: options.language,
-            userId: options.userId,
+            code: options.code,
           });
 
           const abortReason = `Aborted: No active event within ${MAX_ACTIVE_TIMEOUT}ms`;

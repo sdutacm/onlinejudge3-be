@@ -39,6 +39,7 @@ interface IJudgeInfoDetail {
 export interface IJudgeInfoModel {
   judgeInfoId: number;
   solutionId: number;
+  problemRevision: number | null;
   result: ESolutionResult;
   time: number;
   memory: number;
@@ -92,6 +93,7 @@ export type TMJudgeInfoFields = Extract<
   TJudgeInfoModelFields,
   | 'judgeInfoId'
   | 'solutionId'
+  | 'problemRevision'
   | 'result'
   | 'time'
   | 'memory'
@@ -104,12 +106,21 @@ export type TMJudgeInfoFields = Extract<
 
 export type IMSolutionJudgeInfo = Pick<
   IJudgeInfoModel,
-  'result' | 'time' | 'memory' | 'lastCase' | 'totalCase' | 'detail' | 'createdAt' | 'finishedAt'
+  | 'problemRevision'
+  | 'result'
+  | 'time'
+  | 'memory'
+  | 'lastCase'
+  | 'totalCase'
+  | 'detail'
+  | 'createdAt'
+  | 'finishedAt'
 >;
 export type IMSolutionJudgeInfoFull = Pick<
   IJudgeInfoModel,
   | 'judgeInfoId'
   | 'solutionId'
+  | 'problemRevision'
   | 'result'
   | 'time'
   | 'memory'
@@ -343,6 +354,7 @@ export type IMSolutionServiceGetPendingSolutionsRes = Array<{
 
 //#region service.createJudgeInfo
 export interface IMSolutionServiceCreateJudgeInfoOpt {
+  problemRevision: IJudgeInfoModel['problemRevision'];
   result?: IJudgeInfoModel['result'];
 }
 //#endregion

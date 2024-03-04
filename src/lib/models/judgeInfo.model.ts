@@ -49,6 +49,13 @@ export default class JudgeInfoModel extends Model<JudgeInfoModel> implements IJu
   })
   solutionId: number;
 
+  @AllowNull(true)
+  @Column({
+    field: 'problem_revision',
+    type: DataType.INTEGER,
+  })
+  problemRevision: number | null;
+
   @AllowNull(false)
   @Default(0)
   @Column({
