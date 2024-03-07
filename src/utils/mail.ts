@@ -56,6 +56,7 @@ export default class MailSender {
       // Timestamp: new Date().toISOString(), // 默认 new Date().toISOString()
       // SignatureNonce: uuid() // 默认 UUID
     };
+    this.logger.info(`Sending mail to ${toAddress} with subject: ${subject}`);
     if (!isProd) {
       console.log(consoleColors.DEBUG('[SingleSendMail]'), '(log only)');
       console.log(consoleColors.INFO(`to:      ${data.ToAddress}`));
@@ -70,6 +71,10 @@ export default class MailSender {
       const res: AxiosResponse<{ EnvId: string; RequestId: string }> = await this.mailer.send(
         data,
         {}, // 传入 axios config 设置代理等
+      );
+      this.logger.info(
+        `Mail sent to ${toAddress} with subject: ${subject}`,
+        JSON.stringify(res.data),
       );
       return res.data;
     } catch (e) {
