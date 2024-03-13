@@ -106,7 +106,7 @@ export default class JudgerController {
     if (!updateRes) {
       throw new ReqError(Codes.JUDGER_INVALID_DATA);
     }
-    await this.service.commitAndPushDataGit(problemId, name, email, commitMessage);
+    await this.service.commitAndPushDataGit(problemId, name!, email!, commitMessage!);
     // update problem revision
     this.problemService.update(problemId, {});
     this.problemService.clearDetailCache(problemId);

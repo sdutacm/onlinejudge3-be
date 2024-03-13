@@ -77,7 +77,7 @@ const judgerContract = {
       // data: { type: 'zip' },
     },
     additionalProperties: true,
-    required: ['problemId', 'name', 'email', 'commitMessage'],
+    required: ['problemId'],
   } as defContract.ContractSchema,
 
   getLanguageConfigResp: {
