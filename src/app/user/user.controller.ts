@@ -57,7 +57,7 @@ import { CPromiseQueue } from '@/utils/libs/promise-queue';
 // import { CContentChecker } from '@/utils/content-check';
 import { CAuthService } from '../auth/auth.service';
 import { EPerm } from '@/common/configs/perm.config';
-import { CCosUploader } from '@/utils/cos';
+import { CCosHelper } from '@/utils/cos';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -109,7 +109,7 @@ export default class UserController {
   PromiseQueue: CPromiseQueue;
 
   @inject()
-  cosUploader: CCosUploader;
+  cosHelper: CCosHelper;
 
   // @inject()
   // contentChecker: CContentChecker;
@@ -656,11 +656,11 @@ export default class UserController {
     switch (this.staticPath.useCloud) {
       case 'cos': {
         await Promise.all([
-          this.cosUploader.uploadFile(
+          this.cosHelper.uploadFile(
             this.fs.createReadStream(image.filepath),
             path.join(this.staticPath.avatar, fullFileName),
           ),
-          this.cosUploader.uploadFile(
+          this.cosHelper.uploadFile(
             await sImageInstance.toBuffer(),
             path.join(this.staticPath.avatar, sFileName),
           ),
@@ -762,15 +762,15 @@ export default class UserController {
     switch (this.staticPath.useCloud) {
       case 'cos': {
         await Promise.all([
-          this.cosUploader.uploadFile(
+          this.cosHelper.uploadFile(
             this.fs.createReadStream(image.filepath),
             path.join(this.staticPath.bannerImage, fullFileName),
           ),
-          this.cosUploader.uploadFile(
+          this.cosHelper.uploadFile(
             await sImageInstance.toBuffer(),
             path.join(this.staticPath.bannerImage, sFileName),
           ),
-          this.cosUploader.uploadFile(
+          this.cosHelper.uploadFile(
             await minImageInstance.toBuffer(),
             path.join(this.staticPath.bannerImage, minFileName),
           ),

@@ -10,7 +10,7 @@ import path from 'path';
 import { IFs } from '@/utils/libs/fs-extra';
 import { IUploadMediaResp, IUploadAssetResp } from '@/common/contracts/misc';
 import { EPerm } from '@/common/configs/perm.config';
-import { CCosUploader } from '@/utils/cos';
+import { CCosHelper } from '@/utils/cos';
 
 @provide()
 @controller('/')
@@ -31,7 +31,7 @@ export default class MiscController {
   uploadLimit: IAppConfig['uploadLimit'];
 
   @inject()
-  cosUploader: CCosUploader;
+  cosHelper: CCosHelper;
 
   /**
    * 上传媒体文件。
@@ -67,7 +67,7 @@ export default class MiscController {
     const saveName = `${ctx.session.userId}_${this.utils.misc.randomString({ length: 16 })}.${ext}`;
     switch (this.staticPath.useCloud) {
       case 'cos': {
-        await this.cosUploader.uploadFile(
+        await this.cosHelper.uploadFile(
           this.fs.createReadStream(image.filepath),
           path.join(this.staticPath.media, saveName),
         );
@@ -119,7 +119,7 @@ export default class MiscController {
     }
     switch (this.staticPath.useCloud) {
       case 'cos': {
-        await this.cosUploader.uploadFile(
+        await this.cosHelper.uploadFile(
           this.fs.createReadStream(image.filepath),
           path.join(this.staticPath.asset, saveName),
         );

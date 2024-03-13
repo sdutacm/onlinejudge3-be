@@ -13,6 +13,8 @@ import { CAdmZip } from '@/utils/libs/adm-zip';
 import { ISimpleGit, SimpleGit } from '@/utils/libs/simple-git';
 import { IJudgerConfig } from '@/config/judger.config';
 import { Judger } from '@/lib/services/judger';
+import { IAppConfig } from '@/config/config.interface';
+import { CCosHelper } from '@/utils/cos';
 
 export type CJudgerService = JudgerService;
 
@@ -53,15 +55,36 @@ export default class JudgerService {
 
   git: SimpleGit;
 
+  @inject()
+  cosHelper: CCosHelper;
+
+  judgerCosConfig?: {
+    secretId: string;
+    secretKey: string;
+    region: string;
+    bucket: string;
+  };
+
   constructor(
     @config('judger')
     judgerConfig: IJudgerConfig,
+
+    @config('tencentCloud')
+    tencentCloudConfig: IAppConfig['tencentCloud'],
 
     @inject()
     simpleGit: ISimpleGit,
   ) {
     if (judgerConfig.dataUsingGit) {
       this.git = simpleGit(judgerConfig.dataPath);
+    }
+    if (judgerConfig.cos && tencentCloudConfig?.cos) {
+      this.judgerCosConfig = {
+        secretId: judgerConfig.cos.secretId || tencentCloudConfig.cos.secretId,
+        secretKey: judgerConfig.cos.secretKey || tencentCloudConfig.cos.secretKey,
+        region: judgerConfig.cos.region,
+        bucket: judgerConfig.cos.bucket,
+      };
     }
   }
 
@@ -184,6 +207,7 @@ export default class JudgerService {
       throw new Error(`InvalidJudgerDataPathError: ${this.judgerConfig.dataPath}, ${problemId}`);
     }
     const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
+    this.ctx.logger.info('Extracting data zip to', targetPath);
     const zip = new this.AdmZip(filePath);
     const zipEntries = zip.getEntries();
     if (zipEntries.length === 0) {
@@ -192,6 +216,26 @@ export default class JudgerService {
     await this.fs.remove(targetPath);
     await this.fs.ensureDir(targetPath);
     zip.extractAllTo(targetPath, true);
+    this.ctx.logger.info('Extracted data zip');
+    if (this.judgerCosConfig) {
+      this.ctx.logger.info('Uploading data release to COS');
+      const cosDirBase = `judger/data-release/${problemId}`;
+      const remoteFileName = `${Math.floor(Date.now() / 1000)}_${this.utils.misc.randomString({
+        length: 6,
+        type: 'numeric',
+      })}.zip`;
+      await this.cosHelper.uploadFile(
+        this.fs.createReadStream(filePath),
+        `${cosDirBase}/${remoteFileName}`,
+        { bucket: this.judgerCosConfig.bucket, region: this.judgerCosConfig.region },
+      );
+      await this.cosHelper.uploadFile(
+        Buffer.from(new TextEncoder().encode(remoteFileName)),
+        `${cosDirBase}/latest.txt`,
+        { bucket: this.judgerCosConfig.bucket, region: this.judgerCosConfig.region },
+      );
+      this.ctx.logger.info('Uploaded data release to COS. Latest release:', remoteFileName);
+    }
     return true;
   }
 

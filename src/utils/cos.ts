@@ -3,8 +3,13 @@ import { provide, config } from 'midway';
 import { IAppConfig } from '@/config/config.interface';
 import COS from 'cos-nodejs-sdk-v5';
 
+export interface ICosCommonOptions {
+  bucket?: string;
+  region?: string;
+}
+
 @provide()
-export default class CosUploader {
+export default class CosHelper {
   private config: IAppConfig['tencentCloud']['cos'];
   private cos?: COS;
 
@@ -18,7 +23,11 @@ export default class CosUploader {
     }
   }
 
-  public async uploadFile(file: Buffer | fs.ReadStream, remoteFilePath: string): Promise<void> {
+  public async uploadFile(
+    file: Buffer | fs.ReadStream,
+    remoteFilePath: string,
+    options: ICosCommonOptions = {},
+  ): Promise<void> {
     if (!this.cos) {
       throw new Error('COS is not configured');
     }
@@ -26,12 +35,55 @@ export default class CosUploader {
       throw new Error('Invalid COS upload parameters');
     }
     await this.cos.putObject({
-      Bucket: this.config!.bucket,
-      Region: this.config!.region,
+      Bucket: options.bucket || this.config!.bucket,
+      Region: options.region || this.config!.region,
       Key: remoteFilePath,
       Body: file,
     });
   }
+
+  public async downloadFile(
+    remoteFilePath: string,
+    options: ICosCommonOptions = {},
+  ): Promise<Buffer> {
+    if (!this.cos) {
+      throw new Error('COS is not configured');
+    }
+    if (!remoteFilePath) {
+      throw new Error('Invalid COS download parameters');
+    }
+    const res = await this.cos.getObject({
+      Bucket: options.bucket || this.config!.bucket,
+      Region: options.region || this.config!.region,
+      Key: remoteFilePath,
+    });
+    return res.Body;
+  }
+
+  public async isFileExist(
+    remoteFilePath: string,
+    options: ICosCommonOptions = {},
+  ): Promise<boolean> {
+    if (!this.cos) {
+      throw new Error('COS is not configured');
+    }
+    if (!remoteFilePath) {
+      throw new Error('Invalid COS file exist check parameters');
+    }
+    try {
+      await this.cos.headObject({
+        Bucket: options.bucket || this.config!.bucket,
+        Region: options.region || this.config!.region,
+        Key: remoteFilePath,
+      });
+      return true;
+    } catch (e) {
+      if (e.statusCode === 404) {
+        return false;
+      }
+      throw e;
+    }
+  }
 }
 
-export type CCosUploader = CosUploader;
+export type CCosHelper = CosHelper;

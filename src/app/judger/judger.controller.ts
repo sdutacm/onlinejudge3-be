@@ -15,6 +15,9 @@ import {
 import { Codes } from '@/common/codes';
 import { ReqError } from '@/lib/global/error';
 import { EPerm } from '@/common/configs/perm.config';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import { CContestService } from '../contest/contest.service';
+import { CCompetitionService } from '../competition/competition.service';
 
 @provide()
 @controller('/')
@@ -29,10 +32,19 @@ export default class JudgerController {
   problemService: CProblemService;
 
   @inject()
+  contestService: CContestService;
+
+  @inject()
+  competitionService: CCompetitionService;
+
+  @inject()
   utils: IUtils;
 
   @inject()
   lodash: ILodash;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @authPerm(EPerm.ReadProblemData)
@@ -89,11 +101,27 @@ export default class JudgerController {
       ctx.logger.error('Invalid judger data data mime:', data.mime);
       throw new ReqError(Codes.JUDGER_UNSUPPORTED_DATA_FORMAT);
     }
+    // TODO check zip file to prevent zip bomb or directory traversal attack
     const updateRes = await this.service.updateData(problemId, data.filepath);
     if (!updateRes) {
       throw new ReqError(Codes.JUDGER_INVALID_DATA);
     }
     await this.service.commitAndPushDataGit(problemId, name, email, commitMessage);
+    // update problem revision
+    this.problemService.update(problemId, {});
+    this.problemService.clearDetailCache(problemId);
+    const pq = new this.PromiseQueue(20, Infinity);
+    const contestIds = await this.contestService.getAllContestIdsByProblemId(problemId);
+    const competitionIds = await this.competitionService.getAllCompetitionIdsByProblemId(problemId);
+    const queueTasks = [
+      ...contestIds.map((contestId) =>
+        pq.add(() => this.contestService.clearContestProblemsCache(contestId)),
+      ),
+      ...competitionIds.map((competitionId) =>
+        pq.add(() => this.competitionService.clearCompetitionProblemsCache(competitionId)),
+      ),
+    ];
+    await Promise.all(queueTasks);
   }
 
   @route()
