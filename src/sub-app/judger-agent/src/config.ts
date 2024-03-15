@@ -21,6 +21,23 @@ const judgerSocketBridgeBaseUrl =
   process.env.JUDGER_SOCKET_BRIDGE_BASE_URL || 'http://127.0.0.1:7002/socketBridge';
 const judgerSocketBridgeEmitAuthKey = process.env.JUDGER_SOCKET_BRIDGE_EMIT_AUTH_KEY || '';
 
+const cdn = {
+  provider: 'TencentCloud',
+  /**
+   * @example 'https://example.cdn.com'
+   */
+  cdnOrigin: process.env.CDN_DATA_BASE_URL,
+  auth: {
+    useAuth: process.env.CDN_TENCENT_USE_AUTH === '1',
+    mode: 'TypeD',
+    algorithm: process.env.CDN_TENCENT_AUTH_ALGORITHM || 'sha256',
+    pkey: process.env.CDN_TENCENT_AUTH_PKEY,
+    signParam: process.env.CDN_TENCENT_AUTH_SIGN_PARAM || 'sign',
+    timestampParam: process.env.CDN_TENCENT_AUTH_TIMESTAMP_PARAM || 't',
+    timestampRadix: parseInt(process.env.CDN_TENCENT_AUTH_TIMESTAMP_RADIX || '10', 10),
+  },
+};
+
 const config = {
   mysql: {
     host: mysqlHost,
@@ -60,6 +77,7 @@ const config = {
     baseUrl: judgerSocketBridgeBaseUrl,
     emitAuthKey: judgerSocketBridgeEmitAuthKey,
   },
+  cdn,
 };
 
 export default config;
