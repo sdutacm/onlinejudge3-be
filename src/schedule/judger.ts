@@ -23,68 +23,68 @@ const isProd = process.env.NODE_ENV === 'production';
 //   type: 'worker',
 //   immediate: true,
 // })
-export class JudgerCron implements CommonSchedule {
-  @inject()
-  solutionService: CSolutionService;
+// export class JudgerCron implements CommonSchedule {
+//   @inject()
+//   solutionService: CSolutionService;
 
-  @logger('scheduleLogger')
-  logger: EggLogger;
+//   @logger('scheduleLogger')
+//   logger: EggLogger;
 
-  async exec(ctx: Context) {
-    const judgerLogger = ctx.getLogger('judgerLogger');
-    const workerPids = await getWorkerPids(ctx.app);
-    this.logger.info('[judger] alive worker pids:', workerPids);
-    const pendingSolutions = await this.solutionService.getPendingSolutions(
-      MAX_FETCH_PENDING_SOLUTIONS,
-    );
-    const toJudgeSolutionIds: ISolutionModel['solutionId'][] = [];
-    const toResetJudgeStatusSolutionIds: ISolutionModel['solutionId'][] = [];
-    for (const solution of pendingSolutions) {
-      if (toJudgeSolutionIds.length >= MAX_JUDGE_PENDING_SOLUTIONS) {
-        break;
-      }
-      const { solutionId } = solution;
-      const judgeStatus = await this.solutionService.getSolutionJudgeStatus(solutionId);
-      const isCurrentHostButDiedJudging =
-        !!judgeStatus &&
-        os.hostname() === judgeStatus.hostname &&
-        !workerPids.includes(judgeStatus.pid);
-      const isTimeoutDiedJudging =
-        !!judgeStatus &&
-        Math.floor(Date.now() / 1000) - (judgeStatus.updatedAt || 0) >= MAX_GUESS_DIED_TIMEOUT;
-      const canAccept = !judgeStatus || isCurrentHostButDiedJudging || isTimeoutDiedJudging;
-      if (!canAccept) {
-        continue;
-      }
-      if (judgeStatus) {
-        toResetJudgeStatusSolutionIds.push(solutionId);
-      }
-      toJudgeSolutionIds.push(solutionId);
-    }
-    const relativeSolutions = await this.solutionService.getRelative(toJudgeSolutionIds);
-    const toJudgeSolutions: IMSolutionServiceJudgeOpt[] = toJudgeSolutionIds.map((solutionId) => {
-      const solution = relativeSolutions[solutionId];
-      return {
-        judgeInfoId: 0,
-        solutionId,
-        problemId: solution.problem?.problemId,
-        timeLimit: solution.problem?.timeLimit,
-        memoryLimit: solution.problem?.memoryLimit,
-        userId: solution.user?.userId,
-        language: solution.language,
-        code: solution.code,
-        spj: solution.problem?.spj,
-      };
-    });
-    // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);
-    this.logger.info('[judger] to judge solutionIds:', toJudgeSolutionIds);
-    toJudgeSolutionIds.length > 0 &&
-      judgerLogger.info('[judger] scheduled to judge solutionIds:', toJudgeSolutionIds);
-    await Promise.all(
-      toResetJudgeStatusSolutionIds.map((solutionId) =>
-        this.solutionService.delSolutionJudgeStatus(solutionId),
-      ),
-    );
-    toJudgeSolutions.forEach((s) => this.solutionService.judge(s));
-  }
-}
+//   async exec(ctx: Context) {
+//     const judgerLogger = ctx.getLogger('judgerLogger');
+//     const workerPids = await getWorkerPids(ctx.app);
+//     this.logger.info('[judger] alive worker pids:', workerPids);
+//     const pendingSolutions = await this.solutionService.getPendingSolutions(
+//       MAX_FETCH_PENDING_SOLUTIONS,
+//     );
+//     const toJudgeSolutionIds: ISolutionModel['solutionId'][] = [];
+//     const toResetJudgeStatusSolutionIds: ISolutionModel['solutionId'][] = [];
+//     for (const solution of pendingSolutions) {
+//       if (toJudgeSolutionIds.length >= MAX_JUDGE_PENDING_SOLUTIONS) {
+//         break;
+//       }
+//       const { solutionId } = solution;
+//       const judgeStatus = await this.solutionService.getSolutionJudgeStatus(solutionId);
+//       const isCurrentHostButDiedJudging =
+//         !!judgeStatus &&
+//         os.hostname() === judgeStatus.hostname &&
+//         !workerPids.includes(judgeStatus.pid);
+//       const isTimeoutDiedJudging =
+//         !!judgeStatus &&
+//         Math.floor(Date.now() / 1000) - (judgeStatus.updatedAt || 0) >= MAX_GUESS_DIED_TIMEOUT;
+//       const canAccept = !judgeStatus || isCurrentHostButDiedJudging || isTimeoutDiedJudging;
+//       if (!canAccept) {
+//         continue;
+//       }
+//       if (judgeStatus) {
+//         toResetJudgeStatusSolutionIds.push(solutionId);
+//       }
+//       toJudgeSolutionIds.push(solutionId);
+//     }
+//     const relativeSolutions = await this.solutionService.getRelative(toJudgeSolutionIds);
+//     const toJudgeSolutions: IMSolutionServiceJudgeOpt[] = toJudgeSolutionIds.map((solutionId) => {
+//       const solution = relativeSolutions[solutionId];
+//       return {
+//         judgeInfoId: 0,
+//         solutionId,
+//         problemId: solution.problem?.problemId,
+//         timeLimit: solution.problem?.timeLimit,
+//         memoryLimit: solution.problem?.memoryLimit,
+//         userId: solution.user?.userId,
+//         language: solution.language,
+//         code: solution.code,
+//         spj: solution.problem?.spj,
+//       };
+//     });
+//     // console.log(`(pid: ${process.pid}) toJudgeSolutionIds`, toJudgeSolutionIds);
+//     this.logger.info('[judger] to judge solutionIds:', toJudgeSolutionIds);
+//     toJudgeSolutionIds.length > 0 &&
+//       judgerLogger.info('[judger] scheduled to judge solutionIds:', toJudgeSolutionIds);
+//     await Promise.all(
+//       toResetJudgeStatusSolutionIds.map((solutionId) =>
+//         this.solutionService.delSolutionJudgeStatus(solutionId),
+//       ),
+//     );
+//     toJudgeSolutions.forEach((s) => this.solutionService.judge(s));
+//   }
+// }
