@@ -15,6 +15,7 @@ export interface IPulsarConfig {
 export interface IAppConfig extends PowerPartial<EggAppConfig> {
   siteName: string;
   siteTeam: string;
+  systemAuthKey?: string;
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
   pulsar: IPulsarConfig;

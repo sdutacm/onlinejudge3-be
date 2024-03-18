@@ -214,12 +214,14 @@ export interface IMSolutionCalendarItem {
 
 export type IMSolutionCalendar = Array<IMSolutionCalendarItem>;
 
+/**
+ * 评测状态（仅在提交被评测期间存在）
+ */
 export interface IMSolutionJudgeStatus {
-  hostname: string;
-  pid: number;
-  status: 'pending' | 'running';
-  createdAt: number; // s
-  updatedAt: number; // s
+  solutionId: number;
+  judgerId: string;
+  status: 'ready' | 'running';
+  eventTimestampUs: number; // microsecond
   current?: number; // 当前运行的测试点
   total?: number; // 总测试点数量
 }
@@ -364,9 +366,9 @@ export interface IMSolutionServiceUpdateJudgeInfoOpt {
   result: IJudgeInfoModel['result'];
   time?: IJudgeInfoModel['time'];
   memory?: IJudgeInfoModel['memory'];
-  lastCase: IJudgeInfoModel['lastCase'];
-  totalCase: IJudgeInfoModel['totalCase'];
-  detail: IJudgeInfoDetail;
+  lastCase?: IJudgeInfoModel['lastCase'];
+  totalCase?: IJudgeInfoModel['totalCase'];
+  detail?: IJudgeInfoDetail;
   finishedAt: IJudgeInfoModel['finishedAt'];
 }
 //#endregion

@@ -420,6 +420,7 @@ export function respFullList(): MethodDecorator {
  * - ctx.userId：当前登录用户 userId，如未登录则为 undefined
  * - ctx.loggedIn：是否登录
  * - ctx.permissions：当前登录用户的权限列表
+ * - ctx.systemRequest：是否为系统请求（如来自内部其他系统的接口操作）
  * - ctx.scope：查询 scope
  */
 function ctxBaseInfo(): MethodDecorator {
@@ -436,6 +437,12 @@ function ctxBaseInfo(): MethodDecorator {
         ctx.userId = undefined;
         ctx.loggedIn = false;
         ctx.permissions = [];
+      }
+      if (
+        ctx.app.config.systemAuthKey &&
+        ctx.app.config.systemAuthKey === ctx.headers['x-system-request-auth']
+      ) {
+        ctx.systemRequest = true;
       }
       ctx.scope = ctx.request.body._scope;
       if (ctx.request.headers['content-type']?.startsWith('multipart/')) {
@@ -870,6 +877,25 @@ export function authCompetitionRoleOrAuthPerm(
 }
 
 /**
+ * 校验来自系统请求。
+ */
+export function authSystemRequest(): MethodDecorator {
+  return function (_target, _propertyKey, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+
+    descriptor.value = async function (ctx: Context, ...rest: any[]) {
+      if (!ctx.systemRequest) {
+        ctx.status = 403;
+        ctx.body = ctx.helper.rFail(Codes.GENERAL_NO_PERMISSION);
+        return;
+      }
+      const result = await method.call(this, ctx, ...rest);
+      return result;
+    };
+  };
+}
+
+/**
  * 频率限制装饰器工厂工厂
  * @param type 限制类型
  */
@@ -887,7 +913,8 @@ function rateLimitFactoryFactory(
       descriptor.value = async function (ctx: Context, ...rest: any[]) {
         if (
           process.env.NODE_ENV !== 'test' &&
-          !ctx.helper.checkPerms(EPerm.NoFrequencyLimitAccess)
+          !ctx.helper.checkPerms(EPerm.NoFrequencyLimitAccess) &&
+          !ctx.systemRequest
         ) {
           let keyConfig: string;
           let keyArgs: any[] = [propertyKey];

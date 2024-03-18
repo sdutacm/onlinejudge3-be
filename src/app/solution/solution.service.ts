@@ -73,6 +73,7 @@ import { CCompetitionService } from '../competition/competition.service';
 import { ICompetitionModel } from '../competition/competition.interface';
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
+import microtime from 'microtime';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -1383,7 +1384,7 @@ export default class SolutionService {
    * @param options
    */
   async judge(options: IMSolutionServiceJudgeOpt): Promise<IMSolutionServiceJudgeRes> {
-    const { solutionId, problemId, userId } = options;
+    const { judgeInfoId, solutionId, problemId, userId } = options;
     const judgeType = options.spj ? river.JudgeType.Special : river.JudgeType.Standard;
     const logger = this.ctx.getLogger('judgerLogger');
 
@@ -1400,14 +1401,13 @@ export default class SolutionService {
         throw new Error(`No Problem Specified`);
       }
 
-      const createdAt = Math.floor(Date.now() / 1000);
+      const eventTimestampUs = microtime.now();
       logger.info(`[${solutionId}/${problemId}/${userId}] begin`);
-      await this.setSolutionJudgeStatus(solutionId, {
-        hostname: os.hostname(),
-        pid: process.pid,
-        status: 'pending',
-        createdAt,
-        updatedAt: createdAt,
+      await this.setSolutionJudgeStatus(judgeInfoId, {
+        solutionId,
+        judgerId: `${os.hostname()}-${process.pid}`,
+        status: 'ready',
+        eventTimestampUs,
       });
 
       // @ts-ignore
@@ -1437,7 +1437,7 @@ export default class SolutionService {
         onStart: () => {
           console.log(process.pid, 'start judge', solutionId);
           logger.info(`[${solutionId}/${problemId}/${userId}] onStart`);
-          this.pushJudgeStatus(solutionId, [solutionId, judgeType, ESolutionResult.JG]);
+          this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG]);
         },
         onJudgeCaseStart: (current, total) => {
           console.log(`${current}/${total} Running`);
@@ -1446,21 +1446,14 @@ export default class SolutionService {
           );
 
           this.setSolutionJudgeStatus(solutionId, {
-            hostname: os.hostname(),
-            pid: process.pid,
+            solutionId,
+            judgerId: `${os.hostname()}-${process.pid}`,
             status: 'running',
-            createdAt,
-            updatedAt: Math.floor(Date.now() / 1000),
+            eventTimestampUs: microtime.now(),
             current,
             total,
           });
-          this.pushJudgeStatus(solutionId, [
-            solutionId,
-            judgeType,
-            ESolutionResult.JG,
-            current,
-            total,
-          ]);
+          this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG, current, total]);
         },
         onJudgeCaseDone: (current, total, res) => {
           console.log(`${current}/${total} Done:`, res);
@@ -1481,7 +1474,7 @@ export default class SolutionService {
             compileInfo,
           });
           await this.clearDetailCache(solutionId);
-          this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
+          this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
           break;
         }
         case 'SystemError': {
@@ -1491,7 +1484,7 @@ export default class SolutionService {
             result,
           });
           await this.clearDetailCache(solutionId);
-          this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
+          this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
           break;
         }
         case 'Done': {
@@ -1534,13 +1527,7 @@ export default class SolutionService {
           });
           await this.clearSolutionJudgeInfoCache(solutionId);
           // 推送完成状态
-          this.pushJudgeStatus(solutionId, [
-            solutionId,
-            judgeType,
-            result,
-            jResult.last,
-            jResult.total,
-          ]);
+          this.pushJudgeStatus(solutionId, [solutionId, 1, result, jResult.last, jResult.total]);
           // 需要更新计数，让异步定时任务去处理
           await Promise.all([
             this.ctx.helper.redisSadd(
@@ -1562,10 +1549,200 @@ export default class SolutionService {
         result,
       });
       await this.clearDetailCache(solutionId);
-      this.pushJudgeStatus(solutionId, [solutionId, judgeType, result]);
+      this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
     } finally {
       await this.delSolutionJudgeStatus(solutionId);
     }
+  }
+
+  async checkIsJudgeStale(judgeInfoId: number, solutionId: number) {
+    const res = await this.model.count({
+      where: {
+        solutionId,
+        judgeInfoId,
+      },
+    });
+    return res === 0;
+  }
+
+  async updateJudgeStart(
+    judgeInfoId: number,
+    solutionId: number,
+    judgerId: string,
+    eventTimestampUs: number,
+  ): Promise<void> {
+    if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
+      await this.delSolutionJudgeStatus(judgeInfoId);
+      return;
+    }
+    await this.model.update(
+      {
+        result: ESolutionResult.RPD,
+      },
+      {
+        where: {
+          solutionId,
+          judgeInfoId,
+        },
+      },
+    );
+    const currentJudgeStatus = await this.getSolutionJudgeStatus(judgeInfoId);
+    if (currentJudgeStatus && currentJudgeStatus.eventTimestampUs > eventTimestampUs) {
+      return;
+    }
+    await this.setSolutionJudgeStatus(judgeInfoId, {
+      solutionId,
+      judgerId,
+      status: 'ready',
+      eventTimestampUs,
+    });
+    this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG]);
+  }
+
+  async updateJudgeProgress(
+    judgeInfoId: number,
+    solutionId: number,
+    judgerId: string,
+    eventTimestampUs: number,
+    current: number,
+    total: number,
+  ): Promise<void> {
+    if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
+      await this.delSolutionJudgeStatus(judgeInfoId);
+      return;
+    }
+    const currentJudgeStatus = await this.getSolutionJudgeStatus(judgeInfoId);
+    if (currentJudgeStatus && currentJudgeStatus.eventTimestampUs > eventTimestampUs) {
+      return;
+    }
+    await this.setSolutionJudgeStatus(judgeInfoId, {
+      solutionId,
+      judgerId,
+      status: 'running',
+      eventTimestampUs,
+      current,
+      total,
+    });
+    this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG, current, total]);
+  }
+
+  async updateJudgeFinish(
+    judgeInfoId: number,
+    solutionId: number,
+    judgerId: string,
+    eventTimestampUs: number,
+    resultType: 'CompileError' | 'SystemError' | 'Done',
+    detail: any,
+  ): Promise<void> {
+    if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
+      return;
+    }
+    switch (resultType) {
+      case 'CompileError': {
+        const result = ESolutionResult.CE;
+        const { compileInfo } = detail;
+        await Promise.all([
+          this.updateJudgeInfo(judgeInfoId, {
+            result,
+            finishedAt: new Date(),
+          }),
+          this.update(solutionId, {
+            result,
+            compileInfo,
+          }),
+        ]);
+        await Promise.all([
+          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearDetailCache(solutionId),
+        ]);
+        this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
+        break;
+      }
+      case 'SystemError': {
+        const result = ESolutionResult.SE;
+        await Promise.all([
+          this.updateJudgeInfo(judgeInfoId, {
+            result,
+            finishedAt: new Date(),
+          }),
+          this.update(solutionId, {
+            result,
+          }),
+        ]);
+        await Promise.all([
+          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearDetailCache(solutionId),
+        ]);
+        this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
+        break;
+      }
+      case 'Done': {
+        const {
+          result,
+          maxTimeUsed,
+          maxMemoryUsed,
+          lastCaseNumber,
+          totalCaseNumber,
+          cases,
+        } = detail;
+        // 更新评测信息
+        await Promise.all([
+          await this.updateJudgeInfo(solutionId, {
+            result,
+            time: maxTimeUsed,
+            memory: maxMemoryUsed,
+            lastCase: lastCaseNumber,
+            totalCase: totalCaseNumber,
+            detail: {
+              cases: cases.map((r: any) => ({
+                result: r.result,
+                time: r.timeUsed,
+                memory: r.memoryUsed,
+                errMsg: r.errmsg || undefined,
+                outMsg: r.outmsg || undefined,
+              })),
+            },
+            finishedAt: new Date(),
+          }),
+          await this.update(solutionId, {
+            result,
+            time: maxTimeUsed,
+            memory: maxMemoryUsed,
+          }),
+        ]);
+        await Promise.all([
+          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearDetailCache(solutionId),
+        ]);
+        // 推送完成状态
+        this.pushJudgeStatus(solutionId, [solutionId, 1, result, lastCaseNumber, totalCaseNumber]);
+        // 设置异步定时任务来更新计数
+        this.model
+          .findOne({
+            attributes: ['problemId', 'userId'],
+            where: {
+              solutionId,
+            },
+          })
+          .then((res) => {
+            if (!res) {
+              return;
+            }
+            const d = res.get({ plain: true }) as IMSolutionDetailPlain;
+            const { problemId, userId } = d;
+            Promise.all([
+              this.ctx.helper.redisSadd(
+                this.redisKey.asyncSolutionProblemStatsTasks,
+                [],
+                `${problemId}`,
+              ),
+              this.ctx.helper.redisSadd(this.redisKey.asyncSolutionUserStatsTasks, [], `${userId}`),
+            ]);
+          });
+        break;
+      }
+    }
+    await this.delSolutionJudgeStatus(judgeInfoId);
   }
 
   async sendToJudgeQueue(options: {

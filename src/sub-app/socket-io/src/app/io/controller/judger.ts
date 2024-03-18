@@ -4,15 +4,14 @@ import { isPrivate as isPrivateIp } from 'ip';
 /**
  * 编码评测状态。
  * @param solutionId
- * @param type 评测类型
+ * @param state 评测状态（0: running, 1: finished）
  * @param result 评测结果
  * @param current 当前运行评测点
  * @param total 总评测点数量
  */
 export function encodeJudgeStatusBuffer(
   solutionId: number,
-  // type: river.JudgeType,
-  type: number,
+  state: number,
   // result: ESolutionResult,
   result: number,
   current?: number,
@@ -21,7 +20,7 @@ export function encodeJudgeStatusBuffer(
   const buffer = new ArrayBuffer(8);
   const dv = new DataView(buffer);
   dv.setUint32(0, solutionId);
-  dv.setUint8(4, type);
+  dv.setUint8(4, state);
   dv.setUint8(5, result);
   dv.setUint8(6, current || 0);
   dv.setUint8(7, total || 0);

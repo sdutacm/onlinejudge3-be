@@ -8,6 +8,7 @@ declare module 'egg' {
     userId?: number;
     loggedIn: boolean;
     permissions: EPerm[];
+    systemRequest?: boolean;
     scope?: string | null;
     id?: number;
     detail?: any;

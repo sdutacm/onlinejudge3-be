@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 import { EggAppInfo } from 'midway';
 import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
@@ -48,6 +49,9 @@ export default (appInfo: EggAppInfo) => {
   // set your production keys and remove next line
   throw new Error('Please set `config.keys` in config.prod.ts');
   // config.keys = appInfo.name + '_onlinejudge3_xxx';
+
+  // use for system inner request, should change to your own and keep security
+  // config.systemAuthKey = '';
   //#endregion
 
   //#region custom config

@@ -5,6 +5,7 @@ import {
   id,
   rateLimitUser,
   authPerm,
+  authSystemRequest,
 } from '@/lib/decorators/controller.decorator';
 import { CSolutionMeta } from './solution.meta';
 import { routesBe } from '@/common/routes';
@@ -21,6 +22,7 @@ import {
   IBatchGetSolutionDetailReq,
   IRejudgeSolutionReq,
   IRejudgeSolutionResp,
+  ICallbackJudgeReq,
 } from '@/common/contracts/solution';
 import { IMSolutionDetail, IMSolutionServiceCreateOpt, ISolutionModel } from './solution.interface';
 import { ReqError } from '@/lib/global/error';
@@ -634,5 +636,42 @@ export default class SolutionController {
     return {
       rejudgedCount: solutions.length,
     };
+  }
+
+  @route()
+  @authSystemRequest()
+  async [routesBe.callbackJudge.i](ctx: Context): Promise<void> {
+    const req = ctx.request.body as ICallbackJudgeReq;
+    const { judgeInfoId, solutionId, judgerId, data, eventTimestampUs } = req;
+    switch (data.type) {
+      case 'start': {
+        await this.service.updateJudgeStart(judgeInfoId, solutionId, judgerId, eventTimestampUs);
+        break;
+      }
+      case 'progress': {
+        await this.service.updateJudgeProgress(
+          judgeInfoId,
+          solutionId,
+          judgerId,
+          eventTimestampUs,
+          data.current,
+          data.total,
+        );
+        break;
+      }
+      case 'finish': {
+        await this.service.updateJudgeFinish(
+          judgeInfoId,
+          solutionId,
+          judgerId,
+          eventTimestampUs,
+          data.resultType,
+          data.detail,
+        );
+        break;
+      }
+      default:
+        throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
   }
 }
