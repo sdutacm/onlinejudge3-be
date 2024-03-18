@@ -2,8 +2,6 @@ import { omit } from 'lodash';
 import config from './config';
 import { judgerAgentLogger as logger } from './utils/logger';
 import { decodeJudgeQueueMessage, getSystemInfo } from './utils';
-import { IRedisClient, getRedisClient } from './utils/redis';
-import { IDbPool, getPool } from './utils/mysql';
 import { IPulsarClient, getPulsarClient, IPulsarConsumer } from './utils/pulsar';
 import { JudgerService } from './services';
 
@@ -16,28 +14,29 @@ function sleep(ms: number) {
 }
 
 class JudgerAgent {
-  private dbPool: IDbPool;
-  private redis: IRedisClient;
+  public id: string;
   private pulsarClient: IPulsarClient;
   private consumer: IPulsarConsumer;
   private closing = false;
   private sysInfo = getSystemInfo();
 
+  constructor() {
+    this.id =
+      'JudgerAgent-' +
+      [
+        this.sysInfo.hostname,
+        process.pid,
+        this.sysInfo.platform,
+        this.sysInfo.arch,
+        this.sysInfo.cpuModel,
+      ].join('|');
+  }
+
   public async beforeReady() {
-    this.dbPool = getPool();
-    this.redis = getRedisClient();
     this.pulsarClient = getPulsarClient();
     this.consumer = await this.pulsarClient.subscribe({
       topic: `persistent://${config.pulsar.tenant}/${config.pulsar.namespace}/${config.pulsar.judgeQueueTopic}`,
-      consumerName:
-        'JudgerAgent-' +
-        [
-          this.sysInfo.hostname,
-          process.pid,
-          this.sysInfo.platform,
-          this.sysInfo.arch,
-          this.sysInfo.cpuModel,
-        ].join('|'),
+      consumerName: this.id,
       subscription: config.pulsar.judgeSubscription,
       subscriptionType: 'Shared',
       receiverQueueSize: 0,
@@ -53,8 +52,6 @@ class JudgerAgent {
   }
 
   public async beforeClose() {
-    await this.dbPool.end?.().catch((e) => logger.warn('Ignored error while closing mysql:', e));
-    await this.redis.quit().catch((e) => logger.warn('Ignored error while closing redis:', e));
     await this.consumer
       .close()
       ?.catch((e) => logger.warn('Ignored error while closing pulsar consumer:', e));
@@ -118,7 +115,7 @@ class JudgerAgent {
             }),
           );
 
-          const judgerService = new JudgerService(this.dbPool, this.redis);
+          const judgerService = new JudgerService(this.id);
           const jsPromise = judgerService.judge({
             judgeInfoId: options.judgeInfoId,
             solutionId: options.solutionId,

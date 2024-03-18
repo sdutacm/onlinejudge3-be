@@ -17,9 +17,8 @@
     "axios": "^0.27.2",
     "fflate": "^0.8.2",
     "fs-extra": "^9.1.0",
-    "ioredis": "^4.28.5",
     "lodash": "^4.17.21",
-    "mysql2": "^3.9.1",
+    "microtime": "^3.1.1",
     "p-cancelable": "^2.1.1",
     "p-queue": "^6.6.2",
     "pm2": "^5.3.1",
@@ -28,6 +27,7 @@
   },
   "devDependencies": {
     "@types/lodash": "4.14.151",
+    "@types/microtime": "^2.1.2",
     "@types/node": "16.11.7",
     "copyfiles": "^2.4.1",
     "cross-env": "^6.0.0",
