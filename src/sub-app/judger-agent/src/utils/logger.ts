@@ -2,8 +2,8 @@ import os from 'os';
 import { padEnd } from 'lodash';
 import dayjs from 'dayjs';
 
-export class JudgerAgentLogger {
-  public constructor(private readonly id: string) {}
+export class Logger {
+  public constructor(private readonly type: string, private readonly id: string) {}
 
   public info(...args: any[]) {
     console.log(this.getPrefix('info'), ...args);
@@ -21,8 +21,9 @@ export class JudgerAgentLogger {
     return `[${dayjs().format('YYYY-MM-DD HH:mm:ss.SSS')}] ${padEnd(
       `[${level.toUpperCase()}]`,
       7,
-    )} [JudgerAgent:${os.hostname()}:${this.id}]`;
+    )} [${this.type}:${os.hostname()}:${this.id}]`;
   }
 }
 
-export const judgerAgentLogger = new JudgerAgentLogger(`${process.pid}`);
+export const judgerAgentLogger = new Logger('JudgerAgent', `${process.pid}`);
+export const dataManagerLogger = new Logger('DataManager', `${process.pid}`);

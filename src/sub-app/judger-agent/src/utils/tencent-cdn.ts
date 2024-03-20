@@ -1,10 +1,15 @@
 import http from 'http';
 import https from 'https';
+import fs from 'fs-extra';
+import * as stream from 'stream';
+import { promisify } from 'util';
 import Axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import md5 from 'crypto-js/md5';
 import sha256 from 'crypto-js/sha256';
 import config from '../config';
+
+const finished = promisify(stream.finished);
 
 export class TencentCdnHelper {
   private readonly authConfig = config.cdn.auth;
@@ -54,14 +59,31 @@ export class TencentCdnHelper {
 
   async downloadFile(url: string): Promise<Buffer> {
     const usingUrl = this.getAuthUrl(url);
-    const res = await this.axiosInstance.get<Buffer>(usingUrl, {
+    const res = await this.axiosInstance({
+      method: 'GET',
+      url: usingUrl,
       responseType: 'arraybuffer',
-      validateStatus: (status) => status >= 200 && status < 300,
+      validateStatus: (status) => status >= 200 && status < 400,
     });
     return res.data;
+  }
+
+  async downloadFileTo(url: string, savePath: string): Promise<void> {
+    const usingUrl = this.getAuthUrl(url);
+    const writer = fs.createWriteStream(savePath);
+    const res = await this.axiosInstance({
+      method: 'GET',
+      url: usingUrl,
+      responseType: 'stream',
+      validateStatus: (status) => status >= 200 && status < 400,
+    });
+    res.data.pipe(writer);
+    return finished(writer);
   }
 }
 
 export function getTencentCdnHelper() {
   return new TencentCdnHelper();
 }
+
+export const tencentCdnHelper = getTencentCdnHelper();

@@ -72,11 +72,18 @@ export class Judger {
 }
 
 export interface IJudgerCallOptions {
+  /** 题目数据目录。相对于 `config.judgerData.dataDir` */
+  dataDir: string;
   problemId: number;
   language: string;
   code: string;
   timeLimit: number;
   memoryLimit: number;
+  /**
+   * 测试点
+   * @example [{ in: 'data1.in', out: 'data1.out' }]
+   */
+  cases: Array<{ in: string; out: string }>;
   judgeType: river.JudgeType;
   spjFile?: string;
 
@@ -180,12 +187,12 @@ export class JudgerCall {
   private judge(inFile: string, outFile: string): Promise<river.IJudgeResult> {
     const req: river.IJudgeRequest = {
       judgeData: {
-        inFile: `${this.opts.problemId}/${inFile}`,
-        outFile: `${this.opts.problemId}/${outFile}`,
+        inFile: `${this.opts.dataDir}/${inFile}`,
+        outFile: `${this.opts.dataDir}/${outFile}`,
         timeLimit: this.opts.timeLimit,
         memoryLimit: this.opts.memoryLimit,
         judgeType: this.opts.judgeType,
-        spjFile: `${this.opts.problemId}/${this.opts.spjFile}`,
+        spjFile: `${this.opts.dataDir}/${this.opts.spjFile}`,
       },
     };
     return new Promise<river.IJudgeResult>((rs, rj) => {
@@ -236,7 +243,8 @@ export class JudgerCall {
         };
       }
       // 评测
-      const judgeCases = await this.judger.getCases(this.opts.problemId);
+      // const judgeCases = await this.judger.getCases(this.opts.problemId);
+      const judgeCases = this.opts.cases;
       if (!judgeCases?.length) {
         throw new Error(
           `No judge cases for problem ${
