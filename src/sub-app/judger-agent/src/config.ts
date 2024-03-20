@@ -9,6 +9,9 @@ const ojApiBaseUrl = process.env.OJ_API_BASE_URL || 'http://127.0.0.1:7001';
 const ojApiSystemAuthKey = process.env.OJ_API_SYSTEM_AUTH_KEY || '';
 
 const judgerDataDir = process.env.JUDGER_DATA_DIR || '/judger-data';
+const judgerDataUseRemoteRelease = process.env.JUDGER_USE_REMOTE_DATA_RELEASE === '1';
+const judgerDataManagerSocketPath =
+  process.env.JUDGER_DATA_MANAGER_SOCKET_PATH || '/tmp/judger-agent/data-manager.sock';
 const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
 const judgerSocketBridgeBaseUrl =
   process.env.JUDGER_SOCKET_BRIDGE_BASE_URL || 'http://127.0.0.1:7002/socketBridge';
@@ -49,6 +52,12 @@ const config = {
   },
   judgerData: {
     dataDir: judgerDataDir,
+    useRemoteDataRelease: judgerDataUseRemoteRelease,
+    remoteSource: {
+      type: 'CDN',
+      basePath: '/judger/data-release',
+    },
+    dataManagerSocketPath: judgerDataManagerSocketPath,
   },
   judgerGrpc: {
     address: judgerGrpcAddress,

@@ -7,9 +7,13 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc && copyfiles -u1 \"src/proto/**/*\" dist",
     "start": "pm2 start",
-    "stop": "pm2 stop onlinejudge3-be-judger-agent",
-    "reload": "pm2 reload onlinejudge3-be-judger-agent",
-    "start:foreground": "pm2-runtime start ecosystem.config.js"
+    "stop": "pm2 stop onlinejudge3-judger-agent",
+    "reload": "pm2 reload onlinejudge3-judger-agent",
+    "start:foreground": "pm2-runtime start ecosystem.config.js",
+    "start:dm": "pm2 start ecosystem-dm.config.js",
+    "stop:dm": "pm2 stop onlinejudge3-data-manager",
+    "reload:dm": "pm2 reload onlinejudge3-data-manager",
+    "start:dm:foreground": "pm2-runtime start ecosystem-dm.config.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.10.0",

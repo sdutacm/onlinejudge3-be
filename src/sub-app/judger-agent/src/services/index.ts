@@ -11,6 +11,7 @@ import { river } from '../proto/river';
 import { Judger } from './judger';
 import { ESolutionResult } from '../enums';
 import { convertRiverResultToOJ } from '../utils';
+import { getProblemDataResult } from '../utils/judger';
 
 const logger = judgerAgentLogger;
 
@@ -133,6 +134,16 @@ export class JudgerService extends EventEmitter {
           this.onAbortPoint();
           this.emit('active');
 
+          let dataDir = `${problemId}`;
+          let dataCases;
+          if (config.judgerData.useRemoteDataRelease) {
+            logger.info('Preparing remote data');
+            const dataResult = await getProblemDataResult(problemId, revision);
+            dataDir = `${problemId}/${dataResult.extraHash}`;
+            dataCases = dataResult.cases;
+          }
+
+          // TODO compile spj
           const spjFile = spj ? 'spj' : undefined;
           logger.info(
             `${loggerPrefix} getJudgeCall`,
@@ -148,11 +159,13 @@ export class JudgerService extends EventEmitter {
           );
 
           const call = this.judger.getJudgeCall({
+            dataDir,
             problemId,
             language,
             code,
             timeLimit: timeLimit,
             memoryLimit: memoryLimit,
+            cases: dataCases,
             judgeType,
             spjFile,
             onStart: () => {

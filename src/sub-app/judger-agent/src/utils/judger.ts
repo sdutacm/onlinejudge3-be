@@ -9,8 +9,7 @@ import { tencentCdnHelper } from './tencent-cdn';
 import { dataManagerLogger, judgerAgentLogger } from './logger';
 import type { IDataReleaseResult } from '../typings';
 
-const tempDir = path.join(os.tmpdir(), 'judger-agent');
-const socketPath = path.join(tempDir, '/data-manager.sock');
+const socketPath = config.judgerData.dataManagerSocketPath;
 
 export async function lsDataCases(problemId: number, extraHashDir?: string) {
   const dir = path.join(config.judgerData.dataDir, problemId.toString(), extraHashDir || '');
@@ -34,33 +33,43 @@ export async function lsDataCases(problemId: number, extraHashDir?: string) {
 }
 
 export async function getLatestDataReleaseIndex(problemId: number) {
+  const start = Date.now();
   const latestIndex = (
-    await tencentCdnHelper.downloadFile(`/judger/data-release/${problemId}/latest.txt`)
+    await tencentCdnHelper.downloadFile(
+      `${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`,
+    )
   ).toString();
   const filename = latestIndex.trim();
   const extraHash = path.parse(filename).name;
-  dataManagerLogger.info(`Got latest data release index "${filename}" for problem ${problemId}`);
+  dataManagerLogger.info(
+    `[${problemId}]`,
+    `Got latest data release index "${filename}" in ${Date.now() - start}ms`,
+  );
   return [filename, extraHash];
 }
 
 export async function downloadDataRelease(problemId: number, filename: string) {
   const tempDir = path.join(os.tmpdir(), 'judger-agent');
   await fs.ensureDir(tempDir);
-  const archiveTempPath = path.join(tempDir, filename);
-  dataManagerLogger.info(`Downloading data release "${filename}" for problem ${problemId}`);
+  const archiveTempPath = path.join(tempDir, `${problemId}_${filename}`);
+  dataManagerLogger.info(`[${problemId}]`, `Downloading data release "${filename}"`);
+  let start = Date.now();
   await tencentCdnHelper.downloadFileTo(
-    `/judger/data-release/${problemId}/${filename}`,
+    `${config.judgerData.remoteSource.basePath}/${problemId}/${filename}`,
     archiveTempPath,
   );
-  dataManagerLogger.info(`Extracting "${archiveTempPath}" for problem ${problemId}`);
+  dataManagerLogger.info(`[${problemId}]`, `Downloaded data release in ${Date.now() - start}ms`);
   // extract to data dir
   const extraHash = path.parse(filename).name;
   const saveDir = path.join(config.judgerData.dataDir, problemId.toString(), extraHash);
+  dataManagerLogger.info(`[${problemId}]`, `Extracting "${archiveTempPath}" to "${saveDir}"`);
+  start = Date.now();
   await fs.ensureDir(saveDir);
   const zip = new AdmZip(archiveTempPath);
   await promisify(zip.extractAllToAsync)(saveDir, true);
   await fs.unlink(archiveTempPath);
-  dataManagerLogger.info(`Data release "${filename}" is ready for problem ${problemId}`);
+  dataManagerLogger.info(`[${problemId}]`, `Extracted in ${Date.now() - start}ms`);
+  dataManagerLogger.info(`[${problemId}]`, `Data release "${extraHash}" is ready`);
 }
 
 export function getProblemDataResult(
@@ -69,13 +78,19 @@ export function getProblemDataResult(
 ): Promise<IDataReleaseResult> {
   return new Promise((resolve, reject) => {
     const client = net.createConnection({ path: socketPath }, () => {
-      judgerAgentLogger.info('Connected to data manager');
+      judgerAgentLogger.info(
+        `Connected to data manager, requesting problemId=${problemId}, revision=${revision}`,
+      );
       client.write(JSON.stringify({ problemId, revision }));
     });
 
     client.on('data', (data) => {
-      judgerAgentLogger.info('Message from data manager:', data.toString());
-      resolve(JSON.parse(data.toString()));
+      const res = JSON.parse(data.toString());
+      if (res.success) {
+        resolve(res.data);
+      } else {
+        reject(new Error(res.msg));
+      }
     });
 
     client.on('error', (err) => {
@@ -83,7 +98,7 @@ export function getProblemDataResult(
     });
 
     client.on('end', () => {
-      judgerAgentLogger.info('Disconnected from data manager');
+      reject(new Error('Disconnected from data manager'));
     });
   });
 }

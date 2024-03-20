@@ -8,6 +8,7 @@ COPY .npmrc ./
 COPY .node-version ./
 COPY tsconfig.json ./
 COPY ecosystem.config.js ./
+COPY ecosystem-dm.config.js ./
 COPY src ./src
 RUN npm i
 RUN npm run build

@@ -79,13 +79,13 @@ export interface IJudgerCallOptions {
   code: string;
   timeLimit: number;
   memoryLimit: number;
+  judgeType: river.JudgeType;
+  spjFile?: string;
   /**
    * 测试点
    * @example [{ in: 'data1.in', out: 'data1.out' }]
    */
-  cases: Array<{ in: string; out: string }>;
-  judgeType: river.JudgeType;
-  spjFile?: string;
+  cases?: Array<{ in: string; out: string }>;
 
   /**
    * 当评测（编译阶段）开始
@@ -243,8 +243,7 @@ export class JudgerCall {
         };
       }
       // 评测
-      // const judgeCases = await this.judger.getCases(this.opts.problemId);
-      const judgeCases = this.opts.cases;
+      const judgeCases = this.opts.cases ?? (await this.judger.getCases(this.opts.problemId));
       if (!judgeCases?.length) {
         throw new Error(
           `No judge cases for problem ${
