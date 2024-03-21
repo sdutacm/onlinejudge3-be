@@ -60,19 +60,23 @@ export interface IMStatUASPRunInfo {
   _updatedAt: number; // timestamp ms
 }
 
+export interface IMStatJudgeQueueWorkerGroup {
+  group: string;
+  platform: string;
+  arch: string;
+  cpuModel: string;
+  workers: {
+    id: string;
+    status: EStatJudgeQueueWorkerStatus;
+  }[];
+}
+
 export interface IMStatJudgeQueue {
   running: number;
   waiting: number;
   queueSize: number;
   deadQueueSize: number;
-  workers: {
-    id: string;
-    platform: string;
-    arch: string;
-    cpuModel: string;
-    group: string;
-    status: EStatJudgeQueueWorkerStatus;
-  }[];
+  workerGroups: IMStatJudgeQueueWorkerGroup[];
 }
 
 //#region service.getUserACRank

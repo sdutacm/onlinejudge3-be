@@ -13,6 +13,7 @@ import {
   IMStatServiceGetUASPRunInfoRes,
   IMStatUASPRunInfo,
   IMStatJudgeQueue,
+  IMStatJudgeQueueWorkerGroup,
 } from './stat.interface';
 import { CUserService } from '../user/user.service';
 import { IUserModel } from '../user/user.interface';
@@ -160,28 +161,46 @@ export default class StatService {
       this.ctx.logger.error('Pulsar judge dead queue subscription not found');
       return null;
     }
+    const workers = (jSub.consumers as any[]).map((c) => {
+      const consumerName = c.consumerName || '';
+      const [hostname, , platform, arch, cpuModel] = (
+        consumerName.split('JudgerAgent-')[1] || ''
+      ).split('|');
+      return {
+        id: c.consumerName,
+        platform,
+        arch,
+        cpuModel,
+        group: hostname,
+        status:
+          c.unackedMessages > 0
+            ? EStatJudgeQueueWorkerStatus.judging
+            : EStatJudgeQueueWorkerStatus.idle,
+      };
+    });
+    const workerGroups: IMStatJudgeQueueWorkerGroup[] = [];
+    workers.forEach((w) => {
+      if (!workerGroups.find((g) => w.group === g.group)) {
+        workerGroups.push({
+          group: w.group,
+          platform: w.platform,
+          arch: w.arch,
+          cpuModel: w.cpuModel,
+          workers: [],
+        });
+      }
+      const group = workerGroups.find((g) => w.group === g.group);
+      group?.workers.push({
+        id: w.id,
+        status: w.status,
+      });
+    });
     const stats: IMStatJudgeQueue = {
       running: jSub.unackedMessages,
       waiting: jSub.msgBacklog - jSub.unackedMessages,
       queueSize: jSub.msgBacklog,
       deadQueueSize: dSub.msgBacklog,
-      workers: jSub.consumers.map((c: any) => {
-        const consumerName = c.consumerName || '';
-        const [hostname, , platform, arch, cpuModel] = (
-          consumerName.split('JudgerAgent-')[1] || ''
-        ).split('|');
-        return {
-          id: c.consumerName,
-          platform,
-          arch,
-          cpuModel,
-          group: hostname,
-          status:
-            c.unackedMessages > 0
-              ? EStatJudgeQueueWorkerStatus.judging
-              : EStatJudgeQueueWorkerStatus.idle,
-        };
-      }),
+      workerGroups,
     };
     await this.ctx.helper.redisSet(this.redisKey.judgeQueueStats, [], stats, 1);
     return stats;

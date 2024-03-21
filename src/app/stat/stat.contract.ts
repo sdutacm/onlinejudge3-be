@@ -169,25 +169,35 @@ const statContract = {
       waiting: { type: 'number' },
       queueSize: { type: 'number' },
       deadQueueSize: { type: 'number' },
-      workers: {
+      workerGroups: {
         type: 'array',
         items: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
+            group: { type: 'string' },
             platform: { type: 'string' },
             arch: { type: 'string' },
             cpuModel: { type: 'string' },
-            group: { type: 'string' },
-            status: { type: 'number' },
+            workers: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  status: { type: 'number' },
+                },
+                additionalProperties: false,
+                required: ['id', 'status'],
+              },
+            },
           },
           additionalProperties: false,
-          required: ['id', 'platform', 'arch', 'cpuModel', 'group', 'status'],
+          required: ['group', 'platform', 'arch', 'cpuModel', 'workers'],
         },
       },
     },
     additionalProperties: false,
-    required: ['running', 'waiting', 'queueSize', 'deadQueueSize', 'workers'],
+    required: ['running', 'waiting', 'queueSize', 'deadQueueSize', 'workerGroups'],
   } as defContract.ContractSchema,
 };
 

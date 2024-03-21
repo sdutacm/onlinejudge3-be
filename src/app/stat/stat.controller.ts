@@ -124,11 +124,13 @@ export default class StatController {
       waiting: 0,
       queueSize: 0,
       deadQueueSize: 0,
-      workers: [],
+      workerGroups: [],
     };
-    res.workers.forEach((w) => {
-      w.id = sha1(w.id).toString().slice(0, 8);
-      w.group = sha1(w.group).toString().slice(0, 8);
+    res.workerGroups.forEach((g) => {
+      g.group = sha1(g.group).toString().slice(0, 8);
+      g.workers.forEach((w) => {
+        w.id = sha1(w.id).toString().slice(0, 8);
+      });
     });
     return res;
   }
