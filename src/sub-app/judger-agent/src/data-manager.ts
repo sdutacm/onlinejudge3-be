@@ -83,7 +83,11 @@ const server = net.createServer((connection) => {
     ) {
       logger.info(`[${problemId}]`, 'Cache hit');
       const extraHash = statusMap[problemId].extraHash;
-      const str = JSON.stringify(resultCache[problemId][extraHash]);
+      const res = resultCache[problemId][extraHash];
+      const str = JSON.stringify({
+        success: true,
+        data: res,
+      });
       connection.write(str);
       connection.end();
     } else {
