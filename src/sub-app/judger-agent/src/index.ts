@@ -99,9 +99,9 @@ class JudgerAgent {
         process.exit(1);
       }
       let msg = null;
-      const start = Date.now();
       try {
         msg = await this.consumer.receive();
+        const start = Date.now();
 
         // logic
         try {
