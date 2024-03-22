@@ -12,7 +12,6 @@ const apps = [
     env: {
       NODE_ENV: 'production',
     },
-    node_args: ['--unhandled-rejections=warn'],
     kill_timeout : 5000,
   },
 ];
