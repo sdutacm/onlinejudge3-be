@@ -1,3 +1,6 @@
+import { cloneDeep } from 'lodash';
+import debug from 'debug';
+
 const pulsarHost = process.env.PULSAR_HOST || '127.0.0.1';
 const pulsarPort = parseInt(process.env.PULSAR_PORT!, 10) || 6650;
 const pulsarApiBase = process.env.PULSAR_API_BASE || 'http://127.0.0.1:8080';
@@ -13,9 +16,6 @@ const judgerDataUseRemoteRelease = process.env.JUDGER_USE_REMOTE_DATA_RELEASE ==
 const judgerDataManagerSocketPath =
   process.env.JUDGER_DATA_MANAGER_SOCKET_PATH || '/tmp/judger-agent/data-manager.sock';
 const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
-const judgerSocketBridgeBaseUrl =
-  process.env.JUDGER_SOCKET_BRIDGE_BASE_URL || 'http://127.0.0.1:7002/socketBridge';
-const judgerSocketBridgeEmitAuthKey = process.env.JUDGER_SOCKET_BRIDGE_EMIT_AUTH_KEY || '';
 
 const cdn = {
   provider: 'TencentCloud',
@@ -62,11 +62,14 @@ const config = {
   judgerGrpc: {
     address: judgerGrpcAddress,
   },
-  judgerSocketBridge: {
-    baseUrl: judgerSocketBridgeBaseUrl,
-    emitAuthKey: judgerSocketBridgeEmitAuthKey,
-  },
   cdn,
 };
 
 export default config;
+
+const dbg = debug('onlinejudge3:judger-agent:config');
+const maskedConfig = cloneDeep(config);
+maskedConfig.pulsar.authenticationToken = '***';
+maskedConfig.oj.apiSystemAuthKey = '***';
+maskedConfig.cdn.auth.pkey = '***';
+dbg('Config: %O', maskedConfig);

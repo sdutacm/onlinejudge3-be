@@ -1,3 +1,5 @@
+const os = require('os');
+
 const apps = [
   {
     name: 'onlinejudge3-judger-agent',
@@ -5,7 +7,7 @@ const apps = [
     // log_date_format: 'YYYY-MM-DD HH:mm:ss',
     exec_mode: 'cluster',
     max_memory_restart: '256M',
-    instances: parseInt(process.env.WORKERS, 10) || 1,
+    instances: parseInt(process.env.WORKERS, 10) || os.cpus().length,
     merge_logs: true,
     min_uptime: '5s',
     cwd: './',
