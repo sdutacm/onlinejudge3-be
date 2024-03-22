@@ -1,0 +1,12 @@
+version: '3'
+services:
+  judger-agent:
+    image: sdutacm/onlinejudge3-judger-agent:latest
+    container_name: judger-agent
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ~/logs/onlinejudge3-judger-agent-docker:/root/.pm2/logs
+    env_file:
+      - /path/to/docker.env
+

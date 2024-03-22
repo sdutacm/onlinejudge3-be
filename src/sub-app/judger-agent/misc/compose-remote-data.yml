@@ -1,0 +1,35 @@
+version: '3'
+services:
+  data-manager:
+    image: sdutacm/onlinejudge3-judger-agent:latest
+    container_name: data-manager
+    command: npm run start:dm:foreground
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3373/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - ~/logs/onlinejudge3-judger-agent-docker:/root/.pm2/logs
+      - /path/to/data/judger:/data/judger
+      - vshared:/vshared
+    env_file:
+      - /path/to/docker.env
+
+  judger-agent:
+    image: sdutacm/onlinejudge3-judger-agent:latest
+    container_name: judger-agent
+    network_mode: host
+    depends_on:
+      data-manager:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ~/logs/onlinejudge3-judger-agent-docker:/root/.pm2/logs
+      - vshared:/vshared
+    env_file:
+      - /path/to/docker.env
+volumes:
+  vshared:

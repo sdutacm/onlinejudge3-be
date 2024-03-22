@@ -3,7 +3,6 @@ import debug from 'debug';
 
 const pulsarHost = process.env.PULSAR_HOST || '127.0.0.1';
 const pulsarPort = parseInt(process.env.PULSAR_PORT!, 10) || 6650;
-const pulsarApiBase = process.env.PULSAR_API_BASE || 'http://127.0.0.1:8080';
 const pulsarTenant = process.env.PULSAR_TENANT || 'public';
 const pulsarNamespace = process.env.PULSAR_NAMESPACE || 'oj';
 const pulsarAuthToken = process.env.PULSAR_AUTH_TOKEN || '';
@@ -11,7 +10,7 @@ const pulsarAuthToken = process.env.PULSAR_AUTH_TOKEN || '';
 const ojApiBaseUrl = process.env.OJ_API_BASE_URL || 'http://127.0.0.1:7001';
 const ojApiSystemAuthKey = process.env.OJ_API_SYSTEM_AUTH_KEY || '';
 
-const judgerDataDir = process.env.JUDGER_DATA_DIR || '/judger-data';
+const judgerDataDir = process.env.JUDGER_DATA_DIR || '/data/judger';
 const judgerDataUseRemoteRelease = process.env.JUDGER_USE_REMOTE_DATA_RELEASE === '1';
 const judgerDataManagerSocketPath =
   process.env.JUDGER_DATA_MANAGER_SOCKET_PATH || '/tmp/judger-agent/data-manager.sock';
@@ -22,7 +21,7 @@ const cdn = {
   /**
    * @example 'https://example.cdn.com'
    */
-  cdnOrigin: process.env.CDN_DATA_BASE_URL,
+  cdnOrigin: process.env.CDN_ORIGIN,
   auth: {
     useAuth: process.env.CDN_TENCENT_USE_AUTH === '1',
     mode: 'TypeD',
