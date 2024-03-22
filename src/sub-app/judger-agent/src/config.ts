@@ -38,7 +38,6 @@ const config = {
   pulsar: {
     serviceUrl: `pulsar://${pulsarHost}:${pulsarPort}`,
     authenticationToken: pulsarAuthToken,
-    apiBase: pulsarApiBase,
     tenant: pulsarTenant,
     namespace: pulsarNamespace,
     judgeQueueTopic: 'judge-queue',
