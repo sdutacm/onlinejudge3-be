@@ -1,4 +1,13 @@
-import { Model, Table, Column, DataType, Index, ForeignKey } from 'sequelize-typescript';
+import {
+  Model,
+  Table,
+  Column,
+  DataType,
+  Index,
+  ForeignKey,
+  AllowNull,
+  CreatedAt,
+} from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import ProblemModel from './problem.model';
 import TagModel from './tag.model';
@@ -44,6 +53,20 @@ export default class ProblemTagModel extends Model<ProblemTagModel> {
   })
   @ForeignKey(() => TagModel)
   tagId: number;
+
+  @AllowNull(false)
+  @Column({
+    type: DataType.BOOLEAN,
+  })
+  hidden: boolean;
+
+  @AllowNull(false)
+  @CreatedAt
+  @Column({
+    field: 'created_at',
+    type: DataType.DATE,
+  })
+  createdAt: Date;
 }
 
 export type TProblemTagModel = typeof ProblemTagModel;
