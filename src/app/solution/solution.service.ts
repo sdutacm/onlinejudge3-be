@@ -1696,10 +1696,10 @@ export default class SolutionService {
             detail: {
               cases: cases.map((r: any) => ({
                 result: r.result,
-                time: r.timeUsed,
-                memory: r.memoryUsed,
-                errMsg: r.errmsg || undefined,
-                outMsg: r.outmsg || undefined,
+                time: r.time,
+                memory: r.memory,
+                errMsg: r.errMsg,
+                outMsg: r.outMsg,
               })),
             },
             finishedAt: new Date(),
