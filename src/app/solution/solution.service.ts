@@ -1525,7 +1525,7 @@ export default class SolutionService {
             },
             finishedAt: new Date(),
           });
-          await this.clearSolutionJudgeInfoCache(solutionId);
+          await this.clearSolutionJudgeInfoCache(judgeInfoId);
           // 推送完成状态
           this.pushJudgeStatus(solutionId, [solutionId, 1, result, jResult.last, jResult.total]);
           // 需要更新计数，让异步定时任务去处理
@@ -1652,7 +1652,7 @@ export default class SolutionService {
           }),
         ]);
         await Promise.all([
-          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearSolutionJudgeInfoCache(judgeInfoId),
           this.clearDetailCache(solutionId),
         ]);
         this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
@@ -1670,7 +1670,7 @@ export default class SolutionService {
           }),
         ]);
         await Promise.all([
-          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearSolutionJudgeInfoCache(judgeInfoId),
           this.clearDetailCache(solutionId),
         ]);
         this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
@@ -1711,7 +1711,7 @@ export default class SolutionService {
           }),
         ]);
         await Promise.all([
-          this.clearSolutionJudgeInfoCache(solutionId),
+          this.clearSolutionJudgeInfoCache(judgeInfoId),
           this.clearDetailCache(solutionId),
         ]);
         // 推送完成状态
