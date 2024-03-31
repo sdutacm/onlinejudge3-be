@@ -1506,7 +1506,7 @@ export default class SolutionService {
           });
           await this.clearDetailCache(solutionId);
           // 更新评测信息
-          await this.updateJudgeInfo(solutionId, {
+          await this.updateJudgeInfo(judgeInfoId, {
             result,
             time: maxTimeUsed,
             memory: maxMemoryUsed,
@@ -1687,7 +1687,7 @@ export default class SolutionService {
         } = detail;
         // 更新评测信息
         await Promise.all([
-          await this.updateJudgeInfo(solutionId, {
+          await this.updateJudgeInfo(judgeInfoId, {
             result,
             time: maxTimeUsed,
             memory: maxMemoryUsed,
