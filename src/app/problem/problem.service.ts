@@ -439,6 +439,7 @@ export default class ProblemService {
       tagIds.map((tagId) => ({
         problemId,
         tagId,
+        createdAt: new Date(),
       })),
     );
   }
