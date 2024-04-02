@@ -5,6 +5,7 @@ import Axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import PCancelable from 'p-cancelable';
 import microtime from 'microtime';
+import debug from 'debug';
 import config from '../config';
 import { judgerAgentLogger } from '../utils/logger';
 import { river } from '../proto/river';
@@ -14,6 +15,7 @@ import { convertRiverResultToOJ } from '../utils';
 import { getProblemDataResult } from '../utils/judger';
 
 const logger = judgerAgentLogger;
+const dbg = debug('onlinejudge3:judger-agent:JudgerService');
 
 export interface IJudgeOptions {
   judgeInfoId: number;
@@ -86,13 +88,15 @@ export class JudgerService extends EventEmitter {
 
   private async callbackJudge(judgeInfoId: number, solutionId: number, data: any) {
     try {
-      const res = await this.ojApiInstance.post('/callbackJudge', {
+      const req = {
         judgeInfoId,
         solutionId,
         judgerId: this.judgerId,
         eventTimestampUs: microtime.now(),
         data,
-      });
+      };
+      dbg('callback judge: %O', req);
+      const res = await this.ojApiInstance.post('/callbackJudge', req);
       return !!res.data.success;
     } catch (e) {
       logger.warn('callback judge error:', judgeInfoId, JSON.stringify(data), e.message);
@@ -192,6 +196,7 @@ export class JudgerService extends EventEmitter {
           });
 
           const jResult = await call.run();
+          dbg('judge result: %O', jResult);
           this.onAbortPoint();
           logger.info(`${loggerPrefix} done`, JSON.stringify(jResult));
           this.emit('active');
