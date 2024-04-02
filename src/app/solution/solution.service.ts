@@ -817,6 +817,12 @@ export default class SolutionService {
           },
         },
       );
+    } else if (compileInfo === null) {
+      await this.compileInfoModel.destroy({
+        where: {
+          solutionId,
+        },
+      });
     }
     return res[0] > 0;
   }
@@ -1482,6 +1488,7 @@ export default class SolutionService {
           const result = ESolutionResult.SE;
           await this.update(solutionId, {
             result,
+            compileInfo: null,
           });
           await this.clearDetailCache(solutionId);
           this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
@@ -1503,6 +1510,7 @@ export default class SolutionService {
             result,
             time: maxTimeUsed,
             memory: maxMemoryUsed,
+            compileInfo: null,
           });
           await this.clearDetailCache(solutionId);
           // 更新评测信息
@@ -1668,6 +1676,7 @@ export default class SolutionService {
           }),
           this.update(solutionId, {
             result,
+            compileInfo: null,
           }),
         ]);
         await Promise.all([
@@ -1709,6 +1718,7 @@ export default class SolutionService {
             result,
             time: maxTimeUsed,
             memory: maxMemoryUsed,
+            compileInfo: null,
           }),
         ]);
         await Promise.all([

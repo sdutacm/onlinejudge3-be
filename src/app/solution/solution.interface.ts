@@ -287,7 +287,7 @@ export interface IMSolutionServiceUpdateOpt {
   time?: ISolutionModel['time'];
   memory?: ISolutionModel['time'];
   shared?: ISolutionModel['shared'];
-  compileInfo?: string;
+  compileInfo?: string | null;
 }
 
 export type IMSolutionServiceUpdateRes = boolean;
