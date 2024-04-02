@@ -1659,6 +1659,7 @@ export default class SolutionService {
         break;
       }
       case 'SystemError': {
+        this.ctx.logger.error('[updateJudgeFinish] SystemError:', detail);
         const result = ESolutionResult.SE;
         await Promise.all([
           this.updateJudgeInfo(judgeInfoId, {

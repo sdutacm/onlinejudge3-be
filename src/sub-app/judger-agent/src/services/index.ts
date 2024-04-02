@@ -250,7 +250,9 @@ export class JudgerService extends EventEmitter {
           await this.callbackJudge(judgeInfoId, solutionId, {
             type: 'finish',
             resultType: 'SystemError',
-            detail: {},
+            detail: {
+              error: e.message,
+            },
           });
           if (e instanceof InvalidSolutionError) {
             logger.warn(loggerPrefix, e);
