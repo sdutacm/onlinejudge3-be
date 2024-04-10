@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY package.json ./
 COPY package-lock.json ./
-COPY .npmrc ./
 COPY .node-version ./
 COPY tsconfig.json ./
 COPY ecosystem.config.js ./
