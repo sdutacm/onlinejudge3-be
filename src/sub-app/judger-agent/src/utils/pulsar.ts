@@ -22,7 +22,7 @@ export function getPulsarClient() {
           m = pulsarLogger.error;
           break;
       }
-      m.bind(pulsarLogger)(`${file}:${line}`, message);
+      m.bind(pulsarLogger)(`[${file}:${line}]`, message);
     },
   };
   if (config.pulsar.authenticationToken) {
