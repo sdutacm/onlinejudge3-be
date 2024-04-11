@@ -27,3 +27,4 @@ export class Logger {
 
 export const judgerAgentLogger = new Logger('JudgerAgent', `${process.pid}`);
 export const dataManagerLogger = new Logger('DataManager', `${process.pid}`);
+export const pulsarLogger = new Logger('Pulsar', `${process.pid}`);
