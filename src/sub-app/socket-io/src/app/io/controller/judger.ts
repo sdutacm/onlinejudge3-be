@@ -1,5 +1,6 @@
 import { Application } from 'midway';
 import { isPrivate as isPrivateIp } from 'ip';
+import { checkEmitAuth } from '../utils/auth';
 
 /**
  * 编码评测状态。
@@ -28,34 +29,22 @@ export function encodeJudgeStatusBuffer(
 }
 
 module.exports = (app: Application) => {
-  class Controller extends app.Controller {
+  class JudgerController extends app.Controller {
     async subscribe() {
-      console.log('rooms:', this.ctx.socket.rooms);
       const solutionIds: number[] = this.ctx.args[0];
-      console.log('subscribe:', solutionIds);
+      if (!Array.isArray(solutionIds) || solutionIds.length === 0) {
+        return;
+      }
+      console.log(`[judger] client subscribe: ${solutionIds}`);
       solutionIds.forEach((solutionId) => {
-        const room = `s:${solutionId}`;
+        const room = `solution:${solutionId}`;
         this.ctx.socket.join(room);
         this.ctx.socket.emit('res', `subscribed ${solutionId}`);
       });
     }
 
     async innerHttpAcceptPushStatus() {
-      const check = () => {
-        if (
-          this.config.emitAuthKey &&
-          this.config.emitAuthKey === this.ctx.request.headers['x-emit-auth']
-        ) {
-          return true;
-        }
-        if (isPrivateIp(this.ctx.ip)) {
-          return true;
-        }
-        return false;
-      };
-
-      const statusFormArray = this.ctx.request.body as any[];
-      if (!check()) {
+      if (!checkEmitAuth(this.ctx, this.config)) {
         this.ctx.status = 403;
         this.ctx.body = {
           success: false,
@@ -64,6 +53,8 @@ module.exports = (app: Application) => {
         };
         return;
       }
+
+      const statusFormArray = this.ctx.request.body as any[];
       if (!Array.isArray(statusFormArray)) {
         this.ctx.status = 422;
         this.ctx.body = {
@@ -74,15 +65,16 @@ module.exports = (app: Application) => {
         return;
       }
       const solutionId = statusFormArray[0];
-      this.ctx.logger.info('innerHttpAcceptPushStatus', statusFormArray);
+      this.ctx.logger.info('[judger] innerHttpAcceptPushStatus:', statusFormArray);
       // @ts-ignore
       const status = encodeJudgeStatusBuffer(...statusFormArray);
-      this.ctx.app.io.of('/judger').to(`s:${solutionId}`).emit('s', status);
+      this.ctx.app.io.of('/judger').to(`solution:${solutionId}`).emit('s', status);
       this.ctx.body = {
         success: true,
         data: {},
       };
     }
   }
-  return Controller;
+
+  return JudgerController;
 };

@@ -8,4 +8,10 @@ module.exports = (app: Application) => {
     '/socketBridge/pushJudgeStatus',
     app.io.controller.judger.innerHttpAcceptPushStatus,
   );
+
+  app.io.of('/competition').route('subscribe', app.io.controller.competition.subscribe);
+  app.router.post(
+    '/socketBridge/pushCompetitionData',
+    app.io.controller.competition.innerHttpAcceptPushData,
+  );
 };

@@ -1,0 +1,45 @@
+version: '3'
+services:
+  io-1:
+    image: sdutacm/onlinejudge3-socket-io
+    network_mode: host
+    env_file:
+      - ./docker.env
+    environment:
+      - PORT=7011
+    volumes:
+      - ./logs/onlinejudge3-be-socket-io-1:/root/logs/onlinejudge3-be-socket-io
+      - ./config.js:/app/dist/config/config.dynamic.js:ro
+
+  io-2:
+    image: sdutacm/onlinejudge3-socket-io
+    network_mode: host
+    env_file:
+      - ./docker.env
+    environment:
+      - PORT=7012
+    volumes:
+      - ./logs/onlinejudge3-be-socket-io-2:/root/logs/onlinejudge3-be-socket-io
+      - ./config.js:/app/dist/config/config.dynamic.js:ro
+
+  io-3:
+    image: sdutacm/onlinejudge3-socket-io
+    network_mode: host
+    env_file:
+      - ./docker.env
+    environment:
+      - PORT=7013
+    volumes:
+      - ./logs/onlinejudge3-be-socket-io-3:/root/logs/onlinejudge3-be-socket-io
+      - ./config.js:/app/dist/config/config.dynamic.js:ro
+
+  io-4:
+    image: sdutacm/onlinejudge3-socket-io
+    network_mode: host
+    env_file:
+      - ./docker.env
+    environment:
+      - PORT=7014
+    volumes:
+      - ./logs/onlinejudge3-be-socket-io-4:/root/logs/onlinejudge3-be-socket-io
+      - ./config.js:/app/dist/config/config.dynamic.js:ro

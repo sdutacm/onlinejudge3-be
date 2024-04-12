@@ -10,6 +10,8 @@ module.exports = (app: Application) => {
       `🚀 Sub App socket.io is launching... (NODE_ENV: ${process.env.NODE_ENV}, EGG_SERVER_ENV: ${process.env.EGG_SERVER_ENV})`,
     );
 
+    app.config.io.path && app.io.path(app.config.io.path);
+
     console.log('✅ Sub App socket.io launched');
   });
 

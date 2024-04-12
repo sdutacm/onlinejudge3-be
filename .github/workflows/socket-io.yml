@@ -1,0 +1,44 @@
+name: Build Socket.IO Docker Image
+on:
+  push:
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/sub-app/socket-io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      # - uses: actions/setup-node@v3
+      #   with:
+      #     node-version: 16
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to TCR
+        uses: docker/login-action@v2
+        with:
+          registry: ccr.ccs.tencentyun.com
+          username: ${{ secrets.TCR_USERNAME }}
+          password: ${{ secrets.TCR_TOKEN }}
+      - name: Build and Push Image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/sub-app/socket-io
+          file: ./src/sub-app/socket-io/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/onlinejudge3-socket-io:1
+            ${{ secrets.DOCKERHUB_USERNAME }}/onlinejudge3-socket-io:latest
+            ccr.ccs.tencentyun.com/${{ secrets.TCR_NSP }}/onlinejudge3-socket-io:1
+            ccr.ccs.tencentyun.com/${{ secrets.TCR_NSP }}/onlinejudge3-socket-io:latest

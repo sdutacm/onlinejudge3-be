@@ -15,6 +15,7 @@
     "devtest": "cross-env TS_NODE_PROJECT=test/tsconfig.json NODE_ENV=test DEBUG=-* midway-bin test --ts --sticky",
     "lint": "eslint --fix {src,test}/**/*.ts",
     "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be-socket-io --framework=midway --ts --sticky --workers=1",
+    "start:foreground": "egg-scripts start --title=egg-server-onlinejudge3-be-socket-io --framework=midway --ts --sticky --workers=1",
     "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be-socket-io",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest"
   },
@@ -24,10 +25,12 @@
     "egg-scripts": "^2.10.0",
     "egg-socket.io": "^4.1.6",
     "ip": "^1.1.5",
+    "lodash": "^4.17.15",
     "midway": "^1.0.0"
   },
   "devDependencies": {
     "@types/ip": "^1.1.0",
+    "@types/lodash": "^4.14.151",
     "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.18",
     "@typescript-eslint/eslint-plugin": "^2.24.0",
