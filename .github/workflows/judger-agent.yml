@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'src/sub-app/judger-agent/**'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
