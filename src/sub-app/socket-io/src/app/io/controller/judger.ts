@@ -66,6 +66,7 @@ module.exports = (app: Application) => {
       }
       const solutionId = statusFormArray[0];
       this.ctx.logger.info('[judger] innerHttpAcceptPushStatus:', statusFormArray);
+      console.log('[judger] innerHttpAcceptPushStatus:', statusFormArray);
       // @ts-ignore
       const status = encodeJudgeStatusBuffer(...statusFormArray);
       this.ctx.app.io.of('/judger').to(`solution:${solutionId}`).emit('s', status);

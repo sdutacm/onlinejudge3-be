@@ -31,6 +31,7 @@ module.exports = (app: Application) => {
         data: any;
       };
       this.ctx.logger.info('[competition] innerHttpAcceptPushData:', competitionId, userId, data);
+      console.log('[competition] innerHttpAcceptPushData:', competitionId, userId, data);
       this.ctx.app.io
         .of('/competition')
         .to(`competition:${competitionId}_${userId}`)

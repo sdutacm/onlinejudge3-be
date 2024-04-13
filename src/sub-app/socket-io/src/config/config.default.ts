@@ -62,8 +62,10 @@ export default (appInfo: EggAppInfo) => {
     init: {},
     namespace: {
       '/': {
-        connectionMiddleware: ['auth'],
-        packetMiddleware: ['filter'],
+        // connectionMiddleware: ['auth'],
+        // packetMiddleware: ['filter'],
+        connectionMiddleware: [],
+        packetMiddleware: [],
       },
       '/judger': {
         connectionMiddleware: [],
