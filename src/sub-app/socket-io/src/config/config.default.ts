@@ -69,6 +69,10 @@ export default (appInfo: EggAppInfo) => {
         connectionMiddleware: [],
         packetMiddleware: [],
       },
+      '/competition': {
+        connectionMiddleware: [],
+        packetMiddleware: [],
+      },
     },
     redis: {
       host: '127.0.0.1',
