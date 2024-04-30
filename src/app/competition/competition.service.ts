@@ -108,6 +108,7 @@ import { ESolutionResult, ECompetitionUserRole } from '@/common/enums';
 import { compileVarScoreExpression } from '@/common/utils/competition';
 import { ICompetitionSpConfig } from '@/common/interfaces/competition';
 import { CCompetitionLogService } from './competitionLog.service';
+import { CCompetitionEventService } from './competitionEvent.service';
 
 export type CCompetitionService = CompetitionService;
 
@@ -269,6 +270,9 @@ export default class CompetitionService {
 
   @inject()
   competitionLogService: CCompetitionLogService;
+
+  @inject()
+  competitionEventService: CCompetitionEventService;
 
   @inject()
   userModel: TUserModel;

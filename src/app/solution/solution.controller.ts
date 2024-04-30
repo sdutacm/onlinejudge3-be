@@ -40,8 +40,9 @@ import { EPerm } from '@/common/configs/perm.config';
 import { CCompetitionService } from '../competition/competition.service';
 import { isCompetitionSolutionInFrozen } from '@/utils/competition';
 import { CCompetitionLogService } from '../competition/competitionLog.service';
-import { ECompetitionLogAction } from '../competition/competition.enum';
+import { ECompetitionLogAction, ECompetitionEvent } from '../competition/competition.enum';
 import { isContestSolutionInFrozen } from '@/utils/contest';
+import { CCompetitionEventService } from '../competition/competitionEvent.service';
 
 @provide()
 @controller('/')
@@ -66,6 +67,9 @@ export default class SolutionController {
 
   @inject()
   competitionLogService: CCompetitionLogService;
+
+  @inject()
+  competitionEventService: CCompetitionEventService;
 
   @inject()
   utils: IUtils;
@@ -524,6 +528,11 @@ export default class SolutionController {
           problemId,
           userId: sess.userId,
         });
+        this.competitionEventService.event(competitionId, ECompetitionEvent.SubmitSolution, {
+          solutionId: newId,
+          problemId,
+          userId: sess.userId,
+        });
       }
     } catch (e) {
       console.error(e);
@@ -630,6 +639,22 @@ export default class SolutionController {
             code: codeMap.get(s.solutionId) || '',
           }),
         ),
+      );
+
+      await Promise.all(
+        chunk.map((s) => {
+          if (s.competitionId) {
+            return this.competitionEventService
+              .event(s.competitionId, ECompetitionEvent.RejudgeSolution, {
+                solutionId: s.solutionId,
+                problemId: s.problemId,
+                userId: s.userId,
+                judgeInfoId: judgeInfoIdMap.get(s.solutionId),
+              })
+              .then(() => {});
+          }
+          return Promise.resolve();
+        }),
       );
     }
 

@@ -2,7 +2,7 @@ import { IUserModel, IUserModelRatingHistory } from '../user/user.interface';
 import { IMProblemDetail } from '../problem/problem.interface';
 import { ECompetitionUserRole, ECompetitionUserStatus, EContestRatingStatus } from '@/common/enums';
 import { ICompetitionUserInfo } from '@/common/interfaces/competition';
-import { ECompetitionLogAction } from './competition.enum';
+import { ECompetitionLogAction, ECompetitionEvent } from './competition.enum';
 import { IMContestRatingContestDetail } from '../contest/contest.interface';
 
 export interface ICompetitionSession {
@@ -250,6 +250,31 @@ export interface IMCompetitionLogLite {
   solutionId: ICompetitionLogModel['solutionId'];
   detail: ICompetitionLogModel['detail'];
   createdAt: ICompetitionLogModel['createdAt'];
+}
+//#endregion
+
+//#region competition event model
+export interface ICompetitionEventModel {
+  competitionEventId: number;
+  competitionId: number;
+  event: ECompetitionEvent;
+  detail: any;
+  userId: number | null;
+  problemId: number | null;
+  solutionId: number | null;
+  judgeInfoId: number | null;
+  createdAt: Date;
+}
+
+export interface IMCompetitionEventLite {
+  competitionEventId: ICompetitionEventModel['competitionEventId'];
+  event: ICompetitionEventModel['event'];
+  detail: ICompetitionEventModel['detail'];
+  userId: ICompetitionEventModel['userId'];
+  problemId: ICompetitionEventModel['problemId'];
+  solutionId: ICompetitionEventModel['solutionId'];
+  judgeInfoId: ICompetitionEventModel['judgeInfoId'];
+  createdAt: ICompetitionEventModel['createdAt'];
 }
 //#endregion
 

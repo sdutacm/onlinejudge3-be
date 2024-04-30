@@ -37,3 +37,14 @@ export enum ECompetitionLogAction {
   CreateNotification = 'CreateNotification',
   SpGenshinExplorationUnlock = 'SpGenshinExplorationUnlock',
 }
+
+export enum ECompetitionEvent {
+  SubmitSolution = 'solution:SubmitSolution',
+  RejudgeSolution = 'solution:RejudgeSolution',
+  JudgeStart = 'solution:JudgeStart',
+  JudgeProgress = 'solution:JudgeProgress',
+  JudgeFinish = 'solution:JudgeFinish',
+  JudgeCancel = 'solution:JudgeCancel',
+  SolutionResultSettle = 'solution:SolutionResultSettle',
+  SolutionResultChange = 'solution:SolutionResultChange',
+}

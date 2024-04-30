@@ -65,7 +65,11 @@ import {
   EContestRatingStatus,
 } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
-import { ECompetitionLogAction, ECompetitionSettingAllowedAuthMethod } from './competition.enum';
+import {
+  ECompetitionLogAction,
+  ECompetitionSettingAllowedAuthMethod,
+  ECompetitionEvent,
+} from './competition.enum';
 import { exec } from 'child_process';
 import path from 'path';
 import { IAppConfig } from '@/config/config.interface';
@@ -79,6 +83,7 @@ import {
   checkSpGenshinUnlockSection,
   ESpGenshinSectionCheckUnlockResult,
 } from '@/common/utils/competition-genshin';
+import { CCompetitionEventService } from './competitionEvent.service';
 
 @provide()
 @controller('/')
@@ -103,6 +108,9 @@ export default class CompetitionController {
 
   @inject()
   competitionLogService: CCompetitionLogService;
+
+  @inject()
+  competitionEventService: CCompetitionEventService;
 
   @inject()
   utils: IUtils;
