@@ -644,6 +644,10 @@ const solutionContract = {
       judgeInfoId: { type: 'number' },
       solutionId: { type: 'number' },
       judgerId: { type: 'string' },
+      userId: { type: 'number' },
+      problemId: { type: 'number' },
+      contestId: { type: 'number' },
+      competitionId: { type: 'number' },
       data: {
         anyOf: [
           {
@@ -684,7 +688,7 @@ const solutionContract = {
       },
       eventTimestampUs: { type: 'number' },
     },
-    additionalProperties: false,
+    additionalProperties: true,
     required: ['judgeInfoId', 'solutionId', 'judgerId', 'data', 'eventTimestampUs'],
   } as defContract.ContractSchema,
 };

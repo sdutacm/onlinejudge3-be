@@ -30,6 +30,9 @@ export interface IJudgeOptions {
   user: {
     userId: number;
   };
+  competition?: {
+    competitionId: number;
+  };
   language: string;
   code: string;
 }
@@ -86,12 +89,20 @@ export class JudgerService extends EventEmitter {
     }
   }
 
-  private async callbackJudge(judgeInfoId: number, solutionId: number, data: any) {
+  private async callbackJudge(
+    judgeInfoId: number,
+    solutionId: number,
+    redundant: { userId: number; problemId: number; competitionId?: number },
+    data: any,
+  ) {
     try {
       const req = {
         judgeInfoId,
         solutionId,
         judgerId: this.judgerId,
+        userId: redundant.userId,
+        problemId: redundant.problemId,
+        competitionId: redundant.competitionId,
         eventTimestampUs: microtime.now(),
         data,
       };
@@ -112,9 +123,11 @@ export class JudgerService extends EventEmitter {
 
       const logic = async () => {
         this.onAbortPoint();
-        const { judgeInfoId, solutionId, problem, user, language, code } = options;
+        const { judgeInfoId, solutionId, problem, language, code } = options;
         const { revision, problemId, timeLimit, memoryLimit, spj = false } = problem;
-        const { userId } = user;
+        const { userId } = options.user || {};
+        const { competitionId } = options.competition || {};
+        const redundant = { userId, problemId, competitionId };
         const judgeType = spj ? river.JudgeType.Special : river.JudgeType.Standard;
         const loggerPrefix = `[${judgeInfoId}/${solutionId}/${problemId}/${revision}]`;
 
@@ -132,7 +145,7 @@ export class JudgerService extends EventEmitter {
           }
           this.onAbortPoint();
 
-          await this.callbackJudge(judgeInfoId, solutionId, {
+          await this.callbackJudge(judgeInfoId, solutionId, redundant, {
             type: 'start',
           });
           this.onAbortPoint();
@@ -180,7 +193,7 @@ export class JudgerService extends EventEmitter {
             onJudgeCaseStart: (current, total) => {
               this.onAbortPoint();
               logger.info(`${loggerPrefix} onJudgeCaseStart ${current}/${total}`);
-              this.callbackJudge(judgeInfoId, solutionId, {
+              this.callbackJudge(judgeInfoId, solutionId, redundant, {
                 type: 'progress',
                 current,
                 total,
@@ -203,7 +216,7 @@ export class JudgerService extends EventEmitter {
 
           switch (jResult.type) {
             case 'CompileError': {
-              await this.callbackJudge(judgeInfoId, solutionId, {
+              await this.callbackJudge(judgeInfoId, solutionId, redundant, {
                 type: 'finish',
                 resultType: 'CompileError',
                 detail: {
@@ -236,7 +249,7 @@ export class JudgerService extends EventEmitter {
                 errMsg: r.errmsg || undefined,
                 outMsg: r.outmsg || undefined,
               }));
-              await this.callbackJudge(judgeInfoId, solutionId, {
+              await this.callbackJudge(judgeInfoId, solutionId, redundant, {
                 type: 'finish',
                 resultType: 'Done',
                 detail: {
@@ -252,7 +265,7 @@ export class JudgerService extends EventEmitter {
             }
           }
         } catch (e) {
-          await this.callbackJudge(judgeInfoId, solutionId, {
+          await this.callbackJudge(judgeInfoId, solutionId, redundant, {
             type: 'finish',
             resultType: 'SystemError',
             detail: {

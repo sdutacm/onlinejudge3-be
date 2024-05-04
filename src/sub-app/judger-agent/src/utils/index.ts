@@ -69,6 +69,7 @@ export async function decodeJudgeQueueMessage(
     solutionId: obj.solutionId,
     problem: obj.problem as Required<judge.IProblem>,
     user: obj.user as Required<judge.IUser>,
+    competition: obj.competition as Required<judge.ICompetition>,
     language: obj.language,
     code,
   };

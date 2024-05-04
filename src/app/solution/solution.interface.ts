@@ -226,6 +226,13 @@ export interface IMSolutionJudgeStatus {
   total?: number; // 总测试点数量
 }
 
+export interface IMSolutionJudgeRedundantData {
+  userId?: number;
+  problemId?: number;
+  contestId?: number;
+  competitionId?: number;
+}
+
 //#region service.getList
 export interface IMSolutionServiceGetListOpt {
   solutionId?: ISolutionModel['solutionId'];

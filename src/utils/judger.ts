@@ -64,7 +64,7 @@ export async function encodeJudgeQueueMessage(options: {
   language: string;
   code: string;
 }) {
-  const { judgeInfoId, solutionId, problem, user, language, code } = options;
+  const { judgeInfoId, solutionId, problem, user, competition, language, code } = options;
   const gzipPromise = (data: Uint8Array) =>
     new Promise<Uint8Array>((resolve, reject) => {
       compress(data, { level: 9 }, (err, result) => {
@@ -81,6 +81,7 @@ export async function encodeJudgeQueueMessage(options: {
     solutionId,
     problem,
     user,
+    competition,
     language,
     codeEncoding: judge.CodeEncodingEnum.GZIP,
     code: codeCompressed,

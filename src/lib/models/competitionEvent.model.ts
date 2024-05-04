@@ -21,6 +21,7 @@ export default class CompetitionEventModel extends Model<CompetitionEventModel>
   @Column({
     field: 'competition_event_id',
     primaryKey: true,
+    autoIncrement: true,
     type: DataType.INTEGER,
   })
   @Index({

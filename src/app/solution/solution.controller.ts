@@ -507,6 +507,7 @@ export default class SolutionController {
       user: {
         userId: sess.userId,
       },
+      competition: competitionId ? { competitionId } : undefined,
       language,
       code,
     });
@@ -532,6 +533,7 @@ export default class SolutionController {
           solutionId: newId,
           problemId,
           userId: sess.userId,
+          judgeInfoId,
         });
       }
     } catch (e) {
@@ -635,6 +637,7 @@ export default class SolutionController {
             user: {
               userId: s.userId,
             },
+            competition: s.competitionId ? { competitionId: s.competitionId } : undefined,
             language: this.utils.judger.convertOJLanguageToRiver(s.language) || '',
             code: codeMap.get(s.solutionId) || '',
           }),
@@ -668,9 +671,16 @@ export default class SolutionController {
   async [routesBe.callbackJudge.i](ctx: Context): Promise<void> {
     const req = ctx.request.body as ICallbackJudgeReq;
     const { judgeInfoId, solutionId, judgerId, data, eventTimestampUs } = req;
+    const redundant = this.lodash.pick(req, ['userId', 'problemId', 'contestId', 'competitionId']);
     switch (data.type) {
       case 'start': {
-        await this.service.updateJudgeStart(judgeInfoId, solutionId, judgerId, eventTimestampUs);
+        await this.service.updateJudgeStart(
+          judgeInfoId,
+          solutionId,
+          judgerId,
+          eventTimestampUs,
+          redundant,
+        );
         break;
       }
       case 'progress': {
@@ -679,6 +689,7 @@ export default class SolutionController {
           solutionId,
           judgerId,
           eventTimestampUs,
+          redundant,
           data.current,
           data.total,
         );
@@ -690,6 +701,7 @@ export default class SolutionController {
           solutionId,
           judgerId,
           eventTimestampUs,
+          redundant,
           data.resultType,
           data.detail,
         );

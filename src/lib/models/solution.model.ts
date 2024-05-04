@@ -1,7 +1,17 @@
-import { Model, Table, Column, DataType, Index, Default, AllowNull } from 'sequelize-typescript';
+import {
+  Model,
+  Table,
+  Column,
+  DataType,
+  Index,
+  Default,
+  AllowNull,
+  HasOne,
+} from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { ESolutionResult } from '@/common/enums';
 import { ISolutionModel } from '@/app/solution/solution.interface';
+import JudgeInfoModel from './judgeInfo.model';
 
 export const factory = () => SolutionModel;
 providerWrapper([
@@ -253,6 +263,9 @@ export default class SolutionModel extends Model<SolutionModel> implements ISolu
     type: DataType.BOOLEAN,
   })
   isContestUser: boolean;
+
+  @HasOne(() => JudgeInfoModel, { foreignKey: 'judgeInfoId', sourceKey: 'judgeInfoId' })
+  judgeInfo: JudgeInfoModel;
 }
 
 export type TSolutionModel = typeof SolutionModel;

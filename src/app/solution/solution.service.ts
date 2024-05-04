@@ -51,6 +51,7 @@ import {
   IMSolutionServiceGetLiteSolutionSliceOpt,
   IMSolutionServiceGetLiteSolutionSliceRes,
   IMSolutionServiceLiteSolution,
+  IMSolutionJudgeRedundantData,
 } from './solution.interface';
 import { Op, QueryTypes, fn as sequelizeFn, col as sequelizeCol } from 'sequelize';
 import { IUtils } from '@/utils';
@@ -74,6 +75,8 @@ import { ICompetitionModel } from '../competition/competition.interface';
 import { IUserModel } from '../user/user.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import microtime from 'microtime';
+import { CCompetitionEventService } from '../competition/competitionEvent.service';
+import { ECompetitionEvent } from '../competition/competition.enum';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -159,6 +162,9 @@ export default class SolutionService {
 
   @inject()
   competitionService: CCompetitionService;
+
+  @inject()
+  competitionEventService: CCompetitionEventService;
 
   @inject()
   utils: IUtils;
@@ -1573,16 +1579,44 @@ export default class SolutionService {
     return res === 0;
   }
 
+  async updateStaleJudgeInfoAsCancelled(judgeInfoId: number) {
+    if (!judgeInfoId) {
+      return false;
+    }
+    const res = await this.judgeInfoModel.update(
+      {
+        result: ESolutionResult.CNL,
+      },
+      {
+        where: {
+          judgeInfoId,
+          result: {
+            [Op.in]: [ESolutionResult.RPD, ESolutionResult.JG],
+          },
+        },
+      },
+    );
+    return res[0] > 0;
+  }
+
   async updateJudgeStart(
     judgeInfoId: number,
     solutionId: number,
     judgerId: string,
     eventTimestampUs: number,
+    redundant: IMSolutionJudgeRedundantData,
   ): Promise<void> {
     if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
-      await this.delSolutionJudgeStatus(judgeInfoId);
+      this.ctx.logger.info(
+        `[updateJudgeStart] stale judge (solutionId=${solutionId}, judgeInfoId=${judgeInfoId}), skip`,
+      );
+      await Promise.all([
+        this.updateStaleJudgeInfoAsCancelled(judgeInfoId),
+        this.delSolutionJudgeStatus(judgeInfoId),
+      ]);
       return;
     }
+
     await this.model.update(
       {
         result: ESolutionResult.RPD,
@@ -1605,6 +1639,18 @@ export default class SolutionService {
       eventTimestampUs,
     });
     this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG]);
+    if (redundant.competitionId) {
+      this.competitionEventService.event(redundant.competitionId, ECompetitionEvent.JudgeStart, {
+        detail: {
+          judgerId,
+          ts: eventTimestampUs,
+        },
+        solutionId,
+        judgeInfoId,
+        userId: redundant.userId,
+        problemId: redundant.problemId,
+      });
+    }
   }
 
   async updateJudgeProgress(
@@ -1612,13 +1658,21 @@ export default class SolutionService {
     solutionId: number,
     judgerId: string,
     eventTimestampUs: number,
+    redundant: IMSolutionJudgeRedundantData,
     current: number,
     total: number,
   ): Promise<void> {
     if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
-      await this.delSolutionJudgeStatus(judgeInfoId);
+      this.ctx.logger.info(
+        `[updateJudgeProgress] stale judge (solutionId=${solutionId}, judgeInfoId=${judgeInfoId}), skip`,
+      );
+      await Promise.all([
+        this.updateStaleJudgeInfoAsCancelled(judgeInfoId),
+        this.delSolutionJudgeStatus(judgeInfoId),
+      ]);
       return;
     }
+
     const currentJudgeStatus = await this.getSolutionJudgeStatus(judgeInfoId);
     if (currentJudgeStatus && currentJudgeStatus.eventTimestampUs > eventTimestampUs) {
       return;
@@ -1632,6 +1686,20 @@ export default class SolutionService {
       total,
     });
     this.pushJudgeStatus(solutionId, [solutionId, 0, ESolutionResult.JG, current, total]);
+    if (redundant.competitionId) {
+      this.competitionEventService.event(redundant.competitionId, ECompetitionEvent.JudgeProgress, {
+        detail: {
+          current,
+          total,
+          judgerId,
+          ts: eventTimestampUs,
+        },
+        solutionId,
+        judgeInfoId,
+        userId: redundant.userId,
+        problemId: redundant.problemId,
+      });
+    }
   }
 
   async updateJudgeFinish(
@@ -1639,15 +1707,25 @@ export default class SolutionService {
     solutionId: number,
     judgerId: string,
     eventTimestampUs: number,
+    redundant: IMSolutionJudgeRedundantData,
     resultType: 'CompileError' | 'SystemError' | 'Done',
     detail: any,
   ): Promise<void> {
     if (await this.checkIsJudgeStale(judgeInfoId, solutionId)) {
+      this.ctx.logger.info(
+        `[updateJudgeFinish] stale judge (solutionId=${solutionId}, judgeInfoId=${judgeInfoId}), skip`,
+      );
+      await Promise.all([
+        this.updateStaleJudgeInfoAsCancelled(judgeInfoId),
+        this.delSolutionJudgeStatus(judgeInfoId),
+      ]);
       return;
     }
+
+    let result: ESolutionResult = ESolutionResult.SE;
     switch (resultType) {
       case 'CompileError': {
-        const result = ESolutionResult.CE;
+        result = ESolutionResult.CE;
         const { compileInfo } = detail;
         await Promise.all([
           this.updateJudgeInfo(judgeInfoId, {
@@ -1664,11 +1742,30 @@ export default class SolutionService {
           this.clearDetailCache(solutionId),
         ]);
         this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
+        // 推送比赛事件
+        if (redundant.competitionId) {
+          this.competitionEventService.event(
+            redundant.competitionId,
+            ECompetitionEvent.JudgeFinish,
+            {
+              detail: {
+                resultType,
+                result,
+                judgerId,
+                ts: eventTimestampUs,
+              },
+              solutionId,
+              judgeInfoId,
+              userId: redundant.userId,
+              problemId: redundant.problemId,
+            },
+          );
+        }
         break;
       }
       case 'SystemError': {
         this.ctx.logger.error('[updateJudgeFinish] SystemError:', detail);
-        const result = ESolutionResult.SE;
+        result = ESolutionResult.SE;
         await Promise.all([
           this.updateJudgeInfo(judgeInfoId, {
             result,
@@ -1684,17 +1781,30 @@ export default class SolutionService {
           this.clearDetailCache(solutionId),
         ]);
         this.pushJudgeStatus(solutionId, [solutionId, 1, result]);
+        // 推送比赛事件
+        if (redundant.competitionId) {
+          this.competitionEventService.event(
+            redundant.competitionId,
+            ECompetitionEvent.JudgeFinish,
+            {
+              detail: {
+                resultType,
+                result,
+                judgerId,
+                ts: eventTimestampUs,
+              },
+              solutionId,
+              judgeInfoId,
+              userId: redundant.userId,
+              problemId: redundant.problemId,
+            },
+          );
+        }
         break;
       }
       case 'Done': {
-        const {
-          result,
-          maxTimeUsed,
-          maxMemoryUsed,
-          lastCaseNumber,
-          totalCaseNumber,
-          cases,
-        } = detail;
+        const { maxTimeUsed, maxMemoryUsed, lastCaseNumber, totalCaseNumber, cases } = detail;
+        result = detail.result;
         // 更新评测信息
         await Promise.all([
           await this.updateJudgeInfo(judgeInfoId, {
@@ -1727,6 +1837,30 @@ export default class SolutionService {
         ]);
         // 推送完成状态
         this.pushJudgeStatus(solutionId, [solutionId, 1, result, lastCaseNumber, totalCaseNumber]);
+        // 推送比赛事件
+        if (redundant.competitionId) {
+          this.competitionEventService.event(
+            redundant.competitionId,
+            ECompetitionEvent.JudgeFinish,
+            {
+              detail: {
+                resultType,
+                result,
+                maxTimeUsed,
+                maxMemoryUsed,
+                lastCaseNumber,
+                totalCaseNumber,
+                cases,
+                judgerId,
+                ts: eventTimestampUs,
+              },
+              solutionId,
+              judgeInfoId,
+              userId: redundant.userId,
+              problemId: redundant.problemId,
+            },
+          );
+        }
         // 设置异步定时任务来更新计数
         this.model
           .findOne({
@@ -1752,6 +1886,34 @@ export default class SolutionService {
           });
         break;
       }
+    }
+
+    if (redundant.competitionId) {
+      const hasPreviousJudgeInfo =
+        (await this.judgeInfoModel.count({
+          where: {
+            solutionId,
+            judgeInfoId: {
+              [Op.lt]: judgeInfoId,
+            },
+            result: {
+              [Op.ne]: ESolutionResult.CNL,
+            },
+          },
+        })) > 0;
+      const solutionResultEvent = hasPreviousJudgeInfo
+        ? ECompetitionEvent.SolutionResultChange
+        : ECompetitionEvent.SolutionResultSettle;
+      this.competitionEventService.event(redundant.competitionId, solutionResultEvent, {
+        solutionId,
+        judgeInfoId,
+        detail: {
+          resultType,
+          result,
+        },
+        userId: redundant.userId,
+        problemId: redundant.problemId,
+      });
     }
     await this.delSolutionJudgeStatus(judgeInfoId);
   }

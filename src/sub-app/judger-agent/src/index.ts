@@ -121,6 +121,7 @@ class JudgerAgent {
             solutionId: options.solutionId,
             problem: options.problem,
             user: options.user,
+            competition: options.competition,
             language: options.language,
             code: options.code,
           });
