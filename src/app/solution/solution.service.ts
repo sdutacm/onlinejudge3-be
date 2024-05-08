@@ -1889,30 +1889,47 @@ export default class SolutionService {
     }
 
     if (redundant.competitionId) {
-      const hasPreviousJudgeInfo =
-        (await this.judgeInfoModel.count({
-          where: {
-            solutionId,
-            judgeInfoId: {
-              [Op.lt]: judgeInfoId,
-            },
-            result: {
-              [Op.ne]: ESolutionResult.CNL,
-            },
+      const lastJudgeInfo = await this.judgeInfoModel.findOne({
+        where: {
+          solutionId,
+          judgeInfoId: {
+            [Op.lt]: judgeInfoId,
           },
-        })) > 0;
-      const solutionResultEvent = hasPreviousJudgeInfo
-        ? ECompetitionEvent.SolutionResultChange
-        : ECompetitionEvent.SolutionResultSettle;
-      this.competitionEventService.event(redundant.competitionId, solutionResultEvent, {
-        solutionId,
-        judgeInfoId,
-        detail: {
-          result,
+          result: {
+            [Op.ne]: ESolutionResult.CNL,
+          },
         },
-        userId: redundant.userId,
-        problemId: redundant.problemId,
+        order: [['judgeInfoId', 'DESC']],
       });
+      if (!lastJudgeInfo) {
+        this.competitionEventService.event(
+          redundant.competitionId,
+          ECompetitionEvent.SolutionResultSettle,
+          {
+            solutionId,
+            judgeInfoId,
+            detail: {
+              result,
+            },
+            userId: redundant.userId,
+            problemId: redundant.problemId,
+          },
+        );
+      } else if (lastJudgeInfo.result !== result) {
+        this.competitionEventService.event(
+          redundant.competitionId,
+          ECompetitionEvent.SolutionResultChange,
+          {
+            solutionId,
+            judgeInfoId,
+            detail: {
+              result,
+            },
+            userId: redundant.userId,
+            problemId: redundant.problemId,
+          },
+        );
+      }
     }
     await this.delSolutionJudgeStatus(judgeInfoId);
   }
