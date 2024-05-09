@@ -105,7 +105,7 @@ const userContract = {
           type: 'object',
           properties: {
             username: { type: 'string', minLength: 3, maxLength: 20, pattern: '^[0-9A-Za-z_]+$' },
-            nickname: { type: 'string', minLength: 3, maxLength: 20 },
+            nickname: { type: 'string', minLength: 2, maxLength: 20 },
             password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
             school: { type: 'string', maxLength: 100 },
             college: { type: 'string', maxLength: 100 },
