@@ -656,6 +656,21 @@ export default class SolutionService {
   }
 
   /**
+   * 获取指定提交的创建时间。
+   * @param solutionId solutionId
+   * @returns 创建时间
+   */
+  async getSolutionCreateTime(solutionId: ISolutionModel['solutionId']): Promise<Date | undefined> {
+    const dbRes = await this.model.findOne({
+      attributes: ['createdAt'],
+      where: {
+        solutionId,
+      },
+    });
+    return dbRes?.createdAt;
+  }
+
+  /**
    * 按 pk 关联查询提交详情。
    * 如果部分查询的 key 在未找到，则返回的对象中不会含有此 key
    * @param keys 要关联查询的 pk 列表

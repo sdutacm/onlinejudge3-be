@@ -529,11 +529,15 @@ export default class SolutionController {
           problemId,
           userId: sess.userId,
         });
+        const newSolutionCreateTime = await this.service.getSolutionCreateTime(newId);
         this.competitionEventService.event(competitionId, ECompetitionEvent.SubmitSolution, {
           solutionId: newId,
           problemId,
           userId: sess.userId,
           judgeInfoId,
+          detail: {
+            time: newSolutionCreateTime,
+          },
         });
       }
     } catch (e) {
