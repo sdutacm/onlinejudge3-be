@@ -135,7 +135,7 @@ export default class CompetitionController {
     },
   })
   @respList()
-  async [routesBe.getCompetitionList.i](_ctx: Context) {}
+  async [routesBe.getCompetitionList.i](_ctx: Context) { }
 
   @route()
   @id()
@@ -328,7 +328,7 @@ export default class CompetitionController {
     },
   })
   @respDetail()
-  async [routesBe.getCompetitionDetail.i](_ctx: Context) {}
+  async [routesBe.getCompetitionDetail.i](_ctx: Context) { }
 
   @route()
   @authPerm(EPerm.WriteCompetition)
@@ -1313,6 +1313,42 @@ export default class CompetitionController {
       exec(cmd, {
         cwd: this.scriptsConfig.dirPath,
       });
+    }
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  @id()
+  @getDetail(null)
+  async [routesBe.cancelEndCompetition.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    if (!ctx.helper.isContestEnded(detail)) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    } else if (!detail.ended) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    }
+    const settings = (await this.service.getCompetitionSettingDetail(competitionId))!;
+    await this.service.update(competitionId, {
+      ended: false,
+    });
+    await Promise.all([
+      this.service.clearDetailCache(competitionId),
+      this.service.clearCompetitionRanklistCache(competitionId),
+      this.solutionService.clearCompetitionProblemSolutionStatsCache(competitionId),
+    ]);
+    // 根据比赛模式判断相应处理逻辑
+    if (detail.isRating) {
+      // 判断是不是最后一个结算评分的比赛
+      const isLatestRating = await this.service.isLatestRating(competitionId);
+      if (!isLatestRating) {
+        throw new ReqError(Codes.NOT_LATEST_RANKED)
+      }
+
+      // 获取rating until 和 rating change
+      const ratingData = await this.service.getRatingData(competitionId);
+
+      // todo
     }
   }
 

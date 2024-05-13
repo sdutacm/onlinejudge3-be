@@ -703,16 +703,16 @@ export default class CompetitionService {
       ]);
       const cached = detailCached
         ? {
-            ...detailCached,
-            settings: settingsCached
-              ? this.lodash.omit(settingsCached, [
-                  'competitionId',
-                  'joinPassword',
-                  'createdAt',
-                  'updatedAt',
-                ])
-              : undefined,
-          }
+          ...detailCached,
+          settings: settingsCached
+            ? this.lodash.omit(settingsCached, [
+              'competitionId',
+              'joinPassword',
+              'createdAt',
+              'updatedAt',
+            ])
+            : undefined,
+        }
         : null;
       if (cached) {
         // @ts-ignore
@@ -1800,6 +1800,31 @@ export default class CompetitionService {
     data: IMCompetitionRankData,
   ) {
     return this.ctx.helper.redisSet(this.redisKey.competitionRankData, [competitionId], data);
+  }
+
+  async isLatestRating(
+    competitionId: ICompetitionModel['competitionId']
+  ) {
+    console.log("isLatestRating Function: competition_id = ", competitionId)
+    let latestCompetition = await this.ratingContestModel.findOne({
+      // order: [['index', 'DESC']]
+    })
+    console.log("isLatestRating Function: latestCompetition1 = ", latestCompetition)
+    return competitionId === latestCompetition?.id;
+  }
+
+
+  async getRatingData(
+    competitionId: ICompetitionModel['competitionId']
+  ) {
+    let res = null;
+    res = await this.ratingContestModel.findOne({
+      where: {
+        competitionId,
+      },
+      order: [['index', 'DESC']]
+    })
+    return res;
   }
 
   /**
