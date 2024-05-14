@@ -225,6 +225,7 @@ const competitionQuestionDetailFields: Array<TMCompetitionQuestionDetailFields> 
 
 const ratingContestDetailFields: Array<TMContestRatingContestDetailFields> = [
   'contestId',
+  'competitionId',
   'ratingUntil',
   'ratingChange',
   'createdAt',
@@ -1791,6 +1792,17 @@ export default class CompetitionService {
   }
 
   /**
+   * 清除比赛 Rating 计算状态。
+   * @param competitionId competitionId
+   * @param god 是否上帝视角（不传则清空全部）
+   */
+  async deleteRatingStatus(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<void | [void, void]> {
+    return this.ctx.helper.redisDel(this.redisKey.competitionRatingStatus, [competitionId]);
+  }
+
+  /**
    * 设置比赛 RankData。此数据将用于提供给计算脚本进行 rating 计算。
    * @param competitionId competitionId
    * @param data 数据
@@ -1800,6 +1812,28 @@ export default class CompetitionService {
     data: IMCompetitionRankData,
   ) {
     return this.ctx.helper.redisSet(this.redisKey.competitionRankData, [competitionId], data);
+  }
+
+  async getLatestTwoRatingContests() {
+    const latestCompetitions = await this.ratingContestModel.findAll({
+      attributes: ratingContestDetailFields,
+      order: [['ratingContestId', 'DESC']],
+      limit: 2,
+    });
+    return latestCompetitions.map(
+      (d) => d && (d.get({ plain: true }) as IMContestRatingContestDetail),
+    );
+  }
+
+  async deleteRatingContest(competitionId: ICompetitionModel['competitionId']) {
+    if (!competitionId) {
+      return;
+    }
+    await this.ratingContestModel.destroy({
+      where: {
+        competitionId,
+      },
+    });
   }
 
   /**
@@ -1825,6 +1859,18 @@ export default class CompetitionService {
       res && (await this._setRatingContestDetailCache(competitionId, res));
     }
     return res;
+  }
+
+  /**
+   * 清除 Rating 详情缓存。
+   * @param competitionId competitionId
+   */
+  async clearRatingContestDetailCache(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.ratingContestDetailForCompetition, [
+      competitionId,
+    ]);
   }
 
   async getSpGenshinParticipantCanViewProblemIndexes(

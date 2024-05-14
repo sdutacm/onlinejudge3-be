@@ -84,6 +84,8 @@ import {
   ESpGenshinSectionCheckUnlockResult,
 } from '@/common/utils/competition-genshin';
 import { CCompetitionEventService } from './competitionEvent.service';
+import { IRatingContestModel } from '../contest/contest.interface';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 @provide()
 @controller('/')
@@ -126,6 +128,9 @@ export default class CompetitionController {
 
   @config('scripts')
   scriptsConfig: IAppConfig['scripts'];
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   @route()
   @pagination()
@@ -1314,6 +1319,78 @@ export default class CompetitionController {
         cwd: this.scriptsConfig.dirPath,
       });
     }
+  }
+
+  @route()
+  @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.principal])
+  @id()
+  @getDetail(null)
+  async [routesBe.cancelEndCompetition.i](ctx: Context): Promise<void> {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail as IMCompetitionDetail;
+    if (!ctx.helper.isContestEnded(detail)) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    } else if (!detail.ended) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    }
+
+    if (detail.isRating) {
+      const latestRatings = await this.service.getLatestTwoRatingContests();
+      const latestRating = latestRatings[0];
+      const previousRating = latestRatings[1];
+      if (latestRatings.length > 0) {
+        // 判断是不是最后一个结算评分的比赛
+        if (competitionId !== latestRating.competitionId) {
+          throw new ReqError(Codes.NOT_LATEST_RANKED);
+        }
+        // 回滚 rating
+        const curRatingUntil = latestRating.ratingUntil;
+        const prevRatingUntil = previousRating?.ratingUntil;
+        const needRollbackUserIds = Object.keys(curRatingUntil).map((key) => +key);
+        const userToSetRatingMap = new Map<number, IRatingContestModel['ratingUntil'][0]>();
+        for (const userId of needRollbackUserIds) {
+          let userToSetRatingUntil: IRatingContestModel['ratingUntil'][0];
+          if (prevRatingUntil) {
+            const prevRating = prevRatingUntil[userId];
+            userToSetRatingUntil = prevRating || {
+              rating: 0,
+              ratingHistory: [],
+            };
+          } else {
+            userToSetRatingUntil = {
+              rating: 0,
+              ratingHistory: [],
+            };
+          }
+          userToSetRatingMap.set(userId, userToSetRatingUntil);
+        }
+        // 更新 user rating
+        const pq = new this.PromiseQueue(20, Infinity);
+        const queueTasks = needRollbackUserIds.map((userId) =>
+          pq.add(() =>
+            this.userService.update(userId, {
+              rating: userToSetRatingMap.get(userId)!.rating,
+              ratingHistory: userToSetRatingMap.get(userId)!.ratingHistory,
+            }),
+          ),
+        );
+        await Promise.all(queueTasks);
+        // 删除 rating contest
+        await Promise.all([
+          this.service.deleteRatingContest(competitionId),
+          this.service.deleteRatingStatus(competitionId),
+        ]);
+        await this.service.clearRatingContestDetailCache(competitionId);
+      }
+    }
+
+    await this.service.update(competitionId, {
+      ended: false,
+    });
+    await Promise.all([
+      this.service.clearDetailCache(competitionId),
+      this.service.clearCompetitionRanklistCache(competitionId),
+    ]);
   }
 
   @route()
