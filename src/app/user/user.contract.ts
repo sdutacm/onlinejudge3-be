@@ -140,7 +140,6 @@ const userContract = {
         },
       },
       userId: { type: 'number', minimum: 1 },
-      username: { type: 'string' },
       nickname: { type: 'string' },
       school: { type: 'string' },
       college: { type: 'string' },
@@ -166,7 +165,6 @@ const userContract = {
           type: 'object',
           properties: {
             userId: { type: 'number' },
-            username: { type: 'string' },
             nickname: { type: 'string' },
             submitted: { type: 'number' },
             accepted: { type: 'number' },
@@ -186,7 +184,6 @@ const userContract = {
           additionalProperties: false,
           required: [
             'userId',
-            'username',
             'nickname',
             'submitted',
             'accepted',
@@ -215,7 +212,6 @@ const userContract = {
   getUserDetailResp: {
     properties: {
       userId: { type: 'number' },
-      username: { type: 'string' },
       nickname: { type: 'string' },
       email: { type: 'string' },
       submitted: { type: 'number' },
@@ -290,7 +286,6 @@ const userContract = {
     additionalProperties: false,
     required: [
       'userId',
-      'username',
       'nickname',
       'submitted',
       'accepted',

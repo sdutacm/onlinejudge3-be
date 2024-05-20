@@ -403,6 +403,7 @@ export default class UserController {
       const list = ctx.list as IMUserServiceGetListRes;
       if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
         list.rows.forEach((d) => {
+          delete d.username;
           delete d.permission;
           delete d.verified;
           delete d.lastIp;
@@ -443,6 +444,7 @@ export default class UserController {
     } as TreatDateFieldsAsString<typeof detail>;
     if (!ctx.helper.isSelf(userId) && !ctx.helper.checkPerms(EPerm.ReadUser)) {
       return this.lodash.omit(detailResp, [
+        'username',
         'email',
         'defaultLanguage',
         'settings',

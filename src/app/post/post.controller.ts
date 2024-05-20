@@ -16,6 +16,7 @@ import { routesBe } from '@/common/routes';
 import { IUtils } from '@/utils';
 import { ICreatePostReq, ICreatePostResp, IUpdatePostDetailReq } from '@/common/contracts/post';
 import { EPerm } from '@/common/configs/perm.config';
+import { IMPostServiceGetListRes } from './post.interface';
 
 @provide()
 @controller('/')
@@ -37,13 +38,23 @@ export default class PostController {
         delete ctx.request.body.display;
       }
     },
+    afterGetList: (ctx) => {
+      const list = ctx.list as IMPostServiceGetListRes;
+      list.rows.forEach((d) => {
+        delete d.user?.username;
+      });
+    },
   })
   @respList()
   async [routesBe.getPostList.i](_ctx: Context) {}
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(undefined, {
+    afterGetDetail: (ctx) => {
+      delete ctx.detail?.user?.username;
+    },
+  })
   @respDetail()
   async [routesBe.getPostDetail.i](_ctx: Context) {}
 

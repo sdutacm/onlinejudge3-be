@@ -19,6 +19,7 @@ import { ICreateSetResp, ICreateSetReq, IUpdateSetDetailReq } from '@/common/con
 import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { EPerm } from '@/common/configs/perm.config';
+import { IMSetServiceGetListRes } from './set.interface';
 
 @provide()
 @controller('/')
@@ -37,13 +38,24 @@ export default class SetController {
 
   @route()
   @pagination()
-  @getList()
+  @getList(undefined, {
+    afterGetList: (ctx) => {
+      const list = ctx.list as IMSetServiceGetListRes;
+      list.rows.forEach((d) => {
+        delete d.user?.username;
+      });
+    },
+  })
   @respList()
   async [routesBe.getSetList.i](_ctx: Context) {}
 
   @route()
   @id()
-  @getDetail()
+  @getDetail(undefined, {
+    afterGetDetail: (ctx) => {
+      delete ctx.detail?.user?.username;
+    },
+  })
   @respDetail()
   async [routesBe.getSetDetail.i](_ctx: Context) {}
 
