@@ -140,6 +140,7 @@ const userContract = {
         },
       },
       userId: { type: 'number', minimum: 1 },
+      username: { type: 'string' },
       nickname: { type: 'string' },
       school: { type: 'string' },
       college: { type: 'string' },
