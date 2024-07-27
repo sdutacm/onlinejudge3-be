@@ -61,6 +61,7 @@ export default (appInfo: EggAppInfo) => {
   };
 
   config.io = {
+    path: '/onlinejudge3/socket.io',
     init: {},
     namespace: {
       '/': {
