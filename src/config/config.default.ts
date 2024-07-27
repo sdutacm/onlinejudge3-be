@@ -27,6 +27,9 @@ export default (appInfo: EggAppInfo) => {
   config.security = {
     csrf: {
       enable: false,
+      cookieOptions: {
+        path: '/onlinejudge3/',
+      },
     },
   };
 
