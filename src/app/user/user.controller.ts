@@ -41,6 +41,7 @@ import {
   IGetActiveUserCountResp,
   IGetAllUserPermissionsMapResp,
   ISetUserPermissionsReq,
+  IGetSelfCompletedAchievementsResp,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -58,6 +59,7 @@ import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CAuthService } from '../auth/auth.service';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCosHelper } from '@/utils/cos';
+import { CUserAchievementService } from './userAchievement.service';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -83,6 +85,9 @@ export default class UserController {
 
   @inject()
   solutionService: CSolutionService;
+
+  @inject()
+  userAchievementService: CUserAchievementService;
 
   @inject()
   utils: IUtils;
@@ -961,5 +966,21 @@ export default class UserController {
   async [routesBe.setUserPermissions.i](ctx: Context): Promise<void> {
     const { userId, permissions } = ctx.request.body as ISetUserPermissionsReq;
     await this.authService.setUserPermissions(userId, permissions as EPerm[]);
+  }
+
+  /**
+   * 获取当前登录用户已达成成就列表。
+   */
+  @route()
+  @login()
+  async [routesBe.getSelfCompletedAchievements.i](
+    ctx: Context,
+  ): Promise<IGetSelfCompletedAchievementsResp> {
+    const res = await this.userAchievementService.getUserAchievements(ctx.session.userId);
+    return {
+      count: res.length,
+      // @ts-ignore
+      rows: res.map((r) => this.lodash.omit(r, ['userAchievementId'])),
+    };
   }
 }

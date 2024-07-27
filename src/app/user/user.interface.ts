@@ -51,6 +51,17 @@ export interface IUserModel {
 
 export type TUserModelFields = keyof IUserModel;
 
+export interface IUserAchievementModel {
+  userAchievementId: number;
+  userId: number;
+  achievementKey: string;
+  createdAt: Date;
+}
+
+export type TUserAchievementModelFields = keyof IUserAchievementModel;
+
+export type IMUserAchievementDetail = Pick<IUserAchievementModel, TUserAchievementModelFields>;
+
 export type TMUserLiteFields = Extract<
   TUserModelFields,
   | 'userId'

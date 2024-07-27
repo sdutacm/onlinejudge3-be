@@ -522,6 +522,26 @@ const userContract = {
     additionalProperties: false,
     required: ['userId', 'permissions'],
   } as defContract.ContractSchema,
+
+  getSelfCompletedAchievementsResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            achievementKey: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: false,
+          required: ['achievementKey', 'createdAt'],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;
