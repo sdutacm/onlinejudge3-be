@@ -37,8 +37,8 @@ export function formatLoggerHelper(meta: any, customContent = '') {
 export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
 
-  // use for cookie sign key, should change to your own and keep security
-  config.keys = appInfo.name + '_onlinejudge3_n20)pc9vq&z8s';
+  // use for cookie sign key, should be same as main project
+  config.keys = 'onlinejudge3-be';
 
   // add your config here
   config.middleware = [];
@@ -64,10 +64,8 @@ export default (appInfo: EggAppInfo) => {
     path: '/onlinejudge3/socket.io',
     init: {},
     namespace: {
-      '/': {
-        // connectionMiddleware: ['auth'],
-        // packetMiddleware: ['filter'],
-        connectionMiddleware: [],
+      '/general': {
+        connectionMiddleware: ['login', 'user'],
         packetMiddleware: [],
       },
       '/judger': {
@@ -75,11 +73,20 @@ export default (appInfo: EggAppInfo) => {
         packetMiddleware: [],
       },
       '/competition': {
-        connectionMiddleware: [],
+        connectionMiddleware: ['login'],
         packetMiddleware: [],
       },
     },
     redis: {
+      host: '127.0.0.1',
+      port: 6379,
+      auth_pass: null,
+      db: 0,
+    },
+  };
+
+  config.redis = {
+    client: {
       host: '127.0.0.1',
       port: 6379,
       auth_pass: null,

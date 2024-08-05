@@ -53,7 +53,7 @@ const judgerConfig: IJudgerConfig = {
   dataGitEmail: 'sdutacm@example.com',
   /** 评测机地址 */
   address: 'ipv4:127.0.0.1:4003',
-  socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge',
+  socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge/emit',
   socketBridgeEmitAuthKey: '',
   mqJudgeQueueTopic: 'judge-queue',
   mqJudgeQueueSubscription: 'judge-subscription',
