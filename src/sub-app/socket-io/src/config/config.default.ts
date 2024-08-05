@@ -80,6 +80,7 @@ export default (appInfo: EggAppInfo) => {
     redis: {
       host: '127.0.0.1',
       port: 6379,
+      // 这里透传给 socket.io-redis，需要的字段为 `auth_pass`
       auth_pass: null,
       db: 0,
     },
@@ -89,7 +90,7 @@ export default (appInfo: EggAppInfo) => {
     client: {
       host: '127.0.0.1',
       port: 6379,
-      auth_pass: null,
+      password: null,
       db: 0,
     },
   };
