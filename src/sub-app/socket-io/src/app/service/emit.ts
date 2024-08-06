@@ -9,6 +9,10 @@ module.exports = (app: Application) => {
     pushCompetitionEvent(data: any) {
       return this.ctx.service.competition.pushCompetitionEvent(data);
     }
+
+    pushAchievementCompleted(data: any) {
+      return this.ctx.service.achievement.pushAchievementCompleted(data);
+    }
   }
 
   return EmitService;
