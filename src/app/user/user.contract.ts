@@ -214,6 +214,7 @@ const userContract = {
     properties: {
       userId: { type: 'number' },
       nickname: { type: 'string' },
+      username: { type: 'string' },
       email: { type: 'string' },
       submitted: { type: 'number' },
       accepted: { type: 'number' },
