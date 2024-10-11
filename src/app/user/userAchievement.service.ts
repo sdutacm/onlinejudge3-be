@@ -3,6 +3,7 @@ import { IUtils } from '@/utils';
 import { TUserAchievementModel } from '@/lib/models/userAchievement.model';
 import { IMUserAchievementDetail } from './user.interface';
 import { ILodash } from '@/utils/libs/lodash';
+import { EUserAchievementStatus } from '@/common/enums';
 
 export type CUserAchievementService = UserAchievementService;
 
@@ -47,6 +48,7 @@ export default class UserAchievementService {
     const res = await this.userAchievementModel.create({
       userId,
       achievementKey,
+      status: EUserAchievementStatus.created,
     });
     return res.userAchievementId;
   }

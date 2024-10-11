@@ -70,6 +70,10 @@ export default (appInfo: EggAppInfo) => {
 
   //#endregion
 
+  //#region socketBridge
+
+  //#endregion
+
   //#region staticPath
 
   //#endregion

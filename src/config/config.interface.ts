@@ -19,6 +19,10 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
   redisKey: IRedisKeyConfig;
   durations: IDurationsConfig;
   pulsar: IPulsarConfig;
+  socketBridge: {
+    baseUrl: string;
+    emitAuthKey: string;
+  };
   judger: IJudgerConfig;
   staticPath: {
     useCloud?: 'cos';

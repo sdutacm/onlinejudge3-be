@@ -194,6 +194,11 @@ export default (appInfo: EggAppInfo) => {
 
   config.durations = durations;
 
+  config.socketBridge = {
+    baseUrl: 'http://127.0.0.1:7002/socketBridge/emit',
+    emitAuthKey: '',
+  };
+
   config.judger = judgerConfig;
   // #endregion
 

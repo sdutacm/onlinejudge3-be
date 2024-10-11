@@ -77,6 +77,7 @@ import { IProblemModel } from '../problem/problem.interface';
 import microtime from 'microtime';
 import { CCompetitionEventService } from '../competition/competitionEvent.service';
 import { ECompetitionEvent } from '../competition/competition.enum';
+import { IAppConfig } from '@/config/config.interface';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -183,6 +184,9 @@ export default class SolutionService {
 
   @config('judger')
   judgerConfig: IJudgerConfig;
+
+  @config('socketBridge')
+  socketBridgeConfig: IAppConfig['socketBridge'];
 
   /**
    * 获取详情缓存。
@@ -1343,11 +1347,11 @@ export default class SolutionService {
     // this.ctx.app.io.of('/judger').to(`s:${solutionId}`).emit('s', status);
     const start = Date.now();
     axiosSocketBrideInstance({
-      url: `${this.judgerConfig.socketBridgeBaseUrl}/pushJudgeStatus`,
+      url: `${this.socketBridgeConfig.baseUrl}/pushJudgeStatus`,
       method: 'POST',
       data: statusFormArray,
       headers: {
-        'x-emit-auth': this.judgerConfig.socketBridgeEmitAuthKey,
+        'x-emit-auth': this.socketBridgeConfig.emitAuthKey,
       },
     })
       .then((res) => {

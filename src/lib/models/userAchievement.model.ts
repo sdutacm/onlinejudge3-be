@@ -1,5 +1,15 @@
-import { Model, Table, Column, DataType, Index, AllowNull, CreatedAt } from 'sequelize-typescript';
+import {
+  Model,
+  Table,
+  Column,
+  DataType,
+  Index,
+  AllowNull,
+  CreatedAt,
+  Default,
+} from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
+import { EUserAchievementStatus } from '@/common/enums';
 
 export const factory = () => UserAchievementModel;
 providerWrapper([
@@ -41,6 +51,13 @@ export default class UserAchievementModel extends Model<UserAchievementModel> {
     type: DataType.STRING(64),
   })
   achievementKey: string;
+
+  @AllowNull(false)
+  @Default(0)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  status: EUserAchievementStatus;
 
   @AllowNull(true)
   @CreatedAt

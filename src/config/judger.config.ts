@@ -16,10 +16,6 @@ export interface IJudgerConfig {
   dataGitEmail: string;
   /** 评测机地址 */
   address: string;
-  /** socket 推送地址 */
-  socketBridgeBaseUrl: string;
-  /** socket 推送验证 key */
-  socketBridgeEmitAuthKey: string;
   /** 消息队列评测队列主题 */
   mqJudgeQueueTopic: string;
   /** 消息队列评测队列订阅 */
@@ -53,8 +49,6 @@ const judgerConfig: IJudgerConfig = {
   dataGitEmail: 'sdutacm@example.com',
   /** 评测机地址 */
   address: 'ipv4:127.0.0.1:4003',
-  socketBridgeBaseUrl: 'http://127.0.0.1:7002/socketBridge/emit',
-  socketBridgeEmitAuthKey: '',
   mqJudgeQueueTopic: 'judge-queue',
   mqJudgeQueueSubscription: 'judge-subscription',
   mqJudgeDeadQueueTopic: 'judge-dead-queue',
