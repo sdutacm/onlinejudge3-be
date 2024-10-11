@@ -10,6 +10,7 @@ import {
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import { EUserAchievementStatus } from '@/common/enums';
+import { EAchievementKey } from '@/common/configs/achievement.config';
 
 export const factory = () => UserAchievementModel;
 providerWrapper([
@@ -50,7 +51,7 @@ export default class UserAchievementModel extends Model<UserAchievementModel> {
     field: 'achievement_key',
     type: DataType.STRING(64),
   })
-  achievementKey: string;
+  achievementKey: EAchievementKey;
 
   @AllowNull(false)
   @Default(0)
