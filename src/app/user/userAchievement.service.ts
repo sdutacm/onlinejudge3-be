@@ -61,18 +61,22 @@ export default class UserAchievementService {
       },
     });
     if (existed) {
-      return existed.userAchievementId;
+      return {
+        userAchievementId: existed.userAchievementId,
+        existed: true,
+      };
     }
     const res = await this.userAchievementModel.create({
       userId,
       achievementKey,
       status: status ?? EUserAchievementStatus.created,
     });
-    return res.userAchievementId;
+    return {
+      userAchievementId: res.userAchievementId,
+    };
   }
 
-  public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
-    const userAchievementId = await this.addUserAchievement(userId, achievementKey);
+  public async pushAchievementCompleted(userId: number, achievementKey: EAchievementKey) {
     await this.socketBridgeEmitter.emit('pushAchievementCompleted', {
       userId,
       achievementKeys: [achievementKey],
@@ -83,11 +87,19 @@ export default class UserAchievementService {
       },
       {
         where: {
-          userAchievementId,
+          achievementKey,
           status: EUserAchievementStatus.created,
         },
       },
     );
-    return userAchievementId;
+  }
+
+  public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
+    const { userAchievementId, existed } = await this.addUserAchievement(userId, achievementKey);
+    if (existed) {
+      return { userAchievementId };
+    }
+    await this.pushAchievementCompleted(userId, achievementKey);
+    return { userAchievementId };
   }
 }
