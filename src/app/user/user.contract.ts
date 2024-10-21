@@ -533,15 +533,24 @@ const userContract = {
           type: 'object',
           properties: {
             achievementKey: { type: 'string' },
+            status: { type: 'number' },
             createdAt: { type: 'string', format: 'date-time' },
           },
           additionalProperties: false,
-          required: ['achievementKey', 'createdAt'],
+          required: ['achievementKey', 'status', 'createdAt'],
         },
       },
     },
     additionalProperties: false,
     required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  receiveAchievementReq: {
+    properties: {
+      achievementKey: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['achievementKey'],
   } as defContract.ContractSchema,
 };
 

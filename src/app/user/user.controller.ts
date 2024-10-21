@@ -42,6 +42,7 @@ import {
   IGetAllUserPermissionsMapResp,
   ISetUserPermissionsReq,
   IGetSelfCompletedAchievementsResp,
+  IReceiveAchievementReq,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -60,6 +61,7 @@ import { CAuthService } from '../auth/auth.service';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCosHelper } from '@/utils/cos';
 import { CUserAchievementService } from './userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -982,5 +984,25 @@ export default class UserController {
       // @ts-ignore
       rows: res.map((r) => this.lodash.omit(r, ['userAchievementId'])),
     };
+  }
+
+  /**
+   * 确认领取成就。
+   */
+  @route()
+  @login()
+  async [routesBe.receiveAchievement.i](ctx: Context): Promise<void> {
+    const { achievementKey } = ctx.request.body as IReceiveAchievementReq;
+    const achieved = await this.userAchievementService.isAchievementAchieved(
+      ctx.session.userId,
+      achievementKey as EAchievementKey,
+    );
+    if (!achieved) {
+      throw new ReqError(Codes.USER_ACHIEVEMENT_NOT_ACHIEVED);
+    }
+    await this.userAchievementService.receiveAchievement(
+      ctx.session.userId,
+      achievementKey as EAchievementKey,
+    );
   }
 }

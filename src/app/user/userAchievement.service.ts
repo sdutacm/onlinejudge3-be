@@ -9,7 +9,13 @@ import { EAchievementKey } from '@/common/configs/achievement.config';
 
 export type CUserAchievementService = UserAchievementService;
 
-const userAchievementLiteFields = ['userAchievementId', 'userId', 'achievementKey', 'createdAt'];
+const userAchievementLiteFields = [
+  'userAchievementId',
+  'userId',
+  'achievementKey',
+  'status',
+  'createdAt',
+];
 
 @provide()
 export default class UserAchievementService {
@@ -70,6 +76,7 @@ export default class UserAchievementService {
       userId,
       achievementKey,
       status: status ?? EUserAchievementStatus.created,
+      createdAt: new Date(),
     });
     return {
       userAchievementId: res.userAchievementId,
@@ -101,5 +108,30 @@ export default class UserAchievementService {
     }
     await this.pushAchievementCompleted(userId, achievementKey);
     return { userAchievementId };
+  }
+
+  public async isAchievementAchieved(userId: number, achievementKey: EAchievementKey) {
+    const res = await this.userAchievementModel.findOne({
+      where: {
+        userId,
+        achievementKey,
+      },
+    });
+    return !!res;
+  }
+
+  public async receiveAchievement(userId: number, achievementKey: EAchievementKey) {
+    const res = await this.userAchievementModel.update(
+      {
+        status: EUserAchievementStatus.received,
+      },
+      {
+        where: {
+          userId,
+          achievementKey,
+        },
+      },
+    );
+    return res[0] > 0;
   }
 }

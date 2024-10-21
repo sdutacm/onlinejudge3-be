@@ -1,5 +1,6 @@
 import { IContestModel } from '../contest/contest.interface';
 import { ICompetitionModel } from '../competition/competition.interface';
+import { EUserAchievementStatus } from '@/common/enums';
 
 export interface IUserModelRatingHistoryItem {
   contest?: {
@@ -55,6 +56,7 @@ export interface IUserAchievementModel {
   userAchievementId: number;
   userId: number;
   achievementKey: string;
+  status: EUserAchievementStatus;
   createdAt: Date;
 }
 

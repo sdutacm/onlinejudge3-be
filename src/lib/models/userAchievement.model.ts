@@ -61,7 +61,7 @@ export default class UserAchievementModel extends Model<UserAchievementModel> {
   status: EUserAchievementStatus;
 
   @AllowNull(true)
-  @CreatedAt
+  // @CreatedAt // cannot use cuz missing `updated_at` column
   @Column({
     field: 'created_at',
     type: DataType.DATE,
