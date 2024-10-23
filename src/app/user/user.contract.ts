@@ -545,6 +545,14 @@ const userContract = {
     required: ['count', 'rows'],
   } as defContract.ContractSchema,
 
+  confirmAchievementDeliveriedReq: {
+    properties: {
+      achievementKey: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['achievementKey'],
+  } as defContract.ContractSchema,
+
   receiveAchievementReq: {
     properties: {
       achievementKey: { type: 'string' },

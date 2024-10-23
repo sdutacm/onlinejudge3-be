@@ -42,6 +42,7 @@ import {
   IGetAllUserPermissionsMapResp,
   ISetUserPermissionsReq,
   IGetSelfCompletedAchievementsResp,
+  IConfirmAchievementDeliveriedReq,
   IReceiveAchievementReq,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
@@ -984,6 +985,26 @@ export default class UserController {
       // @ts-ignore
       rows: res.map((r) => this.lodash.omit(r, ['userAchievementId'])),
     };
+  }
+
+  /**
+   * 确认成就已推送。
+   */
+  @route()
+  @login()
+  async [routesBe.confirmAchievementDeliveried.i](ctx: Context): Promise<void> {
+    const { achievementKey } = ctx.request.body as IConfirmAchievementDeliveriedReq;
+    const achieved = await this.userAchievementService.isAchievementAchieved(
+      ctx.session.userId,
+      achievementKey as EAchievementKey,
+    );
+    if (!achieved) {
+      throw new ReqError(Codes.USER_ACHIEVEMENT_NOT_ACHIEVED);
+    }
+    await this.userAchievementService.confirmAchievementDeliveried(
+      ctx.session.userId,
+      achievementKey as EAchievementKey,
+    );
   }
 
   /**

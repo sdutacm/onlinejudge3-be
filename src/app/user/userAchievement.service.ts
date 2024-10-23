@@ -88,17 +88,6 @@ export default class UserAchievementService {
       userId,
       achievementKeys: [achievementKey],
     });
-    await this.userAchievementModel.update(
-      {
-        status: EUserAchievementStatus.deliveried,
-      },
-      {
-        where: {
-          achievementKey,
-          status: EUserAchievementStatus.created,
-        },
-      },
-    );
   }
 
   public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
@@ -118,6 +107,22 @@ export default class UserAchievementService {
       },
     });
     return !!res;
+  }
+
+  public async confirmAchievementDeliveried(userId: number, achievementKey: EAchievementKey) {
+    const res = await this.userAchievementModel.update(
+      {
+        status: EUserAchievementStatus.deliveried,
+      },
+      {
+        where: {
+          userId,
+          achievementKey,
+          status: EUserAchievementStatus.created,
+        },
+      },
+    );
+    return res[0] > 0;
   }
 
   public async receiveAchievement(userId: number, achievementKey: EAchievementKey) {
