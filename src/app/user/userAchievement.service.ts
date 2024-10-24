@@ -69,6 +69,7 @@ export default class UserAchievementService {
     if (existed) {
       return {
         userAchievementId: existed.userAchievementId,
+        status: existed.status,
         existed: true,
       };
     }
@@ -83,19 +84,22 @@ export default class UserAchievementService {
     };
   }
 
-  public async pushAchievementCompleted(userId: number, achievementKey: EAchievementKey) {
-    await this.socketBridgeEmitter.emit('pushAchievementCompleted', {
+  public async pushAchievementAchieved(userId: number, achievementKey: EAchievementKey) {
+    await this.socketBridgeEmitter.emit('pushAchievementAchieved', {
       userId,
       achievementKeys: [achievementKey],
     });
   }
 
   public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
-    const { userAchievementId, existed } = await this.addUserAchievement(userId, achievementKey);
-    if (existed) {
+    const { userAchievementId, existed, status } = await this.addUserAchievement(
+      userId,
+      achievementKey,
+    );
+    if (existed && status !== EUserAchievementStatus.created) {
       return { userAchievementId };
     }
-    await this.pushAchievementCompleted(userId, achievementKey);
+    await this.pushAchievementAchieved(userId, achievementKey);
     return { userAchievementId };
   }
 

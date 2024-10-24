@@ -524,7 +524,7 @@ const userContract = {
     required: ['userId', 'permissions'],
   } as defContract.ContractSchema,
 
-  getSelfCompletedAchievementsResp: {
+  getSelfAchievedAchievementsResp: {
     properties: {
       count: { type: 'number' },
       rows: {

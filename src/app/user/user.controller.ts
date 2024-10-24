@@ -41,7 +41,7 @@ import {
   IGetActiveUserCountResp,
   IGetAllUserPermissionsMapResp,
   ISetUserPermissionsReq,
-  IGetSelfCompletedAchievementsResp,
+  IGetSelfAchievedAchievementsResp,
   IConfirmAchievementDeliveriedReq,
   IReceiveAchievementReq,
 } from '@/common/contracts/user';
@@ -976,9 +976,9 @@ export default class UserController {
    */
   @route()
   @login()
-  async [routesBe.getSelfCompletedAchievements.i](
+  async [routesBe.getSelfAchievedAchievements.i](
     ctx: Context,
-  ): Promise<IGetSelfCompletedAchievementsResp> {
+  ): Promise<IGetSelfAchievedAchievementsResp> {
     const res = await this.userAchievementService.getUserAchievements(ctx.session.userId);
     return {
       count: res.length,
