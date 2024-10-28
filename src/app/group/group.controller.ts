@@ -35,6 +35,8 @@ import { EGroupMemberPermission, EGroupJoinChannel, EGroupMemberStatus } from '@
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { CUserService } from '../user/user.service';
 import { EPerm } from '@/common/configs/perm.config';
+import { CUserAchievementService } from '../user/userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
 
 @provide()
 @controller('/')
@@ -56,6 +58,9 @@ export default class GroupController {
 
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
+
+  @inject()
+  userAchievementService: CUserAchievementService;
 
   @route()
   @pagination()
@@ -125,6 +130,10 @@ export default class GroupController {
       userId: ctx.session.userId,
       permission: EGroupMemberPermission.master,
     });
+    this.userAchievementService.addUserAchievementAndPush(
+      ctx.session.userId,
+      EAchievementKey.JoinGroup,
+    );
     return { groupId: newId };
   }
 
@@ -274,6 +283,7 @@ export default class GroupController {
     await this.service.updateGroupMembersCount(groupId);
     await this.service.clearDetailCache(groupId);
     await this.service.clearUserGroupsCache(userId);
+    this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.JoinGroup);
   }
 
   /**
@@ -317,6 +327,7 @@ export default class GroupController {
         });
       }
       await this.service.clearUserGroupsCache(userId);
+      this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.JoinGroup);
     }
     await this.service.updateGroupMembersCount(groupId);
     await this.service.clearDetailCache(groupId);
