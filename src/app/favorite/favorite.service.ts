@@ -253,4 +253,13 @@ export default class FavoriteService {
     });
     return res[0] > 0;
   }
+
+  async countUserFavorites(userId: number): Promise<number> {
+    return this.model.count({
+      where: {
+        userId,
+        deleted: false,
+      },
+    });
+  }
 }

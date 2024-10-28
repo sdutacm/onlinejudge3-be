@@ -1,11 +1,13 @@
-import { provide, inject, Context } from 'midway';
+import { provide, inject, Context, config } from 'midway';
 import { IUtils } from '@/utils';
 import { TUserAchievementModel } from '@/lib/models/userAchievement.model';
-import { IMUserAchievementDetail } from './user.interface';
+import { IMUserAchievementDetail, IUserModel } from './user.interface';
 import { ILodash } from '@/utils/libs/lodash';
 import { EUserAchievementStatus } from '@/common/enums';
 import { CSocketBridgeEmitter } from '@/utils/socketBridgeEmitter';
 import { EAchievementKey } from '@/common/configs/achievement.config';
+import { IRedisKeyConfig } from '@/config/redisKey.config';
+import { IDurationsConfig } from '@/config/durations.config';
 
 export type CUserAchievementService = UserAchievementService;
 
@@ -16,6 +18,8 @@ const userAchievementLiteFields = [
   'status',
   'createdAt',
 ];
+
+type IUserAchievement = Omit<IMUserAchievementDetail, 'userId'>;
 
 @provide()
 export default class UserAchievementService {
@@ -34,54 +38,114 @@ export default class UserAchievementService {
   @inject()
   socketBridgeEmitter: CSocketBridgeEmitter;
 
-  public async getUserAchievements(
-    userId: number,
-  ): Promise<Omit<IMUserAchievementDetail, 'userId'>[]> {
-    const res = await this.userAchievementModel
-      .findAll({
-        where: {
-          userId,
-        },
-        attributes: userAchievementLiteFields,
-        order: [['userAchievementId', 'ASC']],
-      })
-      .then((r) =>
-        this.lodash
-          .uniqBy(r, 'achievementKey')
-          .map((d) =>
-            this.lodash.omit(d.get({ plain: true }) as IMUserAchievementDetail, ['userId']),
-          ),
-      );
+  @config()
+  durations: IDurationsConfig;
+
+  cacheKey: string;
+
+  constructor(@config('redisKey') redisKey: IRedisKeyConfig) {
+    this.cacheKey = redisKey.userAchievements;
+  }
+
+  /**
+   * 获取用户成就列表缓存。
+   * 如果未找到缓存，则返回 `null`
+   * @param userId userId
+   */
+  private async _getCache(userId: IUserModel['userId']): Promise<IUserAchievement[] | null> {
+    return this.ctx.helper
+      .redisGet<IUserAchievement[]>(this.cacheKey, [userId])
+      .then((res) => {
+        if (!Array.isArray(res)) {
+          return null;
+        }
+        return res.map((d) => ({ ...d, createdAt: new Date(d.createdAt) }));
+      });
+  }
+
+  /**
+   * 设置用户成就列表缓存。
+   * @param userId userId
+   * @param data
+   */
+  private async _setCache(userId: IUserModel['userId'], data: IUserAchievement[]): Promise<void> {
+    if (!data) {
+      return;
+    }
+    return this.ctx.helper.redisSet(this.cacheKey, [userId], data, this.durations.cacheFullList);
+  }
+
+  /**
+   * 清除用户成就列表缓存。
+   * @param userId userId
+   */
+  async clearUserAchievementsCache(userId: IUserModel['userId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.cacheKey, [userId]);
+  }
+
+  public async getUserAchievements(userId: number): Promise<IUserAchievement[]> {
+    let res: IUserAchievement[];
+    const cached = await this._getCache(userId);
+    if (cached) {
+      res = cached;
+    } else {
+      res = await this.userAchievementModel
+        .findAll({
+          where: {
+            userId,
+          },
+          attributes: userAchievementLiteFields,
+          order: [['userAchievementId', 'ASC']],
+        })
+        .then((r) =>
+          this.lodash
+            .uniqBy(r, 'achievementKey')
+            .map((d) =>
+              this.lodash.omit(d.get({ plain: true }) as IMUserAchievementDetail, ['userId']),
+            ),
+        );
+      await this._setCache(userId, res);
+    }
     return res;
   }
 
-  public async addUserAchievement(
+  private async createUserAchievement(
     userId: number,
     achievementKey: EAchievementKey,
     status?: EUserAchievementStatus,
   ) {
-    const existed = await this.userAchievementModel.findOne({
-      where: {
-        userId,
-        achievementKey,
-      },
-    });
-    if (existed) {
-      return {
-        userAchievementId: existed.userAchievementId,
-        status: existed.status,
-        existed: true,
-      };
-    }
     const res = await this.userAchievementModel.create({
       userId,
       achievementKey,
       status: status ?? EUserAchievementStatus.created,
       createdAt: new Date(),
     });
+    await this.clearUserAchievementsCache(userId);
     return {
       userAchievementId: res.userAchievementId,
     };
+  }
+
+  private async getOneUserAchievement(userId: number, achievementKey: EAchievementKey) {
+    const fullCached = await this._getCache(userId);
+    let res: IUserAchievement | null;
+    if (fullCached) {
+      res = fullCached.find((d) => d.achievementKey === achievementKey) || null;
+    } else {
+      res = await this.userAchievementModel
+        .findOne({
+          where: {
+            userId,
+            achievementKey,
+          },
+          attributes: userAchievementLiteFields,
+        })
+        .then(
+          (r) =>
+            r && this.lodash.omit(r.get({ plain: true }) as IMUserAchievementDetail, ['userId']),
+        );
+    }
+    return res;
   }
 
   public async pushAchievementAchieved(userId: number, achievementKey: EAchievementKey) {
@@ -92,24 +156,17 @@ export default class UserAchievementService {
   }
 
   public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
-    const { userAchievementId, existed, status } = await this.addUserAchievement(
-      userId,
-      achievementKey,
-    );
-    if (existed && status !== EUserAchievementStatus.created) {
-      return { userAchievementId };
+    const existed = await this.getOneUserAchievement(userId, achievementKey);
+    if (existed && existed.status !== EUserAchievementStatus.created) {
+      return;
+    } else if (!existed) {
+      await this.createUserAchievement(userId, achievementKey);
     }
     await this.pushAchievementAchieved(userId, achievementKey);
-    return { userAchievementId };
   }
 
   public async isAchievementAchieved(userId: number, achievementKey: EAchievementKey) {
-    const res = await this.userAchievementModel.findOne({
-      where: {
-        userId,
-        achievementKey,
-      },
-    });
+    const res = await this.getOneUserAchievement(userId, achievementKey);
     return !!res;
   }
 
@@ -126,7 +183,11 @@ export default class UserAchievementService {
         },
       },
     );
-    return res[0] > 0;
+    const updated = res[0] > 0;
+    if (updated) {
+      await this.clearUserAchievementsCache(userId);
+    }
+    return updated;
   }
 
   public async receiveAchievement(userId: number, achievementKey: EAchievementKey) {
@@ -141,6 +202,10 @@ export default class UserAchievementService {
         },
       },
     );
-    return res[0] > 0;
+    const updated = res[0] > 0;
+    if (updated) {
+      await this.clearUserAchievementsCache(userId);
+    }
+    return updated;
   }
 }

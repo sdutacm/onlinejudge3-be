@@ -36,6 +36,7 @@ const redisKey = {
   userPermissions: 'cache:user_permissions:%d',
   fieldDetail: 'cache:field_detail:%d',
   balloonDetail: 'cache:balloon_detail:%d',
+  userAchievements: 'cache:user_achievements:%d',
   verificationCode: 'verification:code:%s',
   recordUserUpload: 'record:user_upload:%d',
   recordUserCreateGroup: 'record:user_create_group:%d',

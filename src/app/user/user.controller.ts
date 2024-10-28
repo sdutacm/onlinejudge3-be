@@ -700,6 +700,7 @@ export default class UserController {
     });
     await this.service.clearDetailCache(userId);
     ctx.session.avatar = saveName;
+    this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.SetAvatar);
   }
 
   /**
@@ -811,6 +812,7 @@ export default class UserController {
       bannerImage: saveName,
     });
     await this.service.clearDetailCache(userId);
+    this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.SetBannerImage);
   }
 
   /**

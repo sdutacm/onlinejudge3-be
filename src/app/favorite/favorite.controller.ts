@@ -19,6 +19,8 @@ import { CProblemService } from '../problem/problem.service';
 import { CContestService } from '../contest/contest.service';
 import { CSetService } from '../set/set.service';
 import { CGroupService } from '../group/group.service';
+import { CUserAchievementService } from '../user/userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
 
 @provide()
 @controller('/')
@@ -45,6 +47,9 @@ export default class FavoriteController {
   groupService: CGroupService;
 
   @inject()
+  userAchievementService: CUserAchievementService;
+
+  @inject()
   utils: IUtils;
 
   @inject()
@@ -66,74 +71,81 @@ export default class FavoriteController {
   async [routesBe.addFavorite.i](ctx: Context) {
     const { type, target, note } = ctx.request.body as IAddFavoriteReq;
     const userId = ctx.session.userId;
-    switch (type) {
-      case 'problem': {
-        const { problemId, contestId } = target as { problemId: number; contestId?: number };
-        if (
-          !(
-            (await this.problemService.getDetail(problemId)) ||
-            (contestId &&
-              ctx.helper.isContestLoggedIn(contestId) &&
-              (await this.contestService.isProblemInContest(problemId, contestId)))
-          )
-        ) {
-          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+    const res = await (async () => {
+      switch (type) {
+        case 'problem': {
+          const { problemId, contestId } = target as { problemId: number; contestId?: number };
+          if (
+            !(
+              (await this.problemService.getDetail(problemId)) ||
+              (contestId &&
+                ctx.helper.isContestLoggedIn(contestId) &&
+                (await this.contestService.isProblemInContest(problemId, contestId)))
+            )
+          ) {
+            throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+          }
+          const newId = await this.service.create({
+            userId,
+            type,
+            target: { problemId },
+            note,
+          });
+          return { favoriteId: newId };
         }
-        const newId = await this.service.create({
-          userId,
-          type,
-          target: { problemId },
-          note,
-        });
-        return { favoriteId: newId };
-      }
-      case 'contest': {
-        const { contestId } = target as { contestId: number };
-        if (!ctx.helper.isContestLoggedIn(contestId)) {
-          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        case 'contest': {
+          const { contestId } = target as { contestId: number };
+          if (!ctx.helper.isContestLoggedIn(contestId)) {
+            throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+          }
+          const newId = await this.service.create({
+            userId,
+            type,
+            target: { contestId },
+            note,
+          });
+          return { favoriteId: newId };
         }
-        const newId = await this.service.create({
-          userId,
-          type,
-          target: { contestId },
-          note,
-        });
-        return { favoriteId: newId };
-      }
-      case 'set': {
-        const { setId } = target as { setId: number };
-        if (!(await this.setService.getDetail(setId))) {
-          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        case 'set': {
+          const { setId } = target as { setId: number };
+          if (!(await this.setService.getDetail(setId))) {
+            throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+          }
+          const newId = await this.service.create({
+            userId,
+            type,
+            target: { setId },
+            note,
+          });
+          return { favoriteId: newId };
         }
-        const newId = await this.service.create({
-          userId,
-          type,
-          target: { setId },
-          note,
-        });
-        return { favoriteId: newId };
-      }
-      case 'group': {
-        const { groupId } = target as { groupId: number };
-        const groupDetail = await this.groupService.getDetail(groupId);
-        if (!groupDetail) {
-          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        case 'group': {
+          const { groupId } = target as { groupId: number };
+          const groupDetail = await this.groupService.getDetail(groupId);
+          if (!groupDetail) {
+            throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+          }
+          if (groupDetail.private && !(await this.groupService.hasGroupViewPerm(groupId))) {
+            throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+          }
+          const newId = await this.service.create({
+            userId,
+            type,
+            target: { groupId },
+            note,
+          });
+          return { favoriteId: newId };
         }
-        if (groupDetail.private && !(await this.groupService.hasGroupViewPerm(groupId))) {
-          throw new ReqError(Codes.GENERAL_NO_PERMISSION);
+        default: {
+          throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
         }
-        const newId = await this.service.create({
-          userId,
-          type,
-          target: { groupId },
-          note,
-        });
-        return { favoriteId: newId };
       }
-      default: {
-        throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
-      }
+    })();
+    const count = await this.service.countUserFavorites(userId);
+    if (count >= 5) {
+      this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.Fav);
     }
+    return res;
   }
 
   @route()
