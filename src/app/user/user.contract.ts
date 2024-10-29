@@ -266,7 +266,9 @@ const userContract = {
         ],
       },
       site: { type: 'string' },
-      defaultLanguage: { type: 'string' },
+      defaultLanguage: {
+        anyOf: [{ type: 'string' }, { type: 'null' }],
+      },
       settings: {
         anyOf: [
           {

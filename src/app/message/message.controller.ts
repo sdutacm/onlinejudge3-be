@@ -25,6 +25,8 @@ import { ReqError } from '@/lib/global/error';
 import { Codes } from '@/common/codes';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
 import { EPerm } from '@/common/configs/perm.config';
+import { CUserAchievementService } from '../user/userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
 
 @provide()
 @controller('/')
@@ -46,6 +48,9 @@ export default class MessageController {
 
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
+
+  @inject()
+  userAchievementService: CUserAchievementService;
 
   @route()
   @login()
@@ -99,6 +104,20 @@ export default class MessageController {
       content,
       anonymous,
     });
+    const hasBackMessage = await this.service.isExists({
+      fromUserId: toUserId,
+      toUserId: ctx.session.userId,
+    });
+    if (hasBackMessage) {
+      this.userAchievementService.addUserAchievementAndPush(
+        ctx.session.userId,
+        EAchievementKey.SendAndReceiveMessageWithSameUser,
+      );
+      this.userAchievementService.addUserAchievementAndPush(
+        toUserId,
+        EAchievementKey.SendAndReceiveMessageWithSameUser,
+      );
+    }
   }
 
   @route()
