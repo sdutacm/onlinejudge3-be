@@ -36,6 +36,7 @@ export default (appInfo: EggAppInfo) => {
   config.session = {
     key: 'OJ3_SESS',
     path: '/onlinejudge3/',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     renew: true,
     genid: (ctx: Context) => {
       return `session:${ctx.userId || 0}:${uuidv4()}`;
