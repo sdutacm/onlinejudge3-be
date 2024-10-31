@@ -156,6 +156,9 @@ export default class UserAchievementService {
   }
 
   public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
+    if (!userId || !achievementKey) {
+      return;
+    }
     const existed = await this.getOneUserAchievement(userId, achievementKey);
     if (existed && existed.status !== EUserAchievementStatus.created) {
       return;

@@ -50,6 +50,7 @@
     "egg-session": "^3.3.0",
     "egg-session-redis": "^2.1.0",
     "egg-socket.io": "^4.1.6",
+    "execa": "^5.1.1",
     "fflate": "^0.8.2",
     "fs-extra": "^9.0.0",
     "http": "0.0.1-security",

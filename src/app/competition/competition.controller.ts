@@ -1,4 +1,5 @@
 import { Context, controller, inject, provide, config } from 'midway';
+import execa from 'execa';
 import {
   route,
   pagination,
@@ -70,7 +71,6 @@ import {
   ECompetitionSettingAllowedAuthMethod,
   ECompetitionEvent,
 } from './competition.enum';
-import { exec } from 'child_process';
 import path from 'path';
 import { IAppConfig } from '@/config/config.interface';
 import { IMSolutionServiceLiteSolution } from '../solution/solution.interface';
@@ -1275,15 +1275,15 @@ export default class CompetitionController {
   async [routesBe.endCompetition.i](ctx: Context): Promise<void> {
     const competitionId = ctx.id!;
     const detail = ctx.detail as IMCompetitionDetail;
-    if (!ctx.helper.isContestEnded(detail)) {
-      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
-    } else if (detail.ended) {
-      throw new ReqError(Codes.COMPETITION_ENDED);
-    }
+    // if (!ctx.helper.isContestEnded(detail)) {
+    //   throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    // } else if (detail.ended) {
+    //   throw new ReqError(Codes.COMPETITION_ENDED);
+    // }
     const settings = (await this.service.getCompetitionSettingDetail(competitionId))!;
-    await this.service.update(competitionId, {
-      ended: true,
-    });
+    // await this.service.update(competitionId, {
+    //   ended: true,
+    // });
     await Promise.all([
       this.service.clearDetailCache(competitionId),
       this.service.clearCompetitionRanklistCache(competitionId),
@@ -1307,18 +1307,33 @@ export default class CompetitionController {
         }),
       ]);
       // 调用 calRating 脚本
-      const cmd = `nohup node ${path.join(
+      const cmd = `node ${path.join(
         this.scriptsConfig.dirPath,
         'calRating.js',
       )} competition ${competitionId} >> ${path.join(
         this.scriptsConfig.logPath,
         'calRating.log',
-      )} 2>&1 &`;
-      ctx.logger.info('exec:', cmd);
-      exec(cmd, {
-        cwd: this.scriptsConfig.dirPath,
-      });
+      )} 2>&1`;
+      ctx.logger.info('exec cmd:', cmd);
+      const _start = Date.now();
+      // exec(cmd, {
+      //   cwd: this.scriptsConfig.dirPath,
+      // });
+      execa
+        .command(cmd, {
+          cwd: this.scriptsConfig.dirPath,
+          shell: true,
+        })
+        .then(() => {
+          ctx.logger.info(`exec cmd "${cmd}" success in ${Date.now() - _start}ms`);
+          this.service.checkCompetitionRatingAchievements(competitionId);
+        })
+        .catch((e) => {
+          ctx.logger.error(`exec cmd "${cmd}" error in ${Date.now() - _start}ms:`, e);
+        });
     }
+    // 后处理计算成就
+    this.service.checkCompetitionAchievements(competitionId);
   }
 
   @route()

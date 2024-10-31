@@ -104,11 +104,14 @@ import {
 } from '../contest/contest.interface';
 import { TRatingContestModel } from '@/lib/models/ratingContest.model';
 import { ECompetitionRulePreset, ECompetitionLogAction } from './competition.enum';
-import { ESolutionResult, ECompetitionUserRole } from '@/common/enums';
+import { ESolutionResult, ECompetitionUserRole, ECompetitionUserStatus } from '@/common/enums';
 import { compileVarScoreExpression } from '@/common/utils/competition';
 import { ICompetitionSpConfig } from '@/common/interfaces/competition';
 import { CCompetitionLogService } from './competitionLog.service';
 import { CCompetitionEventService } from './competitionEvent.service';
+import { CUserAchievementService } from '../user/userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 export type CCompetitionService = CompetitionService;
 
@@ -276,6 +279,9 @@ export default class CompetitionService {
   competitionEventService: CCompetitionEventService;
 
   @inject()
+  userAchievementService: CUserAchievementService;
+
+  @inject()
   userModel: TUserModel;
 
   @inject()
@@ -292,6 +298,9 @@ export default class CompetitionService {
 
   @config()
   durations: IDurationsConfig;
+
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
 
   scopeChecker = {
     available(data: Partial<ICompetitionModel> | null): boolean {
@@ -1898,5 +1907,230 @@ export default class CompetitionService {
       }
     }
     return unlockedProblemIndexes;
+  }
+
+  async checkCompetitionAchievements(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<void> {
+    const _start = Date.now();
+    this.ctx.logger.info(`[checkCompetitionAchievements ${competitionId}] started`);
+    const attendedParticipants = (await this.getCompetitionUsers(competitionId)).rows.filter(
+      (r) =>
+        r.role === ECompetitionUserRole.participant &&
+        [ECompetitionUserStatus.entered, ECompetitionUserStatus.quitted].includes(r.status) &&
+        !r.banned,
+    );
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] found ${attendedParticipants.length} participants`,
+    );
+    const userIds = attendedParticipants.map((r) => r.userId);
+    const userIdSet = new Set(userIds);
+
+    const detail = await this.getDetail(competitionId, null);
+    const settings = await this.getCompetitionSettingDetail(competitionId);
+    if (!detail || !settings) {
+      this.ctx.logger.info(`[checkCompetitionAchievements ${competitionId}] not found, skip`);
+      return;
+    }
+    // 参与比赛
+    const competitionBrands = (detail.spConfig as ICompetitionSpConfig)?.brands || [];
+    let commonAchievementKeys: EAchievementKey[] = [];
+    if (competitionBrands.includes('APF')) {
+      commonAchievementKeys.push(EAchievementKey.AttendCompetitionAPF);
+    }
+    if (competitionBrands.includes('SDUTPC')) {
+      commonAchievementKeys.push(EAchievementKey.AttendCompetitionSDUTPC);
+    }
+    if (competitionBrands.includes('AzurSeries')) {
+      commonAchievementKeys.push(EAchievementKey.AttendCompetitionAzurSeries);
+    }
+    if (competitionBrands.includes('Genshin')) {
+      commonAchievementKeys.push(EAchievementKey.AttendCompetitionGenshinImpact);
+    }
+    const pq = new this.PromiseQueue(10, Infinity);
+    let queueTasks = userIds.map((userId) =>
+      pq.add(async () => {
+        try {
+          await Promise.all(
+            commonAchievementKeys.map((key) =>
+              this.userAchievementService.addUserAchievementAndPush(userId, key),
+            ),
+          );
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionAchievements ${competitionId}/${userId}] add attended achievements failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+    // 比赛题目
+    const problems = (await this.getCompetitionProblems(competitionId)).rows;
+    const problemIds = problems.map((p) => p.problemId);
+    const problemFbUserIdMap = new Map<number, number>();
+    // 比赛提交
+    const acSolutions = (
+      await this.solutionService.getAllCompetitionSolutionList(competitionId)
+    ).filter(
+      (s) =>
+        s.result === ESolutionResult.AC &&
+        problemIds.includes(s.problemId) &&
+        userIdSet.has(s.userId),
+    );
+    const userAcSolutionsMap = new Map<number, typeof acSolutions>();
+    const userAcProblemsMap = new Map<number, Set<number>>();
+    const akUserIdsSet = new Set<number>();
+    acSolutions.forEach((s) => {
+      const { userId, problemId } = s;
+      if (!userAcSolutionsMap.has(userId)) {
+        userAcSolutionsMap.set(userId, []);
+      }
+      userAcSolutionsMap.get(userId)!.push(s);
+
+      if (!userAcProblemsMap.has(userId)) {
+        userAcProblemsMap.set(userId, new Set());
+      }
+      const acProblemIdSet = userAcProblemsMap.get(userId)!;
+      acProblemIdSet.add(problemId);
+      if (acProblemIdSet.size >= problemIds.length) {
+        akUserIdsSet.add(userId);
+      }
+    });
+    // AK
+    const akUserIds = Array.from(akUserIdsSet);
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] AK users: [${akUserIds.join(',')}]`,
+    );
+    akUserIds.forEach((userId) =>
+      pq.add(async () => {
+        try {
+          await this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.AK);
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionAchievements ${competitionId}/${userId}] add AK achievement failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    // FB
+    acSolutions.forEach((s) => {
+      if (!problemFbUserIdMap.has(s.problemId)) {
+        problemFbUserIdMap.set(s.problemId, s.userId);
+      }
+    });
+    const fbUserIds = Array.from(new Set(problemFbUserIdMap.values()));
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] FB users: [${fbUserIds.join(',')}]`,
+    );
+    queueTasks = fbUserIds.map((userId) =>
+      pq.add(async () => {
+        try {
+          await this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.FB);
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionAchievements ${competitionId}/${userId}] add FB achievement failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+    // 封榜时间
+    const frozenLength = settings?.frozenLength || 0;
+    if (frozenLength > 0) {
+      const frozenStart = new Date(detail.endAt.getTime() - frozenLength * 1000);
+      const fzAcUserIds: number[] = [];
+      for (const [userId, userAcSolutions] of userAcSolutionsMap) {
+        for (const solution of userAcSolutions) {
+          if (solution.createdAt >= frozenStart) {
+            fzAcUserIds.push(userId);
+            break;
+          }
+        }
+      }
+      this.ctx.logger.info(
+        `[checkCompetitionAchievements ${competitionId}] AC during frozen users: [${fzAcUserIds.join(
+          ',',
+        )}]`,
+      );
+      queueTasks = fzAcUserIds.map((userId) =>
+        pq.add(async () => {
+          try {
+            await this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.SolveDuringFrozenTime,
+            );
+          } catch (e) {
+            this.ctx.logger.error(
+              `[checkCompetitionAchievements ${competitionId}/${userId}] add FZ achievement failed:`,
+              e,
+            );
+          }
+        }),
+      );
+      await Promise.all(queueTasks);
+    }
+
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] finished in ${Date.now() - _start}ms`,
+    );
+  }
+
+  async checkCompetitionRatingAchievements(
+    competitionId: ICompetitionModel['competitionId'],
+  ): Promise<void> {
+    const _start = Date.now();
+    this.ctx.logger.info(`[checkCompetitionRatingAchievements ${competitionId}] started`);
+    const ratingContestDetail = await this.getRatingContestDetail(competitionId);
+    if (!ratingContestDetail) {
+      this.ctx.logger.info(
+        `[checkCompetitionRatingAchievements ${competitionId}] no rating detail, skip`,
+      );
+      return;
+    }
+    const { ratingUntil } = ratingContestDetail;
+    const userIds = Object.keys(ratingUntil).map((id) => +id);
+    const pq = new this.PromiseQueue(10, Infinity);
+    const queueTasks = userIds.map((userId) =>
+      pq.add(async () => {
+        try {
+          const { rating } = ratingUntil[userId];
+          let key: EAchievementKey | undefined;
+          if (rating >= 2500) {
+            key = EAchievementKey.RatingLv4;
+          } else if (rating >= 2200) {
+            key = EAchievementKey.RatingLv3;
+          } else if (rating >= 1900) {
+            key = EAchievementKey.RatingLv2;
+          } else if (rating >= 1600) {
+            key = EAchievementKey.RatingLv1;
+          }
+          key && (await this.userAchievementService.addUserAchievementAndPush(userId, key));
+
+          key = undefined;
+          const userDetail = await this.userService.getDetail(userId);
+          const ratingCount = (userDetail?.ratingHistory || []).length;
+          if (ratingCount >= 20) {
+            key = EAchievementKey.AttendRatingCompetitionsLv3;
+          } else if (ratingCount >= 5) {
+            key = EAchievementKey.AttendRatingCompetitionsLv2;
+          } else if (ratingCount >= 1) {
+            key = EAchievementKey.AttendRatingCompetitionsLv1;
+          }
+          key && (await this.userAchievementService.addUserAchievementAndPush(userId, key));
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionRatingAchievements ${competitionId}/${userId}] failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+    this.ctx.logger.info(
+      `[checkCompetitionRatingAchievements ${competitionId}] finished in ${Date.now() - _start}ms`,
+    );
   }
 }
