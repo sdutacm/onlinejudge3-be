@@ -1973,31 +1973,50 @@ export default class CompetitionService {
     const problemIds = problems.map((p) => p.problemId);
     const problemFbUserIdMap = new Map<number, number>();
     // 比赛提交
-    const acSolutions = (
+    const solutions = (
       await this.solutionService.getAllCompetitionSolutionList(competitionId)
     ).filter(
       (s) =>
-        s.result === ESolutionResult.AC &&
         problemIds.includes(s.problemId) &&
-        userIdSet.has(s.userId),
+        userIdSet.has(s.userId) &&
+        ![
+          ESolutionResult.WT,
+          ESolutionResult.JG,
+          ESolutionResult.RPD,
+          ESolutionResult.CNL,
+          ESolutionResult.CE,
+          ESolutionResult.SE,
+        ].includes(s.result),
     );
+    const acSolutions = solutions.filter((s) => s.result === ESolutionResult.AC);
+    const userSolutionsMap = new Map<number, typeof solutions>();
     const userAcSolutionsMap = new Map<number, typeof acSolutions>();
     const userAcProblemsMap = new Map<number, Set<number>>();
     const akUserIdsSet = new Set<number>();
     acSolutions.forEach((s) => {
-      const { userId, problemId } = s;
+      const { userId, problemId, result } = s;
+      if (!userSolutionsMap.has(userId)) {
+        userSolutionsMap.set(userId, []);
+      }
       if (!userAcSolutionsMap.has(userId)) {
         userAcSolutionsMap.set(userId, []);
       }
-      userAcSolutionsMap.get(userId)!.push(s);
-
       if (!userAcProblemsMap.has(userId)) {
         userAcProblemsMap.set(userId, new Set());
       }
+
       const acProblemIdSet = userAcProblemsMap.get(userId)!;
-      acProblemIdSet.add(problemId);
-      if (acProblemIdSet.size >= problemIds.length) {
-        akUserIdsSet.add(userId);
+      if (acProblemIdSet.has(problemId)) {
+        return;
+      }
+
+      userSolutionsMap.get(userId)!.push(s);
+      if (result === ESolutionResult.AC) {
+        userAcSolutionsMap.get(userId)!.push(s);
+        acProblemIdSet.add(problemId);
+        if (acProblemIdSet.size >= problemIds.length) {
+          akUserIdsSet.add(userId);
+        }
       }
     });
     // AK
@@ -2005,7 +2024,7 @@ export default class CompetitionService {
     this.ctx.logger.info(
       `[checkCompetitionAchievements ${competitionId}] AK users: [${akUserIds.join(',')}]`,
     );
-    akUserIds.forEach((userId) =>
+    queueTasks = akUserIds.map((userId) =>
       pq.add(async () => {
         try {
           await this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.AK);
@@ -2017,6 +2036,40 @@ export default class CompetitionService {
         }
       }),
     );
+    await Promise.all(queueTasks);
+    // 1A
+    if (problemIds.length >= 5) {
+      const oneHitACUserIds: number[] = [];
+      for (const [userId, acProblems] of userAcProblemsMap) {
+        if (acProblems.size >= 5) {
+          const userSolutionsOfACProblems = userSolutionsMap
+            .get(userId)!
+            .filter((s) => acProblems.has(s.problemId));
+          if (userSolutionsOfACProblems.every((s) => s.result === ESolutionResult.AC)) {
+            oneHitACUserIds.push(userId);
+          }
+        }
+      }
+      this.ctx.logger.info(
+        `[checkCompetitionAchievements ${competitionId}] 1A users: [${oneHitACUserIds}]`,
+      );
+      queueTasks = oneHitACUserIds.map((userId) =>
+        pq.add(async () => {
+          try {
+            await this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.Competition1AMaster,
+            );
+          } catch (e) {
+            this.ctx.logger.error(
+              `[checkCompetitionAchievements ${competitionId}/${userId}] add 1A achievement failed:`,
+              e,
+            );
+          }
+        }),
+      );
+    }
+    await Promise.all(queueTasks);
     // FB
     acSolutions.forEach((s) => {
       if (!problemFbUserIdMap.has(s.problemId)) {
@@ -2040,6 +2093,39 @@ export default class CompetitionService {
       }),
     );
     await Promise.all(queueTasks);
+    // 个人罚时时间
+    const largePenaltyUserIds: number[] = [];
+    if (detail.rule === ECompetitionRulePreset.ICPC) {
+      for (const [userId, solutions] of userSolutionsMap) {
+        const acProblemIdSet = userAcProblemsMap.get(userId)!;
+        let attemptedCount = 0;
+        for (const solution of solutions) {
+          if (solution.result !== ESolutionResult.AC && acProblemIdSet.has(solution.problemId)) {
+            attemptedCount++;
+          }
+        }
+        // TODO load penalty settings
+        if (attemptedCount >= 10) {
+          largePenaltyUserIds.push(userId);
+        }
+      }
+      queueTasks = largePenaltyUserIds.map((userId) =>
+        pq.add(async () => {
+          try {
+            await this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.TooManyPenalties,
+            );
+          } catch (e) {
+            this.ctx.logger.error(
+              `[checkCompetitionAchievements ${competitionId}/${userId}] add large penalty achievement failed:`,
+              e,
+            );
+          }
+        }),
+      );
+      await Promise.all(queueTasks);
+    }
     // 封榜时间
     const frozenLength = settings?.frozenLength || 0;
     if (frozenLength > 0) {
