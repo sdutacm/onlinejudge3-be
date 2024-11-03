@@ -78,6 +78,10 @@ import microtime from 'microtime';
 import { CCompetitionEventService } from '../competition/competitionEvent.service';
 import { ECompetitionEvent } from '../competition/competition.enum';
 import { IAppConfig } from '@/config/config.interface';
+import { CUserAchievementService } from '../user/userAchievement.service';
+import { EAchievementKey } from '@/common/configs/achievement.config';
+import { standardizeLanguage } from '@/utils/judger';
+import dayjs from 'dayjs';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -166,6 +170,9 @@ export default class SolutionService {
 
   @inject()
   competitionEventService: CCompetitionEventService;
+
+  @inject()
+  userAchievementService: CUserAchievementService;
 
   @inject()
   utils: IUtils;
@@ -1115,9 +1122,10 @@ export default class SolutionService {
   async getUserSolutionCalendar(
     userId: ISolutionModel['userId'],
     result: ESolutionResult = ESolutionResult.AC,
+    ignoreCache = false,
   ): Promise<IMSolutionServiceGetUserSolutionCalendarRes> {
     let res: IMSolutionCalendar | null = null;
-    const cached = await this._getUserSolutionCalendarCache(userId, result);
+    const cached = ignoreCache ? null : await this._getUserSolutionCalendarCache(userId, result);
     cached && (res = cached);
     if (!res) {
       // Author: MeiK
@@ -1780,6 +1788,11 @@ export default class SolutionService {
             },
           );
         }
+        redundant.userId &&
+          this.userAchievementService.addUserAchievementAndPush(
+            redundant.userId,
+            EAchievementKey.SolutionGetCE,
+          );
         break;
       }
       case 'SystemError': {
@@ -1880,6 +1893,90 @@ export default class SolutionService {
             },
           );
         }
+        if (redundant.userId) {
+          // 更新用户成就
+          switch (result) {
+            case ESolutionResult.AC: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetAC,
+              );
+              this.checkOnACAchievements(solutionId);
+              break;
+            }
+            case ESolutionResult.WA: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetWA,
+              );
+              break;
+            }
+            case ESolutionResult.PE: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetPE,
+              );
+              break;
+            }
+            case ESolutionResult.OLE: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetOLE,
+              );
+              break;
+            }
+            case ESolutionResult.TLE: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetTLE,
+              );
+              break;
+            }
+            case ESolutionResult.MLE: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetMLE,
+              );
+              break;
+            }
+            case ESolutionResult.RTE: {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionGetRTE,
+              );
+              break;
+            }
+          }
+
+          if (maxTimeUsed >= 60 * 1000) {
+            this.userAchievementService.addUserAchievementAndPush(
+              redundant.userId,
+              EAchievementKey.SolutionRunsWithLongTime,
+            );
+          }
+          if (maxMemoryUsed > 1 * 1024 * 1024) {
+            this.userAchievementService.addUserAchievementAndPush(
+              redundant.userId,
+              EAchievementKey.SolutionRunsWithLargeMemory,
+            );
+          }
+
+          if (![ESolutionResult.AC, ESolutionResult.CE].includes(result)) {
+            if (totalCaseNumber > 1 && lastCaseNumber === 1) {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionFailedOnFirstTest,
+              );
+            }
+            if (totalCaseNumber > 1 && lastCaseNumber === totalCaseNumber) {
+              this.userAchievementService.addUserAchievementAndPush(
+                redundant.userId,
+                EAchievementKey.SolutionFailedOnLastTest,
+              );
+            }
+          }
+        }
+
         // 设置异步定时任务来更新计数
         this.model
           .findOne({
@@ -1951,6 +2048,192 @@ export default class SolutionService {
       }
     }
     await this.delSolutionJudgeStatus(judgeInfoId);
+  }
+
+  async checkOnACAchievements(solutionId: number) {
+    const _start = Date.now();
+    const detail = await this.getDetail(solutionId);
+    if (!detail) {
+      return;
+    }
+    const {
+      problem: { problemId },
+      user: { userId },
+    } = detail;
+    this.ctx.logger.info(`[checkOnACAchievements ${solutionId}/${userId}] start`);
+
+    try {
+      const hasAchievedKeyCache = new Set<string>();
+      // 通过题目数相关
+      const userAcceptedProblemIds = await this.getUserSubmittedProblemIds(
+        userId,
+        undefined,
+        undefined,
+        ESolutionResult.AC,
+      );
+      const userAcceptedProblemCount = userAcceptedProblemIds.length;
+      if (userAcceptedProblemCount >= 500) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.SolveProblemsLv4,
+        );
+      } else if (userAcceptedProblemCount >= 200) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.SolveProblemsLv3,
+        );
+      } else if (userAcceptedProblemCount >= 100) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.SolveProblemsLv2,
+        );
+      } else if (userAcceptedProblemCount >= 50) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.SolveProblemsLv1,
+        );
+      }
+
+      // 提交语言相关
+      const languages: string[] = await this.model
+        .findAll({
+          attributes: [[sequelizeFn('DISTINCT', sequelizeCol('pro_lang')), 'language']],
+          where: {
+            userId,
+            result: ESolutionResult.AC,
+          },
+        })
+        .then((r: any) => r.map((d: any) => d.language));
+      const languagesSet = new Set(languages.map(standardizeLanguage).filter(Boolean));
+      if (languagesSet.size >= 12) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.LanguageUsageLv3,
+        );
+      } else if (languagesSet.size >= 6) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.LanguageUsageLv2,
+        );
+      } else if (languagesSet.size >= 3) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.LanguageUsageLv1,
+        );
+      }
+
+      // 日期相关
+      const acCal = await this.getUserSolutionCalendar(userId, ESolutionResult.AC, true);
+      let continuousDays = 0;
+      let lastDate: dayjs.Dayjs | null = null;
+      for (const acDay of acCal) {
+        const { date, count } = acDay;
+        if (count <= 0) {
+          continue;
+        }
+        if (!hasAchievedKeyCache.has(EAchievementKey.SolveInOneDay) && count >= 10) {
+          this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.SolveInOneDay,
+          );
+          hasAchievedKeyCache.add(EAchievementKey.SolveInOneDay);
+        }
+        if (!lastDate) {
+          continuousDays = 1;
+          lastDate = dayjs(date);
+          continue;
+        }
+        const currentDate = dayjs(date);
+        if (currentDate.diff(lastDate, 'day') === 1) {
+          continuousDays++;
+        } else {
+          continuousDays = 1;
+        }
+        lastDate = currentDate;
+        if (
+          !hasAchievedKeyCache.has(EAchievementKey.SolveInContinuouslyDayLv2) &&
+          continuousDays >= 10
+        ) {
+          this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.SolveInContinuouslyDayLv2,
+          );
+          hasAchievedKeyCache.add(EAchievementKey.SolveInContinuouslyDayLv2);
+        } else if (
+          !hasAchievedKeyCache.has(EAchievementKey.SolveInContinuouslyDayLv2) &&
+          continuousDays >= 3
+        ) {
+          this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.SolveInContinuouslyDayLv1,
+          );
+          hasAchievedKeyCache.add(EAchievementKey.SolveInContinuouslyDayLv1);
+        }
+      }
+
+      // 时间段相关
+      const nightSolution = await DB.sequelize.query(
+        `SELECT solution_id FROM solution WHERE user_id=? AND result=? AND TIME(sub_time) BETWEEN '00:00:00' AND '06:00:00' LIMIT 1`,
+        {
+          replacements: [userId, ESolutionResult.AC],
+          type: QueryTypes.SELECT,
+        },
+      );
+      if (nightSolution.length > 0) {
+        this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.NightSolver);
+      }
+
+      // 当前题目结果相关
+      const allSolutionsOfProblem = (
+        await this.model.findAll({
+          attributes: ['result'],
+          where: {
+            problemId,
+            userId,
+          },
+          order: [['solutionId', 'ASC']],
+        })
+      ).filter(
+        (s) =>
+          ![
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.RPD,
+            ESolutionResult.CNL,
+          ].includes(s.result),
+      );
+      const results = new Set(allSolutionsOfProblem.map((d) => d.result));
+      if (results.size >= 5) {
+        this.userAchievementService.addUserAchievementAndPush(
+          userId,
+          EAchievementKey.SolveWithMultiResults,
+        );
+      }
+      let solutionCountBeforeAC = 0;
+      for (const { result } of allSolutionsOfProblem) {
+        if (result === ESolutionResult.AC) {
+          if (solutionCountBeforeAC >= 20) {
+            this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.SolveWithAttemptedLv2,
+            );
+          } else if (solutionCountBeforeAC >= 5) {
+            this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.SolveWithAttemptedLv1,
+            );
+          }
+          break;
+        }
+        solutionCountBeforeAC++;
+      }
+
+      this.ctx.logger.info(
+        `[checkOnACAchievements ${solutionId}/${userId}] finished in ${Date.now() - _start}ms`,
+      );
+    } catch (e) {
+      this.ctx.logger.error(`[checkOnACAchievements ${solutionId}/${userId}] failed:`, e);
+    }
   }
 
   async sendToJudgeQueue(options: {

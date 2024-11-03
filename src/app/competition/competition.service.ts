@@ -1941,6 +1941,9 @@ export default class CompetitionService {
     if (competitionBrands.includes('SDUTPC')) {
       commonAchievementKeys.push(EAchievementKey.AttendCompetitionSDUTPC);
     }
+    if (competitionBrands.includes('SDUTRound')) {
+      commonAchievementKeys.push(EAchievementKey.AttendCompetitionSDUTRound);
+    }
     if (competitionBrands.includes('AzurSeries')) {
       commonAchievementKeys.push(EAchievementKey.AttendCompetitionAzurSeries);
     }

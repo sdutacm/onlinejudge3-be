@@ -53,6 +53,52 @@ export function convertOJLanguageToRiver(language: string) {
   }
 }
 
+export function standardizeLanguage(language: string) {
+  if (!language) {
+    return null;
+  }
+  switch (language) {
+    case 'gcc':
+    case 'c':
+      return 'C';
+    case 'g++':
+    case 'c++':
+    case 'cpp':
+      return 'C++';
+    case 'java':
+      return 'Java';
+    case 'python2':
+    case 'python3':
+    case 'python':
+      return 'Python';
+    case 'c#':
+    case 'csharp':
+      return 'C#';
+    case 'go':
+      return 'Go';
+    case 'php':
+      return 'PHP';
+    case 'javascript':
+    case 'js':
+      return 'JavaScript';
+    case 'typescript':
+    case 'ts':
+      return 'TypeScript';
+    case 'haskell':
+      return 'Haskell';
+    case 'lua':
+      return 'Lua';
+    case 'pascal':
+      return 'Pascal';
+    case 'perl':
+      return 'Perl';
+    case 'swift':
+      return 'Swift';
+    default:
+      return language;
+  }
+}
+
 export async function encodeJudgeQueueMessage(options: {
   judgeInfoId: number;
   solutionId: ISolutionModel['solutionId'];

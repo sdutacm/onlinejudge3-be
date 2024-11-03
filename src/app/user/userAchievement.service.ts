@@ -163,6 +163,7 @@ export default class UserAchievementService {
     if (existed && existed.status !== EUserAchievementStatus.created) {
       return;
     } else if (!existed) {
+      this.ctx.logger.info(`[achievement ${userId}] +${achievementKey}`);
       await this.createUserAchievement(userId, achievementKey);
     }
     await this.pushAchievementAchieved(userId, achievementKey);
