@@ -457,4 +457,12 @@ export default class UserService {
           }),
       );
   }
+
+  async getUserCount(): Promise<number> {
+    return this.model.count({
+      where: {
+        forbidden: EUserForbidden.normal,
+      },
+    });
+  }
 }

@@ -1,4 +1,5 @@
 import { provide, inject, Context, config } from 'midway';
+import { fn, col } from 'sequelize';
 import { IUtils } from '@/utils';
 import { TUserAchievementModel } from '@/lib/models/userAchievement.model';
 import { IMUserAchievementDetail, IUserModel } from './user.interface';
@@ -8,6 +9,7 @@ import { CSocketBridgeEmitter } from '@/utils/socketBridgeEmitter';
 import { EAchievementKey } from '@/common/configs/achievement.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IDurationsConfig } from '@/config/durations.config';
+import { IAchievementRateItem } from '../achievement/achievement.interface';
 
 export type CUserAchievementService = UserAchievementService;
 
@@ -39,22 +41,21 @@ export default class UserAchievementService {
   socketBridgeEmitter: CSocketBridgeEmitter;
 
   @config()
+  redisKey: IRedisKeyConfig;
+
+  @config()
   durations: IDurationsConfig;
-
-  cacheKey: string;
-
-  constructor(@config('redisKey') redisKey: IRedisKeyConfig) {
-    this.cacheKey = redisKey.userAchievements;
-  }
 
   /**
    * 获取用户成就列表缓存。
    * 如果未找到缓存，则返回 `null`
    * @param userId userId
    */
-  private async _getCache(userId: IUserModel['userId']): Promise<IUserAchievement[] | null> {
+  private async _getUserAchievementsCache(
+    userId: IUserModel['userId'],
+  ): Promise<IUserAchievement[] | null> {
     return this.ctx.helper
-      .redisGet<IUserAchievement[]>(this.cacheKey, [userId])
+      .redisGet<IUserAchievement[]>(this.redisKey.userAchievements, [userId])
       .then((res) => {
         if (!Array.isArray(res)) {
           return null;
@@ -68,11 +69,40 @@ export default class UserAchievementService {
    * @param userId userId
    * @param data
    */
-  private async _setCache(userId: IUserModel['userId'], data: IUserAchievement[]): Promise<void> {
+  private async _setUserAchievementsCache(
+    userId: IUserModel['userId'],
+    data: IUserAchievement[],
+  ): Promise<void> {
     if (!data) {
       return;
     }
-    return this.ctx.helper.redisSet(this.cacheKey, [userId], data, this.durations.cacheFullList);
+    return this.ctx.helper.redisSet(
+      this.redisKey.userAchievements,
+      [userId],
+      data,
+      this.durations.cacheFullList,
+    );
+  }
+
+  /**
+   * 获取成就达成率缓存。
+   * 如果未找到缓存，则返回 `null`
+   */
+  private async _getAchievementRateCache(): Promise<IAchievementRateItem[] | null> {
+    return this.ctx.helper.redisGet<IAchievementRateItem[]>(this.redisKey.achievementRate, []);
+  }
+
+  /**
+   * 设置成就达成率缓存。
+   * @param data 成就达成率数据
+   */
+  private async _setAchievementRateCache(data: IAchievementRateItem[]): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.achievementRate,
+      [],
+      data,
+      this.durations.cacheFullList,
+    );
   }
 
   /**
@@ -80,12 +110,19 @@ export default class UserAchievementService {
    * @param userId userId
    */
   async clearUserAchievementsCache(userId: IUserModel['userId']): Promise<void> {
-    return this.ctx.helper.redisDel(this.cacheKey, [userId]);
+    return this.ctx.helper.redisDel(this.redisKey.userAchievements, [userId]);
+  }
+
+  /**
+   * 清除成就达成率缓存。
+   */
+  async clearAchievementRateCache(): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.achievementRate, []);
   }
 
   public async getUserAchievements(userId: number): Promise<IUserAchievement[]> {
     let res: IUserAchievement[];
-    const cached = await this._getCache(userId);
+    const cached = await this._getUserAchievementsCache(userId);
     if (cached) {
       res = cached;
     } else {
@@ -104,7 +141,7 @@ export default class UserAchievementService {
               this.lodash.omit(d.get({ plain: true }) as IMUserAchievementDetail, ['userId']),
             ),
         );
-      await this._setCache(userId, res);
+      await this._setUserAchievementsCache(userId, res);
     }
     return res;
   }
@@ -120,14 +157,14 @@ export default class UserAchievementService {
       status: status ?? EUserAchievementStatus.created,
       createdAt: new Date(),
     });
-    await this.clearUserAchievementsCache(userId);
+    await Promise.all([this.clearUserAchievementsCache(userId), this.clearAchievementRateCache()]);
     return {
       userAchievementId: res.userAchievementId,
     };
   }
 
   private async getOneUserAchievement(userId: number, achievementKey: EAchievementKey) {
-    const fullCached = await this._getCache(userId);
+    const fullCached = await this._getUserAchievementsCache(userId);
     let res: IUserAchievement | null;
     if (fullCached) {
       res = fullCached.find((d) => d.achievementKey === achievementKey) || null;
@@ -189,7 +226,10 @@ export default class UserAchievementService {
     );
     const updated = res[0] > 0;
     if (updated) {
-      await this.clearUserAchievementsCache(userId);
+      await Promise.all([
+        this.clearUserAchievementsCache(userId),
+        this.clearAchievementRateCache(),
+      ]);
     }
     return updated;
   }
@@ -208,8 +248,36 @@ export default class UserAchievementService {
     );
     const updated = res[0] > 0;
     if (updated) {
-      await this.clearUserAchievementsCache(userId);
+      await Promise.all([
+        this.clearUserAchievementsCache(userId),
+        this.clearAchievementRateCache(),
+      ]);
     }
     return updated;
+  }
+
+  /**
+   * 获取成就达成率。
+   */
+  async getAchievementRate(): Promise<IAchievementRateItem[]> {
+    let res: IAchievementRateItem[];
+    const cached = await this._getAchievementRateCache();
+    if (cached) {
+      res = cached;
+    } else {
+      const dbRes = await this.userAchievementModel.findAll({
+        attributes: [
+          'achievementKey',
+          [fn('COUNT', fn('DISTINCT', col('user_id'))), 'achievedUserCount'],
+        ],
+        group: ['achievementKey'],
+      });
+      res = dbRes.map((d) => ({
+        achievementKey: d.achievementKey,
+        achievedUserCount: d.get('achievedUserCount') as number,
+      }));
+      await this._setAchievementRateCache(res);
+    }
+    return res;
   }
 }
