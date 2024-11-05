@@ -405,4 +405,12 @@ export default class SetService {
   async clearDetailCache(setId: ISetModel['setId']): Promise<void> {
     return this.ctx.helper.redisDel(this.meta.detailCacheKey, [setId]);
   }
+
+  async getAll(): Promise<IMSetDetailPlain[]> {
+    return this.model
+      .findAll({
+        order: [['setId', 'ASC']],
+      })
+      .then((r) => r.map((d) => d.get({ plain: true }) as IMSetDetailPlain));
+  }
 }

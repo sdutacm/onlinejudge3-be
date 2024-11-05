@@ -82,6 +82,7 @@ import { CUserAchievementService } from '../user/userAchievement.service';
 import { EAchievementKey } from '@/common/configs/achievement.config';
 import { standardizeLanguage } from '@/utils/judger';
 import dayjs from 'dayjs';
+import { CSetService } from '../set/set.service';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const axiosSocketBrideInstance = Axios.create({
@@ -173,6 +174,9 @@ export default class SolutionService {
 
   @inject()
   userAchievementService: CUserAchievementService;
+
+  @inject()
+  setService: CSetService;
 
   @inject()
   utils: IUtils;
@@ -2071,6 +2075,7 @@ export default class SolutionService {
         undefined,
         ESolutionResult.AC,
       );
+      const userAcceptedProblemIdSet = new Set(userAcceptedProblemIds);
       const userAcceptedProblemCount = userAcceptedProblemIds.length;
       if (userAcceptedProblemCount >= 500) {
         this.userAchievementService.addUserAchievementAndPush(
@@ -2226,6 +2231,38 @@ export default class SolutionService {
           break;
         }
         solutionCountBeforeAC++;
+      }
+
+      // 题目集相关
+      const setList = await this.setService.getAll();
+      for (const set of setList) {
+        const {
+          props: { sections },
+        } = set;
+        let setCompleted = true;
+        for (const section of sections) {
+          const { problems } = section;
+          const sectionProblemIds = problems.map((p) => p.problemId);
+          const sectionCompleted = sectionProblemIds.every((p) => userAcceptedProblemIdSet.has(p));
+          if (!sectionCompleted) {
+            setCompleted = false;
+            continue;
+          } else if (!hasAchievedKeyCache.has(EAchievementKey.CompleteSetPartially)) {
+            this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              EAchievementKey.CompleteSetPartially,
+            );
+            hasAchievedKeyCache.add(EAchievementKey.CompleteSetPartially);
+          }
+        }
+        if (setCompleted && !hasAchievedKeyCache.has(EAchievementKey.CompleteSetAll)) {
+          this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.CompleteSetAll,
+          );
+          hasAchievedKeyCache.add(EAchievementKey.CompleteSetAll);
+          break;
+        }
       }
 
       this.ctx.logger.info(
