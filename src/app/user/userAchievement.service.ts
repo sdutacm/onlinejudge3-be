@@ -280,4 +280,22 @@ export default class UserAchievementService {
     }
     return res;
   }
+
+  async pushAllUndeliveredAchievements(userId: number) {
+    const createdOnlyAchievements = await this.userAchievementModel.findAll({
+      attributes: ['achievementKey'],
+      where: {
+        userId,
+        status: EUserAchievementStatus.created,
+      },
+    });
+    const achievementKeys = createdOnlyAchievements.map((d) => d.achievementKey);
+    if (achievementKeys.length) {
+      await this.socketBridgeEmitter.emit('pushAchievementAchieved', {
+        userId,
+        achievementKeys,
+      });
+    }
+    await this.clearUserAchievementsCache(userId);
+  }
 }

@@ -44,4 +44,10 @@ export default class AchievementController {
       rows: achievementRateList,
     };
   }
+
+  @route()
+  @login()
+  async [routesBe.requestAchievementPush.i](ctx: Context): Promise<void> {
+    await this.userAchievementService.pushAllUndeliveredAchievements(ctx.session.userId);
+  }
 }
