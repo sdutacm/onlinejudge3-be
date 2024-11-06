@@ -1956,7 +1956,7 @@ export default class CompetitionService {
         try {
           await Promise.all(
             commonAchievementKeys.map((key) =>
-              this.userAchievementService.addUserAchievementAndPush(userId, key),
+              this.userAchievementService.addUserAchievementAndPush(userId, key, detail.endAt),
             ),
           );
         } catch (e) {
@@ -1990,31 +1990,37 @@ export default class CompetitionService {
     );
     const acSolutions = solutions.filter((s) => s.result === ESolutionResult.AC);
     const userSolutionsMap = new Map<number, typeof solutions>();
-    const userAcSolutionsMap = new Map<number, typeof acSolutions>();
-    const userAcProblemsMap = new Map<number, Set<number>>();
+    const userACSolutionsMap = new Map<number, typeof acSolutions>();
+    const userACProblemIdSetMap = new Map<number, Set<number>>();
+    const userAttemptedProblemIdSetMap = new Map<number, Set<number>>();
     const akUserIdsSet = new Set<number>();
     acSolutions.forEach((s) => {
       const { userId, problemId, result } = s;
       if (!userSolutionsMap.has(userId)) {
         userSolutionsMap.set(userId, []);
       }
-      if (!userAcSolutionsMap.has(userId)) {
-        userAcSolutionsMap.set(userId, []);
+      if (!userACSolutionsMap.has(userId)) {
+        userACSolutionsMap.set(userId, []);
       }
-      if (!userAcProblemsMap.has(userId)) {
-        userAcProblemsMap.set(userId, new Set());
+      if (!userACProblemIdSetMap.has(userId)) {
+        userACProblemIdSetMap.set(userId, new Set());
+      }
+      if (!userAttemptedProblemIdSetMap.has(userId)) {
+        userAttemptedProblemIdSetMap.set(userId, new Set());
       }
 
-      const acProblemIdSet = userAcProblemsMap.get(userId)!;
-      if (acProblemIdSet.has(problemId)) {
+      const userACProblemIdSet = userACProblemIdSetMap.get(userId)!;
+      userAttemptedProblemIdSetMap.get(userId)!.add(problemId);
+      // 一旦一个题目已经 AC 过，则之后的提交被忽略
+      if (userACProblemIdSet.has(problemId)) {
         return;
       }
 
       userSolutionsMap.get(userId)!.push(s);
       if (result === ESolutionResult.AC) {
-        userAcSolutionsMap.get(userId)!.push(s);
-        acProblemIdSet.add(problemId);
-        if (acProblemIdSet.size >= problemIds.length) {
+        userACSolutionsMap.get(userId)!.push(s);
+        userACProblemIdSet.add(problemId);
+        if (userACProblemIdSet.size >= problemIds.length) {
           akUserIdsSet.add(userId);
         }
       }
@@ -2027,7 +2033,11 @@ export default class CompetitionService {
     queueTasks = akUserIds.map((userId) =>
       pq.add(async () => {
         try {
-          await this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.AK);
+          await this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.AK,
+            detail.endAt,
+          );
         } catch (e) {
           this.ctx.logger.error(
             `[checkCompetitionAchievements ${competitionId}/${userId}] add AK achievement failed:`,
@@ -2040,7 +2050,7 @@ export default class CompetitionService {
     // 1A
     if (problemIds.length >= 5) {
       const oneHitACUserIds: number[] = [];
-      for (const [userId, acProblems] of userAcProblemsMap) {
+      for (const [userId, acProblems] of userACProblemIdSetMap) {
         if (acProblems.size >= 5) {
           const userSolutionsOfACProblems = userSolutionsMap
             .get(userId)!
@@ -2059,6 +2069,7 @@ export default class CompetitionService {
             await this.userAchievementService.addUserAchievementAndPush(
               userId,
               EAchievementKey.Competition1AMaster,
+              detail.endAt,
             );
           } catch (e) {
             this.ctx.logger.error(
@@ -2083,7 +2094,11 @@ export default class CompetitionService {
     queueTasks = fbUserIds.map((userId) =>
       pq.add(async () => {
         try {
-          await this.userAchievementService.addUserAchievementAndPush(userId, EAchievementKey.FB);
+          await this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.FB,
+            detail.endAt,
+          );
         } catch (e) {
           this.ctx.logger.error(
             `[checkCompetitionAchievements ${competitionId}/${userId}] add FB achievement failed:`,
@@ -2097,7 +2112,7 @@ export default class CompetitionService {
     const largePenaltyUserIds: number[] = [];
     if (detail.rule === ECompetitionRulePreset.ICPC) {
       for (const [userId, solutions] of userSolutionsMap) {
-        const acProblemIdSet = userAcProblemsMap.get(userId)!;
+        const acProblemIdSet = userACProblemIdSetMap.get(userId)!;
         let attemptedCount = 0;
         for (const solution of solutions) {
           if (solution.result !== ESolutionResult.AC && acProblemIdSet.has(solution.problemId)) {
@@ -2115,6 +2130,7 @@ export default class CompetitionService {
             await this.userAchievementService.addUserAchievementAndPush(
               userId,
               EAchievementKey.TooManyPenalties,
+              detail.endAt,
             );
           } catch (e) {
             this.ctx.logger.error(
@@ -2126,12 +2142,84 @@ export default class CompetitionService {
       );
       await Promise.all(queueTasks);
     }
+    // 全交全没过
+    const allSubmittedButAllFailedUserIds: number[] = [];
+    for (const [userId] of userSolutionsMap) {
+      if (
+        userAttemptedProblemIdSetMap.get(userId)!.size === problemIds.length &&
+        userACProblemIdSetMap.get(userId)!.size === 0
+      ) {
+        allSubmittedButAllFailedUserIds.push(userId);
+      }
+    }
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] all submitted all failed users: [${allSubmittedButAllFailedUserIds.join(
+        ',',
+      )}]`,
+    );
+    queueTasks = allSubmittedButAllFailedUserIds.map((userId) =>
+      pq.add(async () => {
+        try {
+          await this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.AllSubmittedButAllFailed,
+            detail.endAt,
+          );
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionAchievements ${competitionId}/${userId}] add all submitted all failed achievement failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+    // AC 连击
+    const acComboUserIds: number[] = [];
+    for (const [userId, acSolutions] of userACSolutionsMap) {
+      let lastACTime: Date | undefined;
+      for (const acSolution of acSolutions) {
+        if (!lastACTime) {
+          lastACTime = acSolution.createdAt;
+          continue;
+        }
+        const timeDiff = acSolution.createdAt.getTime() - lastACTime.getTime();
+        if (timeDiff <= 300 * 1000) {
+          acComboUserIds.push(userId);
+          break;
+        }
+        lastACTime = acSolution.createdAt;
+      }
+    }
+    this.ctx.logger.info(
+      `[checkCompetitionAchievements ${competitionId}] AC combo users: [${acComboUserIds.join(
+        ',',
+      )}]`,
+    );
+    queueTasks = acComboUserIds.map((userId) =>
+      pq.add(async () => {
+        try {
+          await this.userAchievementService.addUserAchievementAndPush(
+            userId,
+            EAchievementKey.CompetitionACCombo,
+            detail.endAt,
+          );
+        } catch (e) {
+          this.ctx.logger.error(
+            `[checkCompetitionAchievements ${competitionId}/${userId}] add AC combo achievement failed:`,
+            e,
+          );
+        }
+      }),
+    );
+    await Promise.all(queueTasks);
+
     // 封榜时间
     const frozenLength = settings?.frozenLength || 0;
     if (frozenLength > 0) {
       const frozenStart = new Date(detail.endAt.getTime() - frozenLength * 1000);
       const fzAcUserIds: number[] = [];
-      for (const [userId, userAcSolutions] of userAcSolutionsMap) {
+      for (const [userId, userAcSolutions] of userACSolutionsMap) {
         for (const solution of userAcSolutions) {
           if (solution.createdAt >= frozenStart) {
             fzAcUserIds.push(userId);
@@ -2150,6 +2238,7 @@ export default class CompetitionService {
             await this.userAchievementService.addUserAchievementAndPush(
               userId,
               EAchievementKey.SolveDuringFrozenTime,
+              detail.endAt,
             );
           } catch (e) {
             this.ctx.logger.error(
@@ -2172,8 +2261,9 @@ export default class CompetitionService {
   ): Promise<void> {
     const _start = Date.now();
     this.ctx.logger.info(`[checkCompetitionRatingAchievements ${competitionId}] started`);
+    const detail = await this.getDetail(competitionId, null);
     const ratingContestDetail = await this.getRatingContestDetail(competitionId);
-    if (!ratingContestDetail) {
+    if (!detail || !ratingContestDetail) {
       this.ctx.logger.info(
         `[checkCompetitionRatingAchievements ${competitionId}] no rating detail, skip`,
       );
@@ -2196,7 +2286,12 @@ export default class CompetitionService {
           } else if (rating >= 1600) {
             key = EAchievementKey.RatingLv1;
           }
-          key && (await this.userAchievementService.addUserAchievementAndPush(userId, key));
+          key &&
+            (await this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              key,
+              detail.endAt,
+            ));
 
           key = undefined;
           const userDetail = await this.userService.getDetail(userId);
@@ -2208,7 +2303,12 @@ export default class CompetitionService {
           } else if (ratingCount >= 1) {
             key = EAchievementKey.AttendRatingCompetitionsLv1;
           }
-          key && (await this.userAchievementService.addUserAchievementAndPush(userId, key));
+          key &&
+            (await this.userAchievementService.addUserAchievementAndPush(
+              userId,
+              key,
+              detail.endAt,
+            ));
         } catch (e) {
           this.ctx.logger.error(
             `[checkCompetitionRatingAchievements ${competitionId}/${userId}] failed:`,

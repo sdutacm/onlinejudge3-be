@@ -150,12 +150,13 @@ export default class UserAchievementService {
     userId: number,
     achievementKey: EAchievementKey,
     status?: EUserAchievementStatus,
+    createdAt?: Date,
   ) {
     const res = await this.userAchievementModel.create({
       userId,
       achievementKey,
       status: status ?? EUserAchievementStatus.created,
-      createdAt: new Date(),
+      createdAt: createdAt ?? new Date(),
     });
     await Promise.all([this.clearUserAchievementsCache(userId), this.clearAchievementRateCache()]);
     return {
@@ -192,7 +193,11 @@ export default class UserAchievementService {
     });
   }
 
-  public async addUserAchievementAndPush(userId: number, achievementKey: EAchievementKey) {
+  public async addUserAchievementAndPush(
+    userId: number,
+    achievementKey: EAchievementKey,
+    createdAt?: Date,
+  ) {
     if (!userId || !achievementKey) {
       return;
     }
@@ -201,7 +206,7 @@ export default class UserAchievementService {
       return;
     } else if (!existed) {
       this.ctx.logger.info(`[achievement ${userId}] +${achievementKey}`);
-      await this.createUserAchievement(userId, achievementKey);
+      await this.createUserAchievement(userId, achievementKey, undefined, createdAt);
     }
     await this.pushAchievementAchieved(userId, achievementKey);
   }
