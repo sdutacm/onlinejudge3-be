@@ -1994,7 +1994,7 @@ export default class CompetitionService {
     const userACProblemIdSetMap = new Map<number, Set<number>>();
     const userAttemptedProblemIdSetMap = new Map<number, Set<number>>();
     const akUserIdsSet = new Set<number>();
-    acSolutions.forEach((s) => {
+    solutions.forEach((s) => {
       const { userId, problemId, result } = s;
       if (!userSolutionsMap.has(userId)) {
         userSolutionsMap.set(userId, []);
