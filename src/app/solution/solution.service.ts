@@ -1897,7 +1897,7 @@ export default class SolutionService {
             },
           );
         }
-        if (redundant.userId) {
+        if (redundant.userId && redundant.problemId) {
           // 更新用户成就
           switch (result) {
             case ESolutionResult.AC: {
@@ -1979,6 +1979,37 @@ export default class SolutionService {
               );
             }
           }
+
+          // 不同提交结果数量
+          const uniqResultsRes = await this.model.findAll({
+            attributes: [[sequelizeFn('DISTINCT', sequelizeCol('result')), 'result']],
+            where: {
+              userId: redundant.userId,
+              problemId: redundant.problemId,
+            },
+          });
+          const uniqResults = uniqResultsRes
+            .map((d: any) => d.result)
+            .filter(
+              (r) =>
+                ![
+                  ESolutionResult.WT,
+                  ESolutionResult.JG,
+                  ESolutionResult.RPD,
+                  ESolutionResult.CNL,
+                  ESolutionResult.SE,
+                ].includes(r),
+            );
+          if (uniqResults.length >= 5) {
+            this.userAchievementService.addUserAchievementAndPush(
+              redundant.userId,
+              EAchievementKey.SolveWithMultiResults,
+            );
+          }
+        } else {
+          this.ctx.logger.warn(
+            `[updateJudgeFinish] redundant data incomplete. judgeInfoId: ${judgeInfoId}, solutionId: ${solutionId}, judgerId: ${judgerId}`,
+          );
         }
 
         // 设置异步定时任务来更新计数
@@ -2205,15 +2236,9 @@ export default class SolutionService {
             ESolutionResult.JG,
             ESolutionResult.RPD,
             ESolutionResult.CNL,
+            ESolutionResult.SE,
           ].includes(s.result),
       );
-      const results = new Set(allSolutionsOfProblem.map((d) => d.result));
-      if (results.size >= 5) {
-        this.userAchievementService.addUserAchievementAndPush(
-          userId,
-          EAchievementKey.SolveWithMultiResults,
-        );
-      }
       let solutionCountBeforeAC = 0;
       for (const { result } of allSolutionsOfProblem) {
         if (result === ESolutionResult.AC) {
