@@ -2196,7 +2196,7 @@ export default class SolutionService {
           );
           hasAchievedKeyCache.add(EAchievementKey.SolveInContinuouslyDayLv2);
         } else if (
-          !hasAchievedKeyCache.has(EAchievementKey.SolveInContinuouslyDayLv2) &&
+          !hasAchievedKeyCache.has(EAchievementKey.SolveInContinuouslyDayLv1) &&
           continuousDays >= 3
         ) {
           this.userAchievementService.addUserAchievementAndPush(
