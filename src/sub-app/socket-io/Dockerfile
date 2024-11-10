@@ -11,7 +11,7 @@ COPY src ./src
 RUN mv src/config/config.prod.from-file.ts src/config/config.prod.ts
 RUN npm i -g nodeinstall
 RUN npm ci
-RUN nodeinstall --install-alinode 7.6.0
+# RUN nodeinstall --install-alinode 7.6.0
 RUN npm run build
 
 CMD npm run start:foreground
