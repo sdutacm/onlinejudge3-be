@@ -28,7 +28,6 @@ export default class AchievementController {
   lodash: ILodash;
 
   @route()
-  @login()
   async [routesBe.getAchievementRate.i](ctx: Context): Promise<IGetAchievementRateResp> {
     const achievementRate = await this.userAchievementService.getAchievementRate();
     const userCount = await this.userService.getUserCount();
