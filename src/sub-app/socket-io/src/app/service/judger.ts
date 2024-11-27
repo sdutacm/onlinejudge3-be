@@ -39,6 +39,7 @@ module.exports = (app: Application) => {
       }
       const solutionId = statusFormArray[0];
       this.ctx.logger.info('[judger] pushJudgeStatus:', statusFormArray);
+      console.info('[judger] pushJudgeStatus:', statusFormArray);
       // @ts-ignore
       const status = encodeJudgeStatusBuffer(...statusFormArray);
       this.ctx.app.io.of(this.nsp).to(roomKey.judgeStatus(solutionId)).emit('s', status);
