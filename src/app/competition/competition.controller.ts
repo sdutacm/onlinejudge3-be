@@ -1275,15 +1275,15 @@ export default class CompetitionController {
   async [routesBe.endCompetition.i](ctx: Context): Promise<void> {
     const competitionId = ctx.id!;
     const detail = ctx.detail as IMCompetitionDetail;
-    // if (!ctx.helper.isContestEnded(detail)) {
-    //   throw new ReqError(Codes.COMPETITION_NOT_ENDED);
-    // } else if (detail.ended) {
-    //   throw new ReqError(Codes.COMPETITION_ENDED);
-    // }
+    if (!ctx.helper.isContestEnded(detail)) {
+      throw new ReqError(Codes.COMPETITION_NOT_ENDED);
+    } else if (detail.ended) {
+      throw new ReqError(Codes.COMPETITION_ENDED);
+    }
     const settings = (await this.service.getCompetitionSettingDetail(competitionId))!;
-    // await this.service.update(competitionId, {
-    //   ended: true,
-    // });
+    await this.service.update(competitionId, {
+      ended: true,
+    });
     await Promise.all([
       this.service.clearDetailCache(competitionId),
       this.service.clearCompetitionRanklistCache(competitionId),
