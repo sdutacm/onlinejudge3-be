@@ -1382,12 +1382,13 @@ export default class CompetitionController {
         // 更新 user rating
         const pq = new this.PromiseQueue(20, Infinity);
         const queueTasks = needRollbackUserIds.map((userId) =>
-          pq.add(() =>
-            this.userService.update(userId, {
+          pq.add(async () => {
+            await this.userService.update(userId, {
               rating: userToSetRatingMap.get(userId)!.rating,
               ratingHistory: userToSetRatingMap.get(userId)!.ratingHistory,
-            }),
-          ),
+            });
+            await this.userService.clearDetailCache(userId);
+          }),
         );
         await Promise.all(queueTasks);
         // 删除 rating contest
@@ -1396,6 +1397,7 @@ export default class CompetitionController {
           this.service.deleteRatingStatus(competitionId),
         ]);
         await this.service.clearRatingContestDetailCache(competitionId);
+        // TODO 回滚成就
       }
     }
 
