@@ -2275,6 +2275,12 @@ export default class CompetitionService {
     const queueTasks = userIds.map((userId) =>
       pq.add(async () => {
         try {
+          if (!userId) {
+            this.ctx.logger.warn(
+              `[checkCompetitionRatingAchievements ${competitionId}/${userId}] invalid user, skipped`,
+            );
+            return;
+          }
           const { rating } = ratingUntil[userId];
           let key: EAchievementKey | undefined;
           if (rating >= 2500) {
