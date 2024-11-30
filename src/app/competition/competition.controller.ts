@@ -1310,10 +1310,7 @@ export default class CompetitionController {
       const cmd = `node ${path.join(
         this.scriptsConfig.dirPath,
         'calRating.js',
-      )} competition ${competitionId} >> ${path.join(
-        this.scriptsConfig.logPath,
-        'calRating.log',
-      )} 2>&1`;
+      )} competition ${competitionId} 2>&1`;
       ctx.logger.info('exec cmd:', cmd);
       const _start = Date.now();
       // exec(cmd, {

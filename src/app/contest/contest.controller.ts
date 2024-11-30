@@ -695,10 +695,7 @@ export default class ContestController {
         const cmd = `nohup node ${path.join(
           this.scriptsConfig.dirPath,
           'calRating.js',
-        )} contest ${contestId} >> ${path.join(
-          this.scriptsConfig.logPath,
-          'calRating.log',
-        )} 2>&1 &`;
+        )} contest ${contestId} 2>&1 &`;
         ctx.logger.info('exec:', cmd);
         exec(cmd);
         break;
