@@ -1573,15 +1573,9 @@ export default class SolutionService {
           await this.clearSolutionJudgeInfoCache(judgeInfoId);
           // 推送完成状态
           this.pushJudgeStatus(solutionId, [solutionId, 1, result, jResult.last, jResult.total]);
-          // 需要更新计数，让异步定时任务去处理
-          await Promise.all([
-            this.ctx.helper.redisSadd(
-              this.redisKey.asyncSolutionProblemStatsTasks,
-              [],
-              `${problemId}`,
-            ),
-            this.ctx.helper.redisSadd(this.redisKey.asyncSolutionUserStatsTasks, [], `${userId}`),
-          ]);
+          // 需要更新计数，异步后处理
+          this.updateSolutionProblemStats(problemId);
+          this.updateSolutionUserStats(userId);
           console.log('judge all ok', solutionId);
           // break;
         }
@@ -2026,14 +2020,8 @@ export default class SolutionService {
             }
             const d = res.get({ plain: true }) as IMSolutionDetailPlain;
             const { problemId, userId } = d;
-            Promise.all([
-              this.ctx.helper.redisSadd(
-                this.redisKey.asyncSolutionProblemStatsTasks,
-                [],
-                `${problemId}`,
-              ),
-              this.ctx.helper.redisSadd(this.redisKey.asyncSolutionUserStatsTasks, [], `${userId}`),
-            ]);
+            this.updateSolutionProblemStats(problemId);
+            this.updateSolutionUserStats(userId);
           });
         break;
       }
@@ -2370,5 +2358,117 @@ export default class SolutionService {
       codeMap[d.solutionId] = d.code;
     });
     return codeMap;
+  }
+
+  async updateSolutionProblemStats(problemId: ISolutionModel['problemId']) {
+    this.ctx.logger.info('[solutionProblemStats] processing', problemId);
+    if (!(problemId > 0)) {
+      this.ctx.logger.info('[solutionProblemStats] skipped cuz invalid problemId', problemId);
+      return;
+    }
+
+    let _us: number;
+    let res: any;
+
+    _us = Date.now();
+    res = await DB.sequelize.query(
+      'SELECT COUNT(DISTINCT(solution_id)) AS accept FROM solution WHERE problem_id=? AND result=?',
+      {
+        replacements: [problemId, ESolutionResult.AC],
+        type: QueryTypes.SELECT,
+      },
+    );
+    const _sql1Cost = Date.now() - _us;
+
+    const problemAccepted: number = res[0].accept;
+    _us = Date.now();
+    res = await DB.sequelize.query(
+      'SELECT COUNT(solution_id) AS submit FROM solution WHERE problem_id=? AND result NOT IN (?)',
+      {
+        replacements: [
+          problemId,
+          [
+            ESolutionResult.CE,
+            ESolutionResult.SE,
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.RPD,
+          ],
+        ],
+        type: QueryTypes.SELECT,
+      },
+    );
+    const _sql2Cost = Date.now() - _us;
+    const problemSubmitted: number = res[0].submit;
+
+    _us = Date.now();
+    await DB.sequelize.query('UPDATE problem SET accept=?, submit=? WHERE problem_id=?', {
+      replacements: [problemAccepted, problemSubmitted, problemId],
+      type: QueryTypes.UPDATE,
+    });
+    const _sql3Cost = Date.now() - _us;
+    // await this.problemService.clearDetailCache(problemId);
+
+    this.ctx.logger.info('[solutionProblemStats] completed', problemId, 'time cost:', [
+      _sql1Cost,
+      _sql2Cost,
+      _sql3Cost,
+    ]);
+  }
+
+  async updateSolutionUserStats(userId: ISolutionModel['userId']) {
+    this.ctx.logger.info('[solutionUserStats] processing', userId);
+    if (!(userId > 0)) {
+      this.ctx.logger.info('[solutionUserStats] skipped cuz invalid userId', userId);
+      return;
+    }
+
+    let _us: number;
+    let res: any;
+
+    _us = Date.now();
+    res = await DB.sequelize.query(
+      'SELECT COUNT(DISTINCT(problem_id)) AS accept FROM solution WHERE user_id=? AND result=?',
+      {
+        replacements: [userId, ESolutionResult.AC],
+        type: QueryTypes.SELECT,
+      },
+    );
+    const _sql1Cost = Date.now() - _us;
+    const userAccepted = res[0].accept;
+
+    _us = Date.now();
+    res = await DB.sequelize.query(
+      'SELECT COUNT(solution_id) AS submit FROM solution WHERE user_id=? AND result NOT IN (?)',
+      {
+        replacements: [
+          userId,
+          [
+            ESolutionResult.CE,
+            ESolutionResult.SE,
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.RPD,
+          ],
+        ],
+        type: QueryTypes.SELECT,
+      },
+    );
+    const _sql2Cost = Date.now() - _us;
+    const userSubmitted = res[0].submit;
+
+    _us = Date.now();
+    await DB.sequelize.query('UPDATE user SET accept=?, submit=? WHERE user_id=?', {
+      replacements: [userAccepted, userSubmitted, userId],
+      type: QueryTypes.UPDATE,
+    });
+    const _sql3Cost = Date.now() - _us;
+    await this.userService.clearDetailCache(userId);
+
+    this.ctx.logger.info('[solutionUserStats] completed', userId, 'time cost:', [
+      _sql1Cost,
+      _sql2Cost,
+      _sql3Cost,
+    ]);
   }
 }
