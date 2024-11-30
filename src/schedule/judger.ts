@@ -1,14 +1,14 @@
-import { provide, schedule, CommonSchedule, Context, inject, logger, EggLogger } from 'midway';
-import { getWorkerPids } from '@/lib/services/getPids';
-import { CSolutionService } from '@/app/solution/solution.service';
-import { ISolutionModel, IMSolutionServiceJudgeOpt } from '@/app/solution/solution.interface';
-import * as os from 'os';
+// import { provide, schedule, CommonSchedule, Context, inject, logger, EggLogger } from 'midway';
+// import { getWorkerPids } from '@/lib/services/getPids';
+// import { CSolutionService } from '@/app/solution/solution.service';
+// import { ISolutionModel, IMSolutionServiceJudgeOpt } from '@/app/solution/solution.interface';
+// import * as os from 'os';
 
-const MAX_FETCH_PENDING_SOLUTIONS = 100;
-const MAX_JUDGE_PENDING_SOLUTIONS = 10;
-const MAX_GUESS_DIED_TIMEOUT = 3 * 60;
+// const MAX_FETCH_PENDING_SOLUTIONS = 100;
+// const MAX_JUDGE_PENDING_SOLUTIONS = 10;
+// const MAX_GUESS_DIED_TIMEOUT = 3 * 60;
 
-const isProd = process.env.NODE_ENV === 'production';
+// const isProd = process.env.NODE_ENV === 'production';
 
 // TODO remove this
 
