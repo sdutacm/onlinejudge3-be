@@ -869,6 +869,45 @@ export default class CompetitionController {
   }
 
   @route()
+  @login()
+  @id()
+  @getDetail(null)
+  async [routesBe.deleteSignedUpCompetitionParticipant.i](ctx: Context) {
+    const competitionId = ctx.id!;
+    const detail = ctx.detail! as IMCompetitionDetail;
+    const now = new Date();
+    if (now >= detail.startAt) {
+      throw new ReqError(Codes.CONTEST_STARTED);
+    }
+    if (
+      !detail.registerStartAt ||
+      !detail.registerEndAt ||
+      !(now >= detail.registerStartAt && now < detail.registerEndAt)
+    ) {
+      throw new ReqError(Codes.CONTEST_REGISTER_NOT_IN_PROGRESS);
+    }
+    const userId = ctx.session.userId;
+    const user = await this.service.getCompetitionUserDetail(competitionId, userId);
+    if (!user) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (user.role !== ECompetitionUserRole.participant) {
+      throw new ReqError(Codes.COMPETITION_ALREADY_BEEN_A_USER);
+    }
+    if ([ECompetitionUserStatus.entered, ECompetitionUserStatus.quitted].includes(user.status)) {
+      throw new ReqError(Codes.COMPETITION_CANNOT_MODIFY_SELF_PARTICIPANT);
+    }
+    await this.service.deleteCompetitionUser(competitionId, userId);
+    await Promise.all([
+      this.service.clearCompetitionUserDetailCache(competitionId, userId),
+      this.service.clearCompetitionUsersCache(competitionId),
+    ]);
+    this.competitionLogService.log(competitionId, ECompetitionLogAction.DeleteSelfParticipantInfo, {
+      userId,
+    });
+  }
+
+  @route()
   @authCompetitionRole([ECompetitionUserRole.admin, ECompetitionUserRole.auditor])
   @id()
   @getDetail(null)

@@ -21,6 +21,7 @@ export enum ECompetitionLogAction {
   Logout = 'Logout',
   SignUp = 'SignUp',
   ModifySelfParticipantInfo = 'ModifySelfParticipantInfo',
+  DeleteSelfParticipantInfo = 'DeleteSelfParticipantInfo',
   AuditParticipant = 'AuditParticipant',
   ConfirmEnter = 'ConfirmEnter',
   ConfirmQuit = 'ConfirmQuit',

@@ -1268,6 +1268,22 @@ export default class CompetitionService {
     return res[0] > 0;
   }
 
+  async deleteCompetitionUser(
+    competitionId: ICompetitionUserModel['competitionId'],
+    userId: ICompetitionUserModel['userId'],
+  ) {
+    if (!competitionId || !userId) {
+      return false;
+    }
+    const res = await this.competitionUserModel.destroy({
+      where: {
+        competitionId,
+        userId,
+      },
+    });
+    return res > 0;
+  }
+
   /**
    * 创建比赛设置。
    * @param competitionId competitionId

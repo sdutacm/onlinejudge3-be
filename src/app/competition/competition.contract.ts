@@ -1009,6 +1009,14 @@ const competitionContract = {
     required: ['competitionId', 'unofficialParticipation', 'info'],
   } as defContract.ContractSchema,
 
+  deleteSignedUpCompetitionParticipantReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
   auditCompetitionParticipantReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },
