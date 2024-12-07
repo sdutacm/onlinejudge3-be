@@ -138,7 +138,9 @@ export type IMSolutionRelativeProblem = Pick<
 export type IMSolutionRelativeUser = Pick<
   IUserModel,
   'userId' | 'username' | 'nickname' | 'avatar' | 'bannerImage' | 'rating'
->;
+> & {
+  type?: IUserModel['type'];
+};
 export type IMSolutionRelativeContest = Pick<
   IContestModel,
   'contestId' | 'title' | 'type' | 'startAt' | 'endAt' | 'ended' | 'frozenLength'

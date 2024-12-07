@@ -500,6 +500,7 @@ export default class SolutionService {
           avatar: relativeUser?.avatar || '',
           bannerImage: relativeUser?.bannerImage || '',
           rating: relativeUser?.rating || 0,
+          type: relativeUser?.type,
         };
       } else {
         const relativeUser = relativeUsers[d.userId];
@@ -510,6 +511,7 @@ export default class SolutionService {
           avatar: relativeUser?.avatar || '',
           bannerImage: relativeUser?.bannerImage || '',
           rating: relativeUser?.rating || 0,
+          type: relativeUser?.type,
         };
       }
 
