@@ -1,6 +1,6 @@
 import { IContestModel } from '../contest/contest.interface';
 import { ICompetitionModel } from '../competition/competition.interface';
-import { EUserAchievementStatus } from '@/common/enums';
+import { EUserAchievementStatus, EUserMemberStatus, EUserType, EUserStatus } from '@/common/enums';
 
 export interface IUserModelRatingHistoryItem {
   contest?: {
@@ -48,6 +48,8 @@ export interface IUserModel {
   coin: number;
   rating: number;
   ratingHistory: IUserModelRatingHistory | null;
+  type: EUserType;
+  status: EUserStatus;
 }
 
 export type TUserModelFields = keyof IUserModel;
@@ -78,6 +80,8 @@ export type TMUserLiteFields = Extract<
   | 'forbidden'
   | 'permission'
   | 'verified'
+  | 'type'
+  | 'status'
   | 'lastIp'
   | 'lastTime'
   | 'createdAt'
@@ -107,6 +111,8 @@ export type TMUserDetailFields = Extract<
   | 'settings'
   | 'coin'
   | 'verified'
+  | 'type'
+  | 'status'
   | 'lastIp'
   | 'lastTime'
   | 'createdAt'
@@ -124,6 +130,24 @@ export type IMUserFullListPagination = defService.ServiceFullListOpt<TUserModelF
 //   permission: IUserModel['permission'];
 // }
 
+export interface IUserMemberLite {
+  userId: IUserModel['userId']; // memberUserId
+  status: EUserMemberStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type IUserMemberDetail = IUserMemberLite & {
+  username: IUserModel['username'];
+  nickname: IUserModel['nickname'];
+  avatar: IUserModel['avatar'];
+  bannerImage: IUserModel['bannerImage'];
+  accepted: IUserModel['accepted'];
+  submitted: IUserModel['submitted'];
+  rating: IUserModel['rating'];
+  verified: IUserModel['verified'];
+};
+
 //#region service.getList
 export interface IMUserServiceGetListOpt {
   userId?: IUserModel['userId'];
@@ -137,6 +161,8 @@ export interface IMUserServiceGetListOpt {
   forbidden?: IUserModel['forbidden'];
   permission?: IUserModel['permission'];
   verified?: IUserModel['verified'];
+  type?: IUserModel['type'];
+  status?: IUserModel['status'];
 }
 
 export type IMUserServiceGetListRes = defModel.ListModelRes<IMUserLite>;
@@ -171,6 +197,7 @@ export interface IMUserServiceCreateOpt {
   major?: IUserModel['major'];
   class?: IUserModel['class'];
   grade?: IUserModel['grade'];
+  type?: IUserModel['type'];
 }
 
 export type IMUserServiceCreateRes = IUserModel['userId'];
@@ -198,6 +225,7 @@ export interface IMUserServiceUpdateOpt {
   forbidden?: IUserModel['forbidden'];
   lastIp?: IUserModel['lastIp'];
   lastTime?: IUserModel['lastTime'];
+  status?: IUserModel['status'];
 }
 
 export type IMUserServiceUpdateRes = boolean;

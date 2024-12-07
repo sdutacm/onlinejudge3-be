@@ -1,6 +1,6 @@
 import 'egg';
 import { EPerm } from '@/common/configs/perm.config';
-import { ECompetitionUserRole } from '@/common/enums';
+import { EUserType, ECompetitionUserRole } from '@/common/enums';
 
 declare module 'egg' {
   interface Context {
@@ -32,6 +32,7 @@ declare module 'egg' {
       nickname: string;
       permission: number;
       avatar: string | null;
+      type: EUserType;
       loginUa: string;
       loginIp: string;
       loginAt: string;

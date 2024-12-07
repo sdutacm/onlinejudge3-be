@@ -21,15 +21,18 @@ import {
   IMUserServiceGetUserIdsByUsernamesRes,
   IMUserServiceUpdateUserLastStatusOpt,
   IMUserServiceGetUserAcceptedAndSubmittedCountRes,
+  IUserMemberDetail,
+  IUserMemberLite,
 } from './user.interface';
 import { TUserModel, TUserModelScopes } from '@/lib/models/user.model';
 import { IUtils } from '@/utils';
 import { CUserMeta } from './user.meta';
 import { IDurationsConfig } from '@/config/durations.config';
 import { ILodash } from '@/utils/libs/lodash';
-import { EUserForbidden } from '@/common/enums';
+import { EUserForbidden, EUserMemberStatus, EUserStatus, EUserType } from '@/common/enums';
 import DB from '@/lib/models/db';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
+import { TUserMemberModel } from '@/lib/models/userMember.model';
 
 // const Op = Sequelize.Op;
 export type CUserService = UserService;
@@ -51,6 +54,8 @@ const userLiteFields: Array<TMUserLiteFields> = [
   'forbidden',
   'permission',
   'verified',
+  'type',
+  'status',
   'lastIp',
   'lastTime',
   'createdAt',
@@ -78,6 +83,8 @@ const userDetailFields: Array<TMUserDetailFields> = [
   'settings',
   'coin',
   'verified',
+  'type',
+  'status',
   'lastIp',
   'lastTime',
   'createdAt',
@@ -90,6 +97,9 @@ export default class UserService {
 
   @inject('userModel')
   model: TUserModel;
+
+  @inject('userMemberModel')
+  userMemberModel: TUserMemberModel;
 
   @inject()
   utils: IUtils;
@@ -140,6 +150,41 @@ export default class UserService {
     );
   }
 
+  /**
+   * 获取团队成员列表缓存。
+   */
+  private async _getMembersCache(userId: IUserModel['userId']): Promise<IUserMemberLite[] | null> {
+    return this.ctx.helper
+      .redisGet<IUserMemberLite[]>(this.redisKey.userMembers, [userId])
+      .then((res) =>
+        this.utils.misc.processDateFromJson(
+          res,
+          res
+            ? [
+                ...res.map((d, index) => `${index}.createdAt`),
+                ...res.map((d, index) => `${index}.updatedAt`),
+              ]
+            : [],
+        ),
+      );
+  }
+
+  /**
+   * 设置团队成员列表缓存。
+   * @param data 数据
+   */
+  private async _setMembersCache(
+    userId: IUserModel['userId'],
+    data: IUserMemberLite[],
+  ): Promise<void> {
+    return this.ctx.helper.redisSet(
+      this.redisKey.userMembers,
+      [userId],
+      data,
+      this.durations.cacheFullList,
+    );
+  }
+
   private _formatListQuery(opts: IMUserServiceGetListOpt) {
     const q: any = this.utils.misc.ignoreUndefined({
       userId: opts.userId,
@@ -148,6 +193,8 @@ export default class UserService {
       forbidden: opts.forbidden,
       permission: opts.permission,
       verified: opts.verified,
+      type: opts.type,
+      status: opts.status,
     });
     if (opts.nickname) {
       q.nickname = {
@@ -464,5 +511,195 @@ export default class UserService {
         forbidden: EUserForbidden.normal,
       },
     });
+  }
+
+  async getMembersLite(teamUserId: IUserModel['userId']): Promise<IUserMemberLite[]> {
+    let rowsLite: IUserMemberLite[] | null = null;
+    const cached = await this._getMembersCache(teamUserId);
+    if (cached) {
+      rowsLite = cached;
+    } else if (cached === null) {
+      rowsLite = await this.userMemberModel
+        .findAll({
+          where: {
+            userId: teamUserId,
+          },
+          order: [['createdAt', 'ASC']],
+        })
+        .then((r) =>
+          r.map(
+            (d) =>
+              ({
+                userId: d.memberUserId,
+                ...(this.lodash.omit(d.get({ plain: true }), ['userId', 'memberUserId']) as any),
+              } as IUserMemberLite),
+          ),
+        );
+      await this._setMembersCache(teamUserId, rowsLite);
+    }
+    return rowsLite || [];
+  }
+
+  async getMembers(teamUserId: IUserModel['userId']): Promise<IUserMemberDetail[]> {
+    const rowsLite = await this.getMembersLite(teamUserId);
+    const userIds = rowsLite.map((d) => d.userId);
+    const users = await this.getRelative(userIds);
+    return rowsLite.map((d) => ({
+      ...d,
+      ...this.lodash.pick(users[d.userId], [
+        'username',
+        'nickname',
+        'avatar',
+        'bannerImage',
+        'accepted',
+        'submitted',
+        'rating',
+        'verified',
+      ]),
+    }));
+  }
+
+  async addMember(teamUserId: IUserModel['userId'], memberUserId: IUserModel['userId']) {
+    if (!teamUserId || !memberUserId) {
+      return;
+    }
+    await this.userMemberModel.create({
+      userId: teamUserId,
+      memberUserId,
+    });
+    await this.clearMembersCache(teamUserId);
+  }
+
+  async isUserInTeam(teamUserId: IUserModel['userId'], memberUserId: IUserModel['userId']) {
+    const members = await this.getMembersLite(teamUserId);
+    return members.some((d) => d.userId === memberUserId);
+  }
+
+  async updateMemberStatus(
+    teamUserId: IUserModel['userId'],
+    memberUserId: IUserModel['userId'],
+    status: IUserMemberDetail['status'],
+  ) {
+    if (!teamUserId || !memberUserId) {
+      return;
+    }
+    await this.userMemberModel.update(
+      {
+        status,
+      },
+      {
+        where: {
+          userId: teamUserId,
+          memberUserId,
+        },
+      },
+    );
+    await this.clearMembersCache(teamUserId);
+  }
+
+  async removeMember(teamUserId: IUserModel['userId'], memberUserId: IUserModel['userId']) {
+    if (!teamUserId || !memberUserId) {
+      return;
+    }
+    await this.userMemberModel.destroy({
+      where: {
+        userId: teamUserId,
+        memberUserId,
+      },
+    });
+    await this.clearMembersCache(teamUserId);
+  }
+
+  async getTeamMemberCount(teamUserId: IUserModel['userId'], onlyAvailable = false) {
+    const members = await this.getMembersLite(teamUserId);
+    return onlyAvailable
+      ? members.filter((d) => d.status === EUserMemberStatus.available).length
+      : members.length;
+  }
+
+  async areAllTeamMembersReady(teamUserId: IUserModel['userId']) {
+    const members = await this.getMembersLite(teamUserId);
+    return members.length > 0 && members.every((d) => d.status === EUserMemberStatus.available);
+  }
+
+  async isTeamAvailable(teamUserId: IUserModel['userId']) {
+    const detail = await this.getDetail(teamUserId);
+    if (!detail || detail.type !== EUserType.team || detail.status !== EUserStatus.settled) {
+      return false;
+    }
+    return true;
+  }
+
+  async getRelativeTeamMembers(teamUserIds: IUserModel['userId'][]) {
+    const res: Record<number, IUserMemberDetail[]> = {};
+    await Promise.all(
+      teamUserIds.map((teamUserId) =>
+        this.getMembers(teamUserId).then((r) => {
+          res[teamUserId] = r;
+        }),
+      ),
+    );
+    return res;
+  }
+
+  async getUserTeamsLite(memberUserId: IUserModel['userId']) {
+    return this.userMemberModel
+      .findAll({
+        where: {
+          memberUserId,
+        },
+      })
+      .then((r) =>
+        r.map((d) => ({
+          teamUserId: d.userId,
+          ...(this.lodash.omit(d.get({ plain: true }), ['userId', 'memberUserId']) as Omit<
+            IUserMemberLite,
+            'userId'
+          >),
+        })),
+      );
+  }
+
+  async getUserTeams(memberUserId: IUserModel['userId']) {
+    const rowsLite = await this.getUserTeamsLite(memberUserId);
+    const teamUserIds = rowsLite.map((d) => d.teamUserId);
+    const teams = await this.getRelative(teamUserIds, null);
+    const relativeMembers = await this.getRelativeTeamMembers(teamUserIds);
+    return rowsLite.map((d) => ({
+      teamUserId: d.teamUserId,
+      selfMemberStatus: d.status,
+      selfJoinedAt: d.updatedAt,
+      ...this.lodash.pick(teams[d.teamUserId], [
+        'username',
+        'nickname',
+        'avatar',
+        'bannerImage',
+        'status',
+      ]),
+      members: relativeMembers[d.teamUserId] || [],
+    }));
+  }
+
+  /**
+   * 清除团队成员列表缓存。
+   */
+  async clearMembersCache(userId: IUserModel['userId']): Promise<void> {
+    return this.ctx.helper.redisDel(this.redisKey.userMembers, [userId]);
+  }
+
+  async confirmTeamSettlement(userId: IUserModel['userId']) {
+    await this.model.update(
+      {
+        status: EUserStatus.settled,
+      },
+      {
+        where: {
+          userId,
+          type: EUserType.team,
+          status: EUserStatus.normal,
+        },
+      },
+    );
+    await this.clearDetailCache(userId);
   }
 }

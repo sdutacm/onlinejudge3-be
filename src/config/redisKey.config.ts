@@ -38,6 +38,7 @@ const redisKey = {
   balloonDetail: 'cache:balloon_detail:%d',
   userAchievements: 'cache:user_achievements:%d',
   achievementRate: 'cache:achievement_rate:%d',
+  userMembers: 'cache:user_members:%d',
   verificationCode: 'verification:code:%s',
   recordUserUpload: 'record:user_upload:%d',
   recordUserCreateGroup: 'record:user_create_group:%d',

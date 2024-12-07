@@ -44,6 +44,11 @@ import {
   IGetSelfAchievedAchievementsResp,
   IConfirmAchievementDeliveriedReq,
   IReceiveAchievementReq,
+  IGetUserMembersResp,
+  IAddUserMemberReq,
+  IRemoveUserMemberReq,
+  IConfirmJoinTeamReq,
+  IGetSelfJoinedTeamsResp,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -53,7 +58,7 @@ import { ISharp } from '@/utils/libs/sharp';
 import { IFs } from '@/utils/libs/fs-extra';
 import { ILodash } from '@/utils/libs/lodash';
 import { CSolutionService } from '../solution/solution.service';
-import { EUserPermission } from '@/common/enums';
+import { EUserPermission, EUserMemberStatus, EUserStatus, EUserType } from '@/common/enums';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import util from 'util';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
@@ -136,6 +141,7 @@ export default class UserController {
           permission: ctx.session.permission,
           permissions: await this.authService.getPermissions(ctx.session.userId),
           avatar: ctx.session.avatar,
+          type: ctx.session.type,
         }
       : null;
   }
@@ -177,6 +183,7 @@ export default class UserController {
       nickname: user.nickname,
       permission: user.permission,
       avatar: user.avatar,
+      type: user.type,
       loginUa: ctx.request.headers['user-agent'] as string,
       loginIp: ctx.ip,
       loginAt: loginAt.toISOString(),
@@ -195,6 +202,7 @@ export default class UserController {
       permission: user.permission,
       permissions: await this.authService.getPermissions(ctx.session.userId),
       avatar: user.avatar,
+      type: user.type,
     };
   }
 
@@ -221,7 +229,7 @@ export default class UserController {
    */
   @route()
   async [routesBe.register.i](ctx: Context): Promise<IRegisterResp> {
-    const { username, nickname, email, code, password } = ctx.request.body as IRegisterReq;
+    const { username, nickname, email, code, password, type } = ctx.request.body as IRegisterReq;
     if (await this.service.isUsernameExists(username)) {
       throw new ReqError(Codes.USER_USERNAME_EXISTS);
     } else if (await this.service.isNicknameExists(nickname)) {
@@ -246,6 +254,7 @@ export default class UserController {
       email,
       verified: true,
       password: this.utils.misc.hashPassword(password),
+      type,
     });
     this.verificationService.deleteEmailVerificationCode(email);
     ctx.userId = newId;
@@ -258,6 +267,7 @@ export default class UserController {
       nickname: nickname,
       permission: EUserPermission.normal,
       avatar: '',
+      type,
       loginUa: ctx.request.headers['user-agent'] as string,
       loginIp: ctx.ip,
       loginAt: loginAt.toISOString(),
@@ -293,6 +303,7 @@ export default class UserController {
       major,
       class: _class,
       grade,
+      type,
     } = ctx.request.body as ICreateUserReq;
     if (await this.service.isUsernameExists(username)) {
       throw new ReqError(Codes.USER_USERNAME_EXISTS);
@@ -315,6 +326,7 @@ export default class UserController {
       major,
       class: _class,
       grade,
+      type,
     });
     return { userId: newId };
   }
@@ -331,7 +343,17 @@ export default class UserController {
   async [routesBe.batchCreateUsers.i](ctx: Context): Promise<void> {
     const { users, conflict } = ctx.request.body as IBatchCreateUsersReq;
     for (const user of users) {
-      const { username, nickname, password, school, college, major, class: _class, grade } = user;
+      const {
+        username,
+        nickname,
+        password,
+        school,
+        college,
+        major,
+        class: _class,
+        grade,
+        type,
+      } = user;
       // if (!(await this.contentChecker.simpleCheck(nickname, 'nickname'))) {
       //   throw new ReqError(Codes.USER_NICKNAME_CONTAINS_ILLEGAL_CONTENT, {
       //     nickname,
@@ -377,6 +399,7 @@ export default class UserController {
         major,
         class: _class,
         grade,
+        type,
       });
     }
   }
@@ -1027,5 +1050,171 @@ export default class UserController {
       ctx.session.userId,
       achievementKey as EAchievementKey,
     );
+  }
+
+  /**
+   * 获取团队成员。
+   */
+  @route()
+  @id()
+  @getDetail()
+  async [routesBe.getUserMembers.i](ctx: Context): Promise<IGetUserMembersResp> {
+    const userId = ctx.id!;
+    const detail = ctx.detail as IMUserDetail;
+    const members = await this.service.getMembers(userId);
+    const hasPermission =
+      userId === ctx.session.userId ||
+      ctx.helper.checkPerms(EPerm.ReadUser) ||
+      members.some((m) => m.userId === ctx.session.userId);
+    if (!hasPermission && detail.status !== EUserStatus.settled) {
+      return {
+        count: 0,
+        rows: [],
+      };
+    }
+
+    return {
+      count: members.length,
+      rows: (members as unknown) as TreatDateFieldsAsString<typeof members[0]>[],
+    };
+  }
+
+  /**
+   * 添加团队成员。
+   */
+  @route()
+  @login()
+  async [routesBe.addUserMember.i](ctx: Context): Promise<void> {
+    const { memberUserId } = ctx.request.body as IAddUserMemberReq;
+    const teamUserId = ctx.session.userId;
+    const detail = (await this.service.getDetail(teamUserId, null))!;
+    if (detail.type !== EUserType.team) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    if (detail.status === EUserStatus.settled) {
+      throw new ReqError(Codes.USER_TEAM_HAS_SETTLED);
+    }
+    const memberUserDetail = await this.service.getDetail(memberUserId, null);
+    if (!memberUserDetail) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    if (memberUserDetail.type !== EUserType.personal) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    const isExists = await this.service.isUserInTeam(teamUserId, memberUserId);
+    if (isExists) {
+      throw new ReqError(Codes.USER_EXISTS);
+    }
+    await this.service.addMember(teamUserId, memberUserId);
+  }
+
+  /**
+   * 移除团队成员。
+   */
+  @route()
+  @login()
+  async [routesBe.removeUserMember.i](ctx: Context): Promise<void> {
+    const { memberUserId } = ctx.request.body as IRemoveUserMemberReq;
+    const teamUserId = ctx.session.userId;
+    const detail = (await this.service.getDetail(teamUserId, null))!;
+    if (detail.type !== EUserType.team) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    if (detail.status === EUserStatus.settled) {
+      throw new ReqError(Codes.USER_TEAM_HAS_SETTLED);
+    }
+    const memberUserDetail = await this.service.getDetail(memberUserId, null);
+    if (!memberUserDetail) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    if (memberUserDetail.type !== EUserType.personal) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    const isExists = await this.service.isUserInTeam(teamUserId, memberUserId);
+    if (!isExists) {
+      throw new ReqError(Codes.USER_NOT_EXIST);
+    }
+    await this.service.removeMember(teamUserId, memberUserId);
+  }
+
+  /**
+   * 获取自己已加入团队列表。
+   */
+  @route()
+  @login()
+  async [routesBe.getSelfJoinedTeams.i](ctx: Context): Promise<IGetSelfJoinedTeamsResp> {
+    const memberUserId = ctx.session.userId;
+    const detail = await this.service.getDetail(memberUserId, null);
+    if (!detail) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    if (detail.type !== EUserType.personal) {
+      return {
+        count: 0,
+        rows: [],
+      };
+    }
+    const selfTeams = await this.service.getUserTeams(memberUserId);
+    const joinedTeams = selfTeams.filter((t) => t.selfMemberStatus === EUserMemberStatus.available);
+    return {
+      count: joinedTeams.length,
+      rows: (joinedTeams as unknown) as TreatDateFieldsAsString<
+        Omit<typeof joinedTeams[0], 'members'> & {
+          members: TreatDateFieldsAsString<typeof joinedTeams[0]['members'][0]>[];
+        }
+      >[],
+    };
+  }
+
+  /**
+   * 确认加入团队。
+   */
+  @route()
+  @login()
+  async [routesBe.confirmJoinTeam.i](ctx: Context): Promise<void> {
+    const { teamUserId } = ctx.request.body as IConfirmJoinTeamReq;
+    const memberUserId = ctx.session.userId;
+    const teamDetail = (await this.service.getDetail(teamUserId, null))!;
+    if (!teamDetail || teamDetail.type !== EUserType.team) {
+      throw new ReqError(Codes.USER_NOT_INVITED_TO_THIS_TEAM);
+    }
+    const memberUserDetail = (await this.service.getDetail(memberUserId, null))!;
+    if (memberUserDetail.type !== EUserType.personal) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    const members = await this.service.getMembersLite(teamUserId);
+    const existed = members.find((m) => m.userId === memberUserId);
+    if (!existed) {
+      throw new ReqError(Codes.USER_NOT_INVITED_TO_THIS_TEAM);
+    }
+    if (existed.status === EUserMemberStatus.available) {
+      throw new ReqError(Codes.USER_HAS_JOINED_TEAM);
+    }
+    await this.service.updateMemberStatus(teamUserId, memberUserId, EUserMemberStatus.available);
+  }
+
+  /**
+   * 确认团队就绪锁定。
+   */
+  @route()
+  @login()
+  async [routesBe.confirmTeamSettlement.i](ctx: Context): Promise<void> {
+    const teamUserId = ctx.session.userId;
+    const detail = (await this.service.getDetail(teamUserId, null))!;
+    if (detail.type !== EUserType.team) {
+      throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
+    }
+    if (detail.status === EUserStatus.settled) {
+      throw new ReqError(Codes.USER_TEAM_HAS_SETTLED);
+    }
+    const memberCount = await this.service.getTeamMemberCount(teamUserId);
+    if (memberCount < 1) {
+      throw new ReqError(Codes.USER_TEAM_NEED_AT_LEAST_ONE_MEMBER);
+    }
+    const areMembersReady = await this.service.areAllTeamMembersReady(teamUserId);
+    if (!areMembersReady) {
+      throw new ReqError(Codes.USER_TEAM_MEMBERS_ARE_NOT_READY);
+    }
+    await this.service.confirmTeamSettlement(teamUserId);
   }
 }

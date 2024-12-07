@@ -10,7 +10,7 @@ import {
   BelongsToMany,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
-import { EUserPermission, EUserForbidden } from '@/common/enums';
+import { EUserPermission, EUserForbidden, EUserType, EUserStatus } from '@/common/enums';
 import { IUserModel } from '@/app/user/user.interface';
 import ContestModel from './contest.model';
 import UserContestModel from './userContest.model';
@@ -288,6 +288,20 @@ export default class UserModel extends Model<UserModel> implements IUserModel {
       this.setDataValue('ratingHistory', '');
     }
   }
+
+  @AllowNull(false)
+  @Default(EUserType.personal)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  type: EUserType;
+
+  @AllowNull(false)
+  @Default(EUserStatus.normal)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  status: EUserStatus;
 
   @BelongsToMany(() => ContestModel, () => UserContestModel)
   contests: Array<ContestModel & { UserContestModel: UserContestModel }>;

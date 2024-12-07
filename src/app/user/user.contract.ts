@@ -21,9 +21,10 @@ const userContract = {
           permission: { type: 'number' },
           permissions: { type: 'array', items: { type: 'string' } },
           avatar: { type: ['string', 'null'] },
+          type: { type: 'number' },
         },
         additionalProperties: false,
-        required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
+        required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar', 'type'],
       },
       {
         type: 'null',
@@ -48,9 +49,10 @@ const userContract = {
       permission: { type: 'number' },
       permissions: { type: 'array', items: { type: 'string' } },
       avatar: { type: ['string', 'null'] },
+      type: { type: 'number' },
     },
     additionalProperties: false,
-    required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar'],
+    required: ['userId', 'username', 'nickname', 'permission', 'permissions', 'avatar', 'type'],
   } as defContract.ContractSchema,
 
   registerReq: {
@@ -60,9 +62,10 @@ const userContract = {
       email: { type: 'string', minLength: 5, maxLength: 60, format: 'email' },
       code: { type: 'number' },
       password: { type: 'string', minLength: 6, maxLength: 20, pattern: '^[!-~]+$' },
+      type: { type: 'number', enum: [1, 2] },
     },
     additionalProperties: false,
-    required: ['username', 'nickname', 'email', 'code', 'password'],
+    required: ['username', 'nickname', 'email', 'code', 'password', 'type'],
   } as defContract.ContractSchema,
 
   registerResp: {
@@ -84,9 +87,10 @@ const userContract = {
       major: { type: 'string', maxLength: 100 },
       class: { type: 'string', maxLength: 100 },
       grade: { type: 'string' },
+      type: { type: 'number', enum: [1, 2] },
     },
     additionalProperties: false,
-    required: ['username', 'nickname', 'password'],
+    required: ['username', 'nickname', 'password', 'type'],
   } as defContract.ContractSchema,
 
   createUserResp: {
@@ -112,9 +116,11 @@ const userContract = {
             major: { type: 'string', maxLength: 100 },
             class: { type: 'string', maxLength: 100 },
             grade: { type: 'string' },
+            type: { type: 'number', enum: [1, 2] },
+            status: { type: 'number', enum: [0, 1] },
           },
           additionalProperties: false,
-          required: ['username', 'nickname', 'password'],
+          required: ['username', 'nickname', 'password', 'type'],
         },
       },
       conflict: { type: 'string', enum: ['insert', 'upsert'] },
@@ -150,6 +156,8 @@ const userContract = {
       forbidden: { type: 'number' },
       permission: { type: 'number' },
       verified: { type: 'boolean' },
+      type: { type: 'number' },
+      status: { type: 'number' },
       _scope: { anyOf: [{ type: 'string', enum: ['available'] }, { type: 'null' }] },
     },
     additionalProperties: false,
@@ -166,6 +174,7 @@ const userContract = {
           type: 'object',
           properties: {
             userId: { type: 'number' },
+            username: { type: 'string' },
             nickname: { type: 'string' },
             submitted: { type: 'number' },
             accepted: { type: 'number' },
@@ -176,13 +185,15 @@ const userContract = {
             forbidden: { type: 'number' },
             permission: { type: 'number' },
             verified: { type: 'boolean' },
+            type: { type: 'number' },
+            status: { type: 'number' },
             lastIp: { type: 'string' },
             lastTime: {
               anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
             },
             createdAt: { type: 'string', format: 'date-time' },
           },
-          additionalProperties: false,
+          additionalProperties: true,
           required: [
             'userId',
             'nickname',
@@ -193,6 +204,7 @@ const userContract = {
             'rating',
             'grade',
             'forbidden',
+            'type',
           ],
         },
       },
@@ -281,6 +293,8 @@ const userContract = {
       },
       coin: { type: 'number' },
       verified: { type: 'boolean' },
+      type: { type: 'number' },
+      status: { type: 'number' },
       lastIp: { type: 'string' },
       lastTime: {
         anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }],
@@ -305,6 +319,7 @@ const userContract = {
       'rating',
       'ratingHistory',
       'site',
+      'type',
     ],
   } as defContract.ContractSchema,
 
@@ -561,6 +576,152 @@ const userContract = {
     },
     additionalProperties: false,
     required: ['achievementKey'],
+  } as defContract.ContractSchema,
+
+  getUserMembersReq: {
+    properties: {
+      userId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['userId'],
+  } as defContract.ContractSchema,
+
+  getUserMembersResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            avatar: { type: ['string', 'null'] },
+            bannerImage: { type: 'string' },
+            accepted: { type: 'number' },
+            submitted: { type: 'number' },
+            rating: { type: 'number' },
+            verified: { type: 'boolean' },
+            status: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: true,
+          required: [
+            'userId',
+            'username',
+            'nickname',
+            'avatar',
+            'bannerImage',
+            'accepted',
+            'submitted',
+            'rating',
+            'verified',
+            'status',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  addUserMemberReq: {
+    properties: {
+      memberUserId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['memberUserId'],
+  } as defContract.ContractSchema,
+
+  removeUserMemberReq: {
+    properties: {
+      memberUserId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['memberUserId'],
+  } as defContract.ContractSchema,
+
+  getSelfJoinedTeamsResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            teamUserId: { type: 'number' },
+            selfMemberStatus: { type: 'number' },
+            selfJoinedAt: { type: 'string', format: 'date-time' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            avatar: { type: ['string', 'null'] },
+            bannerImage: { type: 'string' },
+            status: { type: 'number' },
+            members: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  userId: { type: 'number' },
+                  username: { type: 'string' },
+                  nickname: { type: 'string' },
+                  avatar: { type: ['string', 'null'] },
+                  bannerImage: { type: 'string' },
+                  accepted: { type: 'number' },
+                  submitted: { type: 'number' },
+                  rating: { type: 'number' },
+                  verified: { type: 'boolean' },
+                  status: { type: 'number' },
+                  createdAt: { type: 'string', format: 'date-time' },
+                  updatedAt: { type: 'string', format: 'date-time' },
+                },
+                additionalProperties: true,
+                required: [
+                  'userId',
+                  'username',
+                  'nickname',
+                  'avatar',
+                  'bannerImage',
+                  'accepted',
+                  'submitted',
+                  'rating',
+                  'verified',
+                  'status',
+                  'createdAt',
+                  'updatedAt',
+                ],
+              },
+            },
+          },
+          additionalProperties: true,
+          required: [
+            'teamUserId',
+            'selfMemberStatus',
+            'selfJoinedAt',
+            'username',
+            'nickname',
+            'avatar',
+            'bannerImage',
+            'status',
+            'members',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
+  confirmJoinTeamReq: {
+    properties: {
+      teamUserId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['teamUserId'],
   } as defContract.ContractSchema,
 };
 
