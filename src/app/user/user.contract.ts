@@ -578,6 +578,49 @@ const userContract = {
     required: ['achievementKey'],
   } as defContract.ContractSchema,
 
+  getSelfOfficialMembersResp: {
+    properties: {
+      count: { type: 'number' },
+      rows: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            userId: { type: 'number' },
+            username: { type: 'string' },
+            nickname: { type: 'string' },
+            avatar: { type: ['string', 'null'] },
+            bannerImage: { type: 'string' },
+            accepted: { type: 'number' },
+            submitted: { type: 'number' },
+            rating: { type: 'number' },
+            verified: { type: 'boolean' },
+            status: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+          additionalProperties: true,
+          required: [
+            'userId',
+            'username',
+            'nickname',
+            'avatar',
+            'bannerImage',
+            'accepted',
+            'submitted',
+            'rating',
+            'verified',
+            'status',
+            'createdAt',
+            'updatedAt',
+          ],
+        },
+      },
+    },
+    additionalProperties: false,
+    required: ['count', 'rows'],
+  } as defContract.ContractSchema,
+
   getUserMembersReq: {
     properties: {
       userId: { type: 'number', minimum: 1 },

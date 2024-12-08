@@ -44,6 +44,7 @@ import {
   IGetSelfAchievedAchievementsResp,
   IConfirmAchievementDeliveriedReq,
   IReceiveAchievementReq,
+  IGetSelfOfficialMembersResp,
   IGetUserMembersResp,
   IAddUserMemberReq,
   IRemoveUserMemberReq,
@@ -1050,6 +1051,27 @@ export default class UserController {
       ctx.session.userId,
       achievementKey as EAchievementKey,
     );
+  }
+
+  /**
+   * 获取当前登录账号正式团队成员。
+   */
+  @route()
+  @login()
+  async [routesBe.getSelfOfficialMembers.i](ctx: Context): Promise<IGetSelfOfficialMembersResp> {
+    const userId = ctx.session.userId;
+    const detail = (await this.service.getDetail(userId, null))!;
+    if (detail.type !== EUserType.team || detail.status !== EUserStatus.settled) {
+      return {
+        count: 0,
+        rows: [],
+      };
+    }
+    const members = await this.service.getMembers(userId);
+    return {
+      count: members.length,
+      rows: (members as unknown) as TreatDateFieldsAsString<typeof members[0]>[],
+    };
   }
 
   /**
