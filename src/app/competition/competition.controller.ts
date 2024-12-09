@@ -902,6 +902,17 @@ export default class CompetitionController {
       this.service.clearCompetitionUserDetailCache(competitionId, userId),
       this.service.clearCompetitionUsersCache(competitionId),
     ]);
+    const subject = 'Your Competition Sign-Up has cancelled';
+    const content = `<p>Dear User:</p>
+<p>Your sign-up of competition "${detail.title}" has cancalled.</p>
+<p>If this is not your operation, please re-signup or contact staff promptly.</p>
+<p><br/></p>
+<p>${this.siteTeam}</p>`;
+    const globalUser = await this.userService.findOne({ userId });
+    // 发送邮件通知
+    globalUser?.email && this.mailSender.singleSend(globalUser.email, subject, content);
+    // 发送站内信
+    this.messageService.sendSystemMessage(userId, subject, content);
     this.competitionLogService.log(competitionId, ECompetitionLogAction.DeleteSelfParticipantInfo, {
       userId,
     });
