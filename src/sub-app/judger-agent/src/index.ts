@@ -1,4 +1,4 @@
-import { omit, cloneDeep } from 'lodash';
+import { omit } from 'lodash';
 import config from './config';
 import { judgerAgentLogger as logger } from './utils/logger';
 import { decodeJudgeQueueMessage, getSystemInfo } from './utils';
