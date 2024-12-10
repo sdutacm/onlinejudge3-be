@@ -690,9 +690,58 @@ const solutionContract = {
         ],
       },
       eventTimestampUs: { type: 'number' },
+      batchData: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            data: {
+              anyOf: [
+                {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', enum: ['start'] },
+                  },
+                  additionalProperties: false,
+                  required: ['type'],
+                },
+                {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', enum: ['progress'] },
+                    current: { type: 'number' },
+                    total: { type: 'number' },
+                  },
+                  additionalProperties: false,
+                  required: ['type', 'current', 'total'],
+                },
+                {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', enum: ['finish'] },
+                    resultType: {
+                      type: 'string',
+                      enum: ['CompileError', 'SystemError', 'Done'],
+                    },
+                    detail: {
+                      type: 'object',
+                      allowAdditionalProperties: true,
+                    },
+                  },
+                  additionalProperties: false,
+                  required: ['type', 'resultType'],
+                },
+              ],
+            },
+            eventTimestampUs: { type: 'number' },
+          },
+          additionalProperties: false,
+          required: ['data', 'eventTimestampUs'],
+        },
+      },
     },
     additionalProperties: true,
-    required: ['judgeInfoId', 'solutionId', 'judgerId', 'data', 'eventTimestampUs'],
+    required: ['judgeInfoId', 'solutionId', 'judgerId'],
   } as defContract.ContractSchema,
 };
 

@@ -494,6 +494,29 @@ export default class SolutionController {
       result: ESolutionResult.RPD,
     });
     await this.service.update(newId, { judgeInfoId });
+    try {
+      if (competitionId) {
+        const newSolutionCreateTime = await this.service.getSolutionCreateTime(newId);
+        await Promise.all([
+          this.competitionLogService.log(competitionId, ECompetitionLogAction.SubmitSolution, {
+            solutionId: newId,
+            problemId,
+            userId: sess.userId,
+          }),
+          this.competitionEventService.event(competitionId, ECompetitionEvent.SubmitSolution, {
+            solutionId: newId,
+            problemId,
+            userId: sess.userId,
+            judgeInfoId,
+            detail: {
+              time: newSolutionCreateTime,
+            },
+          }),
+        ]);
+      }
+    } catch (e) {
+      ctx.logger.error('[submitSolution] append competition log or event error:', e);
+    }
     this.service.sendToJudgeQueue({
       judgeInfoId,
       solutionId: newId,
@@ -522,27 +545,7 @@ export default class SolutionController {
     //   code,
     //   spj: problem.spj,
     // });
-    try {
-      if (competitionId) {
-        this.competitionLogService.log(competitionId, ECompetitionLogAction.SubmitSolution, {
-          solutionId: newId,
-          problemId,
-          userId: sess.userId,
-        });
-        const newSolutionCreateTime = await this.service.getSolutionCreateTime(newId);
-        this.competitionEventService.event(competitionId, ECompetitionEvent.SubmitSolution, {
-          solutionId: newId,
-          problemId,
-          userId: sess.userId,
-          judgeInfoId,
-          detail: {
-            time: newSolutionCreateTime,
-          },
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+
     // const REDIS_QUEUE_NAME = 'judge:queue';
     // const task = {
     //   solution_id: `${newId}`,
@@ -627,6 +630,22 @@ export default class SolutionController {
     }
     for (const chunk of chunks) {
       await Promise.all(
+        chunk.map((s) => {
+          if (s.competitionId) {
+            return this.competitionEventService
+              .event(s.competitionId, ECompetitionEvent.RejudgeSolution, {
+                solutionId: s.solutionId,
+                problemId: s.problemId,
+                userId: s.userId,
+                judgeInfoId: judgeInfoIdMap.get(s.solutionId),
+              })
+              .then(() => {});
+          }
+          return Promise.resolve();
+        }),
+      );
+
+      await Promise.all(
         chunk.map((s) =>
           this.service.sendToJudgeQueue({
             judgeInfoId: judgeInfoIdMap.get(s.solutionId)!,
@@ -647,22 +666,6 @@ export default class SolutionController {
           }),
         ),
       );
-
-      await Promise.all(
-        chunk.map((s) => {
-          if (s.competitionId) {
-            return this.competitionEventService
-              .event(s.competitionId, ECompetitionEvent.RejudgeSolution, {
-                solutionId: s.solutionId,
-                problemId: s.problemId,
-                userId: s.userId,
-                judgeInfoId: judgeInfoIdMap.get(s.solutionId),
-              })
-              .then(() => {});
-          }
-          return Promise.resolve();
-        }),
-      );
     }
 
     return {
@@ -674,45 +677,51 @@ export default class SolutionController {
   @authSystemRequest()
   async [routesBe.callbackJudge.i](ctx: Context): Promise<void> {
     const req = ctx.request.body as ICallbackJudgeReq;
-    const { judgeInfoId, solutionId, judgerId, data, eventTimestampUs } = req;
+    const { judgeInfoId, solutionId, judgerId, batchData } = req;
     const redundant = this.lodash.pick(req, ['userId', 'problemId', 'contestId', 'competitionId']);
-    switch (data.type) {
-      case 'start': {
-        await this.service.updateJudgeStart(
-          judgeInfoId,
-          solutionId,
-          judgerId,
-          eventTimestampUs,
-          redundant,
-        );
-        break;
+    const batchDataList = batchData || [
+      { data: req.data!, eventTimestampUs: req.eventTimestampUs! },
+    ];
+    for (const item of batchDataList) {
+      const { data, eventTimestampUs } = item;
+      switch (data.type) {
+        case 'start': {
+          await this.service.updateJudgeStart(
+            judgeInfoId,
+            solutionId,
+            judgerId,
+            eventTimestampUs,
+            redundant,
+          );
+          break;
+        }
+        case 'progress': {
+          await this.service.updateJudgeProgress(
+            judgeInfoId,
+            solutionId,
+            judgerId,
+            eventTimestampUs,
+            redundant,
+            data.current,
+            data.total,
+          );
+          break;
+        }
+        case 'finish': {
+          await this.service.updateJudgeFinish(
+            judgeInfoId,
+            solutionId,
+            judgerId,
+            eventTimestampUs,
+            redundant,
+            data.resultType,
+            data.detail,
+          );
+          break;
+        }
+        default:
+          throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
       }
-      case 'progress': {
-        await this.service.updateJudgeProgress(
-          judgeInfoId,
-          solutionId,
-          judgerId,
-          eventTimestampUs,
-          redundant,
-          data.current,
-          data.total,
-        );
-        break;
-      }
-      case 'finish': {
-        await this.service.updateJudgeFinish(
-          judgeInfoId,
-          solutionId,
-          judgerId,
-          eventTimestampUs,
-          redundant,
-          data.resultType,
-          data.detail,
-        );
-        break;
-      }
-      default:
-        throw new ReqError(Codes.GENERAL_ILLEGAL_REQUEST);
     }
   }
 }
