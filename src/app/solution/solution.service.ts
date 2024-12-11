@@ -2064,6 +2064,7 @@ export default class SolutionService {
             solutionId,
             judgeInfoId,
             detail: {
+              previousResult: lastJudgeInfo.result,
               result,
             },
             userId: redundant.userId,
