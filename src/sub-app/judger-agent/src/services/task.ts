@@ -97,7 +97,9 @@ export class JudgeTask extends EventEmitter {
     if (this.callbackBuffer.length === 0) {
       return;
     }
+    const lockedSize = this.callbackBuffer.length;
     try {
+      dbg('flush callback buffer: %d, %O', lockedSize, this.callbackBuffer);
       const req = {
         judgeInfoId: this.options.judgeInfoId,
         solutionId: this.options.solutionId,
@@ -111,7 +113,7 @@ export class JudgeTask extends EventEmitter {
       const res = await this.ojApiInstance.post('/callbackJudge', req);
       const success = !!res.data.success;
       if (success) {
-        this.callbackBuffer = [];
+        this.callbackBuffer.splice(0, lockedSize);
       }
       return success;
     } catch (e) {
