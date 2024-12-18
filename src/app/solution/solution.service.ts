@@ -2002,29 +2002,15 @@ export default class SolutionService {
               EAchievementKey.SolveWithMultiResults,
             );
           }
+
+          // 更新题目和用户的 AC/Submitted 计数
+          this.updateSolutionProblemStats(redundant.problemId);
+          this.updateSolutionUserStats(redundant.userId);
         } else {
           this.ctx.logger.warn(
             `[updateJudgeFinish] redundant data incomplete. judgeInfoId: ${judgeInfoId}, solutionId: ${solutionId}, judgerId: ${judgerId}`,
           );
         }
-
-        // 设置异步定时任务来更新计数
-        this.model
-          .findOne({
-            attributes: ['problemId', 'userId'],
-            where: {
-              solutionId,
-            },
-          })
-          .then((res) => {
-            if (!res) {
-              return;
-            }
-            const d = res.get({ plain: true }) as IMSolutionDetailPlain;
-            const { problemId, userId } = d;
-            this.updateSolutionProblemStats(problemId);
-            this.updateSolutionUserStats(userId);
-          });
         break;
       }
     }
