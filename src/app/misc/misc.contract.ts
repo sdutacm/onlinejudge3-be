@@ -40,6 +40,27 @@ const miscContract = {
     additionalProperties: false,
     required: ['url'],
   } as defContract.ContractSchema,
+
+  getStaticObjectReq: {
+    properties: {
+      key: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['key'],
+  } as defContract.ContractSchema,
+
+  getStaticObjectResp: {
+    properties: {
+      key: { type: 'string' },
+      category: { type: 'string' },
+      mime: { type: 'string' },
+      content: {},
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+    additionalProperties: false,
+    required: ['key', 'category', 'mime', 'content', 'createdAt', 'updatedAt'],
+  } as defContract.ContractSchema,
 };
 
 export type IMiscContract = typeof miscContract;

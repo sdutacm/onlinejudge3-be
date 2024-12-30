@@ -766,6 +766,28 @@ const userContract = {
     additionalProperties: false,
     required: ['teamUserId'],
   } as defContract.ContractSchema,
+
+  getSelfStaticObjectReq: {
+    properties: {
+      key: { type: 'string' },
+    },
+    additionalProperties: false,
+    required: ['key'],
+  } as defContract.ContractSchema,
+
+  getSelfStaticObjectResp: {
+    properties: {
+      key: { type: 'string' },
+      category: { type: 'string' },
+      userId: { type: 'number' },
+      mime: { type: 'string' },
+      content: {},
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+    additionalProperties: false,
+    required: ['key', 'category', 'userId', 'mime', 'content', 'createdAt', 'updatedAt'],
+  } as defContract.ContractSchema,
 };
 
 export type IUserContract = typeof userContract;

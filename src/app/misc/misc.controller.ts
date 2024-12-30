@@ -8,9 +8,15 @@ import { IUtils } from '@/utils';
 import { IAppConfig } from '@/config/config.interface';
 import path from 'path';
 import { IFs } from '@/utils/libs/fs-extra';
-import { IUploadMediaResp, IUploadAssetResp } from '@/common/contracts/misc';
+import {
+  IUploadMediaResp,
+  IUploadAssetResp,
+  IGetStaticObjectReq,
+  IGetStaticObjectResp,
+} from '@/common/contracts/misc';
 import { EPerm } from '@/common/configs/perm.config';
 import { CCosHelper } from '@/utils/cos';
+import { CMiscService } from './misc.service';
 
 @provide()
 @controller('/')
@@ -23,6 +29,9 @@ export default class MiscController {
 
   @inject()
   fs: IFs;
+
+  @inject('miscService')
+  service: CMiscService;
 
   @config()
   staticPath: IAppConfig['staticPath'];
@@ -134,5 +143,20 @@ export default class MiscController {
     return {
       url: path.join(path.relative(this.staticPath.base, this.staticPath.asset), saveName),
     };
+  }
+
+  /**
+   * 获取指定静态存储对象。
+   */
+  @route()
+  @login()
+  async [routesBe.getStaticObject.i](ctx: Context): Promise<IGetStaticObjectResp> {
+    const { key } = ctx.request.body as IGetStaticObjectReq;
+    const object = await this.service.getStaticObject({ key, userId: null });
+    if (!object) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    delete object.userId;
+    return (object as unknown) as TreatDateFieldsAsString<IGetStaticObjectResp>;
   }
 }

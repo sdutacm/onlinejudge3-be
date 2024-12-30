@@ -50,6 +50,8 @@ import {
   IRemoveUserMemberReq,
   IConfirmJoinTeamReq,
   IGetSelfJoinedTeamsResp,
+  IGetSelfStaticObjectReq,
+  IGetSelfStaticObjectResp,
 } from '@/common/contracts/user';
 import { IMUserDetail, IMUserServiceGetListRes } from './user.interface';
 import { CVerificationService } from '../verification/verification.service';
@@ -69,6 +71,7 @@ import { EPerm } from '@/common/configs/perm.config';
 import { CCosHelper } from '@/utils/cos';
 import { CUserAchievementService } from './userAchievement.service';
 import { EAchievementKey } from '@/common/configs/achievement.config';
+import { CMiscService } from '../misc/misc.service';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -97,6 +100,9 @@ export default class UserController {
 
   @inject()
   userAchievementService: CUserAchievementService;
+
+  @inject()
+  miscService: CMiscService;
 
   @inject()
   utils: IUtils;
@@ -1238,5 +1244,22 @@ export default class UserController {
       throw new ReqError(Codes.USER_TEAM_MEMBERS_ARE_NOT_READY);
     }
     await this.service.confirmTeamSettlement(teamUserId);
+  }
+
+  /**
+   * 获取当前登录账号相关的指定静态存储对象。
+   */
+  @route()
+  @login()
+  async [routesBe.getSelfStaticObject.i](ctx: Context): Promise<IGetSelfStaticObjectResp> {
+    const userId = ctx.session.userId;
+    const { key } = ctx.request.body as IGetSelfStaticObjectReq;
+    const object = await this.miscService.getStaticObject({ key, userId });
+    if (!object) {
+      throw new ReqError(Codes.GENERAL_ENTITY_NOT_EXIST);
+    }
+    return (object as unknown) as TreatDateFieldsAsString<
+      Omit<typeof object, 'userId'> & { userId: number }
+    >;
   }
 }
