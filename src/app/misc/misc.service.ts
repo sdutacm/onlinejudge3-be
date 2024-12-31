@@ -29,13 +29,18 @@ export default class MiscService {
     category?: IStaticObjectModel['category'];
     userId?: IStaticObjectModel['userId'];
   }): Promise<IStaticObjectModel<T> | null> {
+    const where: any = this.utils.misc.ignoreUndefined({
+      key: options.key,
+      category: options.category,
+      userId: options.userId,
+    });
+    await this.staticObjectModel.increment('viewCount', {
+      by: 1,
+      where,
+    });
     const res = await this.staticObjectModel
       .findOne({
-        where: this.utils.misc.ignoreUndefined({
-          key: options.key,
-          category: options.category,
-          userId: options.userId,
-        }),
+        where,
       })
       .then((d) => d && (d.get({ plain: true }) as IStaticObjectModel));
     if (!res) {

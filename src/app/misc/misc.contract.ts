@@ -55,11 +55,12 @@ const miscContract = {
       category: { type: 'string' },
       mime: { type: 'string' },
       content: {},
+      viewCount: { type: 'number' },
       createdAt: { type: 'string', format: 'date-time' },
       updatedAt: { type: 'string', format: 'date-time' },
     },
     additionalProperties: false,
-    required: ['key', 'category', 'mime', 'content', 'createdAt', 'updatedAt'],
+    required: ['key', 'category', 'mime', 'content', 'viewCount', 'createdAt', 'updatedAt'],
   } as defContract.ContractSchema,
 };
 

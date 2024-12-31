@@ -782,11 +782,21 @@ const userContract = {
       userId: { type: 'number' },
       mime: { type: 'string' },
       content: {},
+      viewCount: { type: 'number' },
       createdAt: { type: 'string', format: 'date-time' },
       updatedAt: { type: 'string', format: 'date-time' },
     },
     additionalProperties: false,
-    required: ['key', 'category', 'userId', 'mime', 'content', 'createdAt', 'updatedAt'],
+    required: [
+      'key',
+      'category',
+      'userId',
+      'mime',
+      'content',
+      'viewCount',
+      'createdAt',
+      'updatedAt',
+    ],
   } as defContract.ContractSchema,
 };
 

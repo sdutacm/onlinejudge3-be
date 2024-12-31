@@ -4,6 +4,7 @@ export interface IStaticObjectModel<T = any> {
   userId: number | null;
   mime: string;
   content: T;
+  viewCount: number;
   createdAt: Date;
   updatedAt: Date;
 }

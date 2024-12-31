@@ -68,6 +68,14 @@ export default class StaticObjectModel extends Model<StaticObjectModel> {
   content: string;
 
   @AllowNull(false)
+  @Default(0)
+  @Column({
+    field: 'view_count',
+    type: DataType.INTEGER,
+  })
+  viewCount: number;
+
+  @AllowNull(false)
   @CreatedAt
   @Column({
     field: 'created_at',
