@@ -6,6 +6,7 @@ const pulsarPort = parseInt(process.env.PULSAR_PORT!, 10) || 6650;
 const pulsarTenant = process.env.PULSAR_TENANT || 'public';
 const pulsarNamespace = process.env.PULSAR_NAMESPACE || 'oj';
 const pulsarAuthToken = process.env.PULSAR_AUTH_TOKEN || '';
+const pulsarListenerName = process.env.PULSAR_LISTENER_NAME || undefined;
 
 const ojApiBaseUrl = process.env.OJ_API_BASE_URL || 'http://127.0.0.1:7001';
 const ojApiSystemAuthKey = process.env.OJ_API_SYSTEM_AUTH_KEY || '';
@@ -36,6 +37,7 @@ const cdn = {
 const config = {
   pulsar: {
     serviceUrl: `pulsar://${pulsarHost}:${pulsarPort}`,
+    listenerName: pulsarListenerName,
     authenticationToken: pulsarAuthToken,
     tenant: pulsarTenant,
     namespace: pulsarNamespace,

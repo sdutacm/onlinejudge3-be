@@ -8,6 +8,7 @@ export type IPulsarConsumer = Pulsar.Consumer;
 export function getPulsarClient() {
   const pulsarOptions: Pulsar.ClientConfig = {
     serviceUrl: config.pulsar.serviceUrl,
+    listenerName: config.pulsar.listenerName,
     log: (level, file, line, message) => {
       let m = pulsarLogger.info;
       switch (level) {

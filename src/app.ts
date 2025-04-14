@@ -29,6 +29,7 @@ class AppBootHook implements IBoot {
     if (this.app.config.pulsar.enable) {
       const pulsarOptions: Pulsar.ClientConfig = {
         serviceUrl: this.app.config.pulsar.serviceUrl,
+        listenerName: this.app.config.pulsar.listenerName,
       };
       if (this.app.config.pulsar.authenticationToken) {
         pulsarOptions.authentication = new Pulsar.AuthenticationToken({

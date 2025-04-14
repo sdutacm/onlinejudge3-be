@@ -6,6 +6,7 @@ import { IJudgerConfig } from './judger.config';
 export interface IPulsarConfig {
   enable: boolean;
   serviceUrl: string;
+  listenerName?: string;
   tenant: string;
   namespace: string;
   authenticationToken?: string;
