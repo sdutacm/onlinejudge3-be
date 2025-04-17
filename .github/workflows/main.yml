@@ -35,6 +35,7 @@ jobs:
       - name: Build and Push Image
         uses: docker/build-push-action@v3
         with:
+          context: .
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/onlinejudge3-be:1
