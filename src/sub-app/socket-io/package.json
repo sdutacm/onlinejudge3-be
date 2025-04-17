@@ -17,6 +17,8 @@
     "start": "egg-scripts start --daemon --title=egg-server-onlinejudge3-be-socket-io --framework=midway --ts --sticky --workers=1",
     "start:foreground": "egg-scripts start --title=egg-server-onlinejudge3-be-socket-io --framework=midway --ts --sticky --workers=1",
     "stop": "egg-scripts stop --title=egg-server-onlinejudge3-be-socket-io",
+    "restart": "npm stop && npm start",
+    "restart:foreground": "npm stop && npm run start:foreground",
     "test": "cross-env DEBUG=-* npm run lint && npm run devtest"
   },
   "dependencies": {
