@@ -1,8 +1,10 @@
-/* eslint-disable no-unreachable */
 import { EggAppInfo } from 'midway';
 import { IAppConfig } from './config.interface';
 import { formatLoggerHelper } from '@/utils/format';
 import { routesBe, IRouteBeConfig } from '@/common/routes';
+// @ts-ignore
+import configDynamic from './config.dynamic';
+import _ from 'lodash';
 
 const csrfRoutes = Object.keys(routesBe)
   .map(
@@ -13,7 +15,7 @@ const csrfRoutes = Object.keys(routesBe)
   .filter((route) => route.csrf);
 
 export default (appInfo: EggAppInfo) => {
-  const config = {} as IAppConfig;
+  let config = {} as IAppConfig;
 
   config.proxy = true;
   config.maxIpsCount = 1;
@@ -42,55 +44,7 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
-  //#region secret configs
-  // use for cookie sign key, should change to your own and keep security
-  // set your production keys and remove next line
-  throw new Error('Please set `config.keys` in config.prod.ts');
-  // config.keys = appInfo.name + '_onlinejudge3_xxx';
-
-  // use for system inner request, should change to your own and keep security
-  // config.systemAuthKey = '';
-  //#endregion
-
-  //#region custom config
-
-  //#endregion
-
-  //#region sequelize
-
-  //#endregion
-
-  //#region redis
-
-  //#endregion
-
-  //#region pulsar
-
-  //#endregion
-
-  //#region socketBridge
-
-  //#endregion
-
-  //#region staticPath
-
-  //#endregion
-
-  //#region mail
-
-  //#endregion
-
-  //#region scripts
-
-  //#endregion
-
-  //#region alinode
-
-  //#endregion
-
-  //#region cloud
-
-  //#endregion
+  config = _.merge(config, configDynamic);
 
   return config;
 };
