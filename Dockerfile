@@ -8,6 +8,7 @@ COPY .node-version ./
 COPY tsconfig.json ./
 COPY tsconfig.prod.json ./
 COPY src ./src
+COPY gulpfile.js ./
 RUN mv src/config/config.prod.from-file.ts src/config/config.prod.ts
 RUN npm i -g nodeinstall
 RUN npm ci
