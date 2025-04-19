@@ -31,12 +31,14 @@ export class Judger {
   private client: any;
 
   constructor(opts: IJudgerOptions) {
-    // @ts-ignore
-    this.client = new riverDef.River(opts.address, grpc.credentials.createInsecure(), {
-      'grpc.service_config': JSON.stringify({
-        loadBalancingConfig: [{ round_robin: {} }],
-      }),
-    });
+    if (opts.address) {
+      // @ts-ignore
+      this.client = new riverDef.River(opts.address, grpc.credentials.createInsecure(), {
+        'grpc.service_config': JSON.stringify({
+          loadBalancingConfig: [{ round_robin: {} }],
+        }),
+      });
+    }
   }
 
   public getLanguageConfig(): Promise<river.ILanguageItem[]> {

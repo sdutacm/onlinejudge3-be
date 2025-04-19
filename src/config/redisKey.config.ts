@@ -40,8 +40,11 @@ const redisKey = {
   achievementRate: 'cache:achievement_rate:%d',
   userMembers: 'cache:user_members:%d',
   verificationCode: 'verification:code:%s',
+  confJudgerLanguages: 'conf:judger_languages',
   recordUserUpload: 'record:user_upload:%d',
   recordUserCreateGroup: 'record:user_create_group:%d',
+  recordRateIp: 'record:rateIp:%s:%s', // {interfaceName} {ip}
+  recordRateUser: 'record:rateUser:%s:%d', // {interfaceName} {userId}
   userACStats: 'stats:user_ac:%s',
   userASProblemsStatsRunInfo: 'stats:user_a_s_problems_run_info',
   userAcceptedProblemsStats: 'stats:user_accepted_problems:%d',
@@ -55,8 +58,6 @@ const redisKey = {
   solutionJudgeStatus: 'status:solution_judge_status:%d',
   contestRatingStatus: 'status:contest_rating_status:%d',
   competitionRatingStatus: 'status:competition_rating_status:%d',
-  rateIp: 'rateIp:%s:%s', // {interfaceName} {ip}
-  rateUser: 'rateUser:%s:%d', // {interfaceName} {userId}
   session: 'session:%d:%s', // {userId} {sessionKey}
   lockCompetitionBallonCalc: 'lock:competition_balloon_calc:%d', // {competitionId}
   // asyncSolutionProblemStatsTasks: 'async:solution_problem_stats_tasks',

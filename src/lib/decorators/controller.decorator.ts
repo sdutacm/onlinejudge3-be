@@ -920,7 +920,7 @@ function rateLimitFactoryFactory(
           let keyArgs: any[] = [propertyKey];
           switch (type) {
             case 'ip': {
-              keyConfig = redisKey.rateIp;
+              keyConfig = redisKey.recordRateIp;
               const ip = ctx.ip;
               if (!isPrivateIp(ctx.ip)) {
                 keyArgs.push(ip);
@@ -928,7 +928,7 @@ function rateLimitFactoryFactory(
               break;
             }
             case 'user': {
-              keyConfig = redisKey.rateUser;
+              keyConfig = redisKey.recordRateUser;
               const userId = ctx.session.userId;
               if (userId) {
                 keyArgs.push(userId);

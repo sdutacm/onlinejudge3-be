@@ -15,7 +15,7 @@ export interface IJudgerConfig {
   /** git commit 邮箱 */
   dataGitEmail: string;
   /** 评测机地址 */
-  address: string;
+  address: string | undefined;
   /** 消息队列评测队列主题 */
   mqJudgeQueueTopic: string;
   /** 消息队列评测队列订阅 */
@@ -48,7 +48,8 @@ const judgerConfig: IJudgerConfig = {
   /** git commit 邮箱 */
   dataGitEmail: 'sdutacm@example.com',
   /** 评测机地址 */
-  address: 'ipv4:127.0.0.1:4003',
+  // address: 'ipv4:127.0.0.1:4003',
+  address: undefined,
   mqJudgeQueueTopic: 'judge-queue',
   mqJudgeQueueSubscription: 'judge-subscription',
   mqJudgeDeadQueueTopic: 'judge-dead-queue',

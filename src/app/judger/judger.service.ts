@@ -311,9 +311,9 @@ export default class JudgerService {
   }
 
   /**
-   * 获取评测机语言配置缓存。
+   * 获取远程评测机语言配置缓存。
    */
-  async getLanguageConfig(): Promise<IMJudgerLanguageConfig> {
+  async getLanguageConfigRemote(): Promise<IMJudgerLanguageConfig> {
     let res: IMJudgerLanguageConfig | null = null;
     const cached = await this._getLanguageConfigCache();
     cached && (res = cached);
@@ -328,6 +328,22 @@ export default class JudgerService {
         await this._setLanguageConfigCache(null);
         throw e;
       }
+    }
+    return res;
+  }
+
+  /**
+   * 获取评测机语言配置缓存。
+   */
+  async getLanguageConfig(): Promise<IMJudgerLanguageConfig> {
+    let res = await this.ctx.helper.redisGet<IMJudgerLanguageConfig>(
+      this.redisKey.confJudgerLanguages,
+    );
+    if (!res) {
+      res = await this.getLanguageConfigRemote();
+    }
+    if (!res) {
+      throw new Error('Cannot find judger language config');
     }
     return res;
   }
