@@ -4,6 +4,14 @@ import { ParameterException } from '../../../exceptions/parameter';
 
 module.exports = (app: Application) => {
   class EmitController extends app.Controller {
+    async healthCheck() {
+      this.ctx.status = 200;
+      this.ctx.body = {
+        success: true,
+        code: 0,
+      };
+    }
+
     async innerHttpEmit() {
       if (!checkEmitAuth(this.ctx, this.config)) {
         this.ctx.status = 403;
