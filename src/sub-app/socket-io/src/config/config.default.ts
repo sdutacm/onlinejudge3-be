@@ -53,7 +53,7 @@ export default (appInfo: EggAppInfo) => {
 
   config.session = {
     key: 'OJ3_SESS',
-    path: '/onlinejudge3/',
+    // path: '/onlinejudge3/',
     renew: true,
     genid: (ctx: Context) => {
       return `session:${ctx.userId || 0}:${uuidv4()}`;

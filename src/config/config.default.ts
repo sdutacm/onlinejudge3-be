@@ -13,7 +13,8 @@ export default (appInfo: EggAppInfo) => {
   const config = {} as IAppConfig;
 
   config.container = {
-    ignore: 'sub-app/**', // ignore path in midway auto scan
+    // ignore path in midway auto scan
+    ignore: ['sub-app/**', 'config/config.prod.from-file.ts'],
   };
 
   config.keys = appInfo.name;
@@ -27,15 +28,15 @@ export default (appInfo: EggAppInfo) => {
   config.security = {
     csrf: {
       enable: false,
-      cookieOptions: {
-        path: '/onlinejudge3/',
-      },
+      // cookieOptions: {
+      //   path: '/onlinejudge3/',
+      // },
     },
   };
 
   config.session = {
     key: 'OJ3_SESS',
-    path: '/onlinejudge3/',
+    // path: '/onlinejudge3/',
     maxAge: 30 * 24 * 60 * 60 * 1000,
     renew: true,
     genid: (ctx: Context) => {
