@@ -349,15 +349,16 @@ export default class JudgerService {
   }
 
   /**
-   * 将 Zip 格式的题目数据包更新到题目目录下（全量覆盖）。
+   * 更新 zip 格式的题目数据包（全量覆盖）。
    * @param problemId problemId
    * @param filePath 题目数据包路径
-   * @returns 是否更新成功，如何数据包内文件为空则认为更新失败
+   * @returns 是否更新成功，如果数据包内文件为空则认为更新失败
    */
   async updateData(problemId: IProblemModel['problemId'], filePath: string) {
     if (!problemId) {
       throw new Error(`InvalidJudgerDataError: ${problemId} is undefined`);
     }
+    // 写入覆盖到本地文件系统
     if (this.judgerConfig.dataPath) {
       const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
       this.ctx.logger.info('Extracting data zip to', targetPath);
@@ -371,8 +372,10 @@ export default class JudgerService {
       zip.extractAllTo(targetPath, true);
       this.ctx.logger.info('Extracted data zip');
     }
+    // 上传到远端 COS
     if (this.judgerCosConfig) {
       // upload complete data to data/
+      // TODO add problem id level lock
       const targetPath = path.join(
         os.tmpdir(),
         'onlinejudge3-judgerdata-upload',
@@ -400,26 +403,38 @@ export default class JudgerService {
         bucket: this.judgerCosConfig.bucket,
         region: this.judgerCosConfig.region,
       });
-      this.ctx.logger.info(`Uploaded data to COS ${remotePath}`);
+      this.ctx.logger.info(`Uploaded problem ${problemId} complete data to COS`);
 
       // upload release to data-release/
-      this.ctx.logger.info('Uploading data release to COS');
-      const cosDirBase = `judger/data-release/${problemId}`;
+      this.ctx.logger.info(`Uploading problem ${problemId} data release to COS`);
+      const dataReleaseBase = `judger/data-release/${problemId}`;
       const remoteFileName = `${Math.floor(Date.now() / 1000)}_${this.utils.misc.randomString({
         length: 6,
         type: 'numeric',
       })}.zip`;
       await this.cosHelper.uploadFile(
         this.fs.createReadStream(filePath),
-        `${cosDirBase}/${remoteFileName}`,
+        `${dataReleaseBase}/${remoteFileName}`,
         { bucket: this.judgerCosConfig.bucket, region: this.judgerCosConfig.region },
       );
       await this.cosHelper.uploadFile(
         Buffer.from(new TextEncoder().encode(remoteFileName)),
-        `${cosDirBase}/latest.txt`,
+        `${dataReleaseBase}/latest.txt`,
         { bucket: this.judgerCosConfig.bucket, region: this.judgerCosConfig.region },
       );
-      this.ctx.logger.info('Uploaded data release to COS. Latest release:', remoteFileName);
+      this.ctx.logger.info(
+        `Uploaded problem ${problemId} data release to COS. Latest release: ${remoteFileName}`,
+      );
+
+      // upload an update history file to data-commit/
+      const commitFileName = `${Date.now()}-${problemId}-${remoteFileName}.commit`;
+      const commitFileContent = '';
+      await this.cosHelper.uploadFile(
+        Buffer.from(commitFileContent),
+        `judger/data-commit/${commitFileName}`,
+        { bucket: this.judgerCosConfig.bucket, region: this.judgerCosConfig.region },
+      );
+      this.ctx.logger.info(`Uploaded problem ${problemId} data commit history to COS`);
     }
     return true;
   }
