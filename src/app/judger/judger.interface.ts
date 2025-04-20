@@ -6,22 +6,26 @@ export type IMJudgerLanguageConfig = {
 }[];
 
 //#region service.getDataFile
-export type IMJudgerServiceGetDataFileRes = {
+export interface IMJudgerServiceGetDataFileRespObjectDirFile {
+  type: 'file' | 'directory' | 'N/A';
+  filename: string;
+  path: string;
+  size: number;
+  createTime?: Date;
+  modifyTime?: Date;
+}
+
+export interface IMJudgerServiceGetDataFileRespObject {
   type: 'file' | 'directory';
   filename: string;
   path: string;
   size: number;
-  createTime: Date;
-  modifyTime: Date;
+  createTime?: Date;
+  modifyTime?: Date;
   isBinary?: boolean; // 仅限文件
   content?: string | Buffer; // 仅限文件
-  files?: Array<{
-    type: 'file' | 'directory' | 'N/A';
-    filename: string;
-    path: string;
-    size: number;
-    createTime: Date;
-    modifyTime: Date;
-  }>; // 仅限目录
-} | null;
+  files?: IMJudgerServiceGetDataFileRespObjectDirFile[]; // 仅限目录
+}
+
+export type IMJudgerServiceGetDataFileRes = IMJudgerServiceGetDataFileRespObject | null;
 //#endregion

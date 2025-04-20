@@ -1,11 +1,9 @@
-import path from 'path';
-
 export interface IJudgerConfig {
   /**
    * 评测数据所在目录。如有需要，可以直接 clone 测试数组到本地，然后在此指定其路径
    * @see https://github.com/sdutacm/judger-data_test
    */
-  dataPath: string;
+  dataPath: string | undefined;
   /** 是否使用 git */
   dataUsingGit: boolean;
   /** git 分支 */
@@ -26,8 +24,6 @@ export interface IJudgerConfig {
   mqJudgeDeadQueueSubscription: string;
   /** 评测数据对象存储（腾讯云） */
   cos?: {
-    secretId?: string;
-    secretKey?: string;
     region: string;
     bucket: string;
   };
@@ -38,7 +34,8 @@ const judgerConfig: IJudgerConfig = {
    * 评测数据所在目录。如有需要，可以直接 clone 测试数组到本地，然后在此指定其路径
    * @see https://github.com/sdutacm/judger-data_test
    */
-  dataPath: path.join(__dirname, '../../judger-data_test'),
+  // dataPath: path.join(__dirname, '../../judger-data_test'),
+  dataPath: undefined,
   /** 是否使用 git */
   dataUsingGit: false,
   /** git 分支 */

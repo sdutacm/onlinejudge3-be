@@ -1,12 +1,17 @@
 import { provide, inject, Context, config } from 'midway';
 import { CJudgerMeta } from './judger.meta';
-import { IMJudgerServiceGetDataFileRes, IMJudgerLanguageConfig } from './judger.interface';
+import {
+  IMJudgerServiceGetDataFileRes,
+  IMJudgerLanguageConfig,
+  IMJudgerServiceGetDataFileRespObjectDirFile,
+} from './judger.interface';
 import { IProblemModel } from '../problem/problem.interface';
 import { IDurationsConfig } from '@/config/durations.config';
 import { IRedisKeyConfig } from '@/config/redisKey.config';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import path from 'path';
+import os from 'os';
 import { IFs } from '@/utils/libs/fs-extra';
 import { IIsBinaryFile } from '@/utils/libs/isbinaryfile';
 import { CAdmZip } from '@/utils/libs/adm-zip';
@@ -15,6 +20,7 @@ import { IJudgerConfig } from '@/config/judger.config';
 import { Judger } from '@/lib/services/judger';
 import { IAppConfig } from '@/config/config.interface';
 import { CCosHelper } from '@/utils/cos';
+import { CPromiseQueue } from '@/utils/libs/promise-queue';
 
 export type CJudgerService = JudgerService;
 
@@ -58,9 +64,10 @@ export default class JudgerService {
   @inject()
   cosHelper: CCosHelper;
 
+  @inject('PromiseQueue')
+  PromiseQueue: CPromiseQueue;
+
   judgerCosConfig?: {
-    secretId: string;
-    secretKey: string;
     region: string;
     bucket: string;
   };
@@ -80,8 +87,6 @@ export default class JudgerService {
     }
     if (judgerConfig.cos && tencentCloudConfig?.cos) {
       this.judgerCosConfig = {
-        secretId: judgerConfig.cos.secretId || tencentCloudConfig.cos.secretId,
-        secretKey: judgerConfig.cos.secretKey || tencentCloudConfig.cos.secretKey,
         region: judgerConfig.cos.region,
         bucket: judgerConfig.cos.bucket,
       };
@@ -113,7 +118,10 @@ export default class JudgerService {
    * 获取数据目录下指定路径的文件信息，对于目录，还会返回目录下文件列表。
    * @param filePath 文件路径
    */
-  async getDataFile(filePath: string): Promise<IMJudgerServiceGetDataFileRes> {
+  async getDataFileFromLocal(filePath: string): Promise<IMJudgerServiceGetDataFileRes> {
+    if (!this.judgerConfig.dataPath) {
+      throw new Error('Judger data path is not set');
+    }
     const rootPath = path.join(this.judgerConfig.dataPath, 'data');
     const targetPath = path.join(rootPath, filePath);
     if (!targetPath.startsWith(rootPath)) {
@@ -159,7 +167,8 @@ export default class JudgerService {
           return {
             type,
             filename: f,
-            path: path.relative(rootPath, path.join(targetPath, f)),
+            path:
+              path.relative(rootPath, path.join(targetPath, f)) + (type === 'directory' ? '/' : ''),
             size: subStat.size,
             createTime: subStat.birthtime,
             modifyTime: subStat.mtime,
@@ -168,7 +177,7 @@ export default class JudgerService {
         return {
           type: 'directory',
           filename: path.basename(targetPath),
-          path: path.relative(rootPath, targetPath),
+          path: path.relative(rootPath, targetPath) + '/',
           size: stat.size,
           createTime: stat.birthtime,
           modifyTime: stat.mtime,
@@ -183,10 +192,101 @@ export default class JudgerService {
   }
 
   /**
-   * 获取指定题目数据的归档文件。格式为 Zip。
+   * 获取数据目录下指定路径的文件信息，对于目录，还会返回目录下文件列表。
+   * @param filePath 文件路径
+   */
+  async getDataFileFromRemoteCos(filePath: string): Promise<IMJudgerServiceGetDataFileRes> {
+    if (!this.judgerCosConfig) {
+      throw new Error('Judger COS config is not set');
+    }
+    const rootPath = 'judger/data';
+    const targetPath = path.join(rootPath, filePath);
+    if (!filePath.endsWith('/')) {
+      // get as single file
+      try {
+        const res = await this.cosHelper.getFile(targetPath, {
+          bucket: this.judgerCosConfig.bucket,
+          region: this.judgerCosConfig.region,
+        });
+        const isBinary = await this.isBinaryFile(res.Body);
+        return {
+          type: 'file',
+          filename: path.basename(targetPath),
+          path: path.relative(rootPath, targetPath),
+          size: +res.headers['content-length'],
+          createTime: new Date(res.headers['last-modified']),
+          modifyTime: new Date(res.headers['last-modified']),
+          isBinary,
+          content: isBinary ? res.Body.toString('base64') : res.Body.toString(),
+        };
+      } catch (e) {
+        if (e.statusCode === 404) {
+          return null;
+        }
+        this.ctx.logger.error('getDataFileFromRemoteCos error:', e);
+        throw e;
+      }
+    } else {
+      // list dir files
+      const res = await this.cosHelper.listFiles(targetPath, {
+        bucket: this.judgerCosConfig!.bucket,
+        region: this.judgerCosConfig!.region,
+      });
+      if (res.directories.length === 0 && res.files.length === 0) {
+        return null;
+      }
+      const files = res.files.map((f) => {
+        return {
+          type: 'file',
+          filename: path.basename(f.Key),
+          path: path.relative(rootPath, f.Key),
+          size: +f.Size,
+          modifyTime: new Date(f.LastModified),
+        } as IMJudgerServiceGetDataFileRespObjectDirFile;
+      });
+      return {
+        type: 'directory',
+        filename: path.basename(targetPath),
+        path: path.relative(rootPath, targetPath) + '/',
+        size: +(res.self?.Size || 0),
+        modifyTime: res.self ? new Date(res.self.LastModified) : undefined,
+        files: [
+          ...res.directories.map(
+            (d) =>
+              ({
+                type: 'directory',
+                filename: path.basename(d),
+                path: path.relative(rootPath, d) + '/',
+                size: 0,
+              } as IMJudgerServiceGetDataFileRespObjectDirFile),
+          ),
+          ...files,
+        ],
+      };
+    }
+  }
+
+  /**
+   * 获取数据目录下指定路径的文件信息，对于目录，还会返回目录下文件列表。
+   * @param filePath 文件路径
+   */
+  async getDataFile(filePath: string): Promise<IMJudgerServiceGetDataFileRes> {
+    if (this.judgerCosConfig) {
+      return this.getDataFileFromRemoteCos(filePath);
+    } else if (this.judgerConfig.dataPath) {
+      return this.getDataFileFromLocal(filePath);
+    }
+    return null;
+  }
+
+  /**
+   * 从本地文件系统获取指定题目数据的归档文件。
    * @param problemId problemId
    */
-  async getDataArchive(problemId: IProblemModel['problemId']) {
+  async getDataArchiveFromLocal(problemId: IProblemModel['problemId']) {
+    if (!this.judgerConfig.dataPath) {
+      throw new Error('Judger data path is not set');
+    }
     const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
     if (!(await this.fs.pathExists(targetPath))) {
       return null;
@@ -197,27 +297,112 @@ export default class JudgerService {
   }
 
   /**
+   * 从远程 COS 获取指定题目数据的归档文件。
+   * @param problemId problemId
+   */
+  async getDataArchiveFromRemoteCos(problemId: IProblemModel['problemId']) {
+    // download data from cos to tmp dir
+    const savePath = path.join(
+      os.tmpdir(),
+      'onlinejudge3-judgerdata-save',
+      problemId.toString() + '-' + Date.now().toString(),
+    );
+    await this.fs.ensureDir(savePath);
+    const remotePath = `judger/data/${problemId}/`;
+    const res = await this.cosHelper.listFilesRecursive(remotePath, {
+      bucket: this.judgerCosConfig!.bucket,
+      region: this.judgerCosConfig!.region,
+    });
+    if (res.contents.length === 0) {
+      return null;
+    }
+    const files = res.contents.filter((f) => !f.Key.endsWith('/')).map((f) => f.Key);
+    const pq = new this.PromiseQueue(20, Infinity);
+    const queueTasks = files.map((file) =>
+      pq.add(async () => {
+        const fileSavePath = path.join(savePath, path.relative(remotePath, file));
+        const fileContent = await this.cosHelper.downloadFile(file, {
+          bucket: this.judgerCosConfig!.bucket,
+          region: this.judgerCosConfig!.region,
+        });
+        await this.fs.ensureFile(fileSavePath);
+        await this.fs.writeFile(fileSavePath, fileContent);
+      }),
+    );
+    await Promise.all(queueTasks);
+    const zip = new this.AdmZip();
+    zip.addLocalFolder(savePath);
+    return zip.toBuffer();
+  }
+
+  /**
+   * 获取指定题目数据的归档文件。格式为 zip。
+   * @param problemId problemId
+   */
+  async getDataArchive(problemId: IProblemModel['problemId']) {
+    if (this.judgerCosConfig) {
+      return this.getDataArchiveFromRemoteCos(problemId);
+    } else if (this.judgerConfig.dataPath) {
+      return this.getDataArchiveFromLocal(problemId);
+    }
+    return null;
+  }
+
+  /**
    * 将 Zip 格式的题目数据包更新到题目目录下（全量覆盖）。
    * @param problemId problemId
    * @param filePath 题目数据包路径
    * @returns 是否更新成功，如何数据包内文件为空则认为更新失败
    */
   async updateData(problemId: IProblemModel['problemId'], filePath: string) {
-    if (!this.judgerConfig.dataPath || !problemId) {
-      throw new Error(`InvalidJudgerDataPathError: ${this.judgerConfig.dataPath}, ${problemId}`);
+    if (!problemId) {
+      throw new Error(`InvalidJudgerDataError: ${problemId} is undefined`);
     }
-    const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
-    this.ctx.logger.info('Extracting data zip to', targetPath);
-    const zip = new this.AdmZip(filePath);
-    const zipEntries = zip.getEntries();
-    if (zipEntries.length === 0) {
-      return false;
+    if (this.judgerConfig.dataPath) {
+      const targetPath = path.join(this.judgerConfig.dataPath, 'data', problemId.toString());
+      this.ctx.logger.info('Extracting data zip to', targetPath);
+      const zip = new this.AdmZip(filePath);
+      const zipEntries = zip.getEntries();
+      if (zipEntries.length === 0) {
+        return false;
+      }
+      await this.fs.remove(targetPath);
+      await this.fs.ensureDir(targetPath);
+      zip.extractAllTo(targetPath, true);
+      this.ctx.logger.info('Extracted data zip');
     }
-    await this.fs.remove(targetPath);
-    await this.fs.ensureDir(targetPath);
-    zip.extractAllTo(targetPath, true);
-    this.ctx.logger.info('Extracted data zip');
     if (this.judgerCosConfig) {
+      // upload complete data to data/
+      const targetPath = path.join(
+        os.tmpdir(),
+        'onlinejudge3-judgerdata-upload',
+        problemId.toString() + '-' + Date.now().toString(),
+      );
+      const zip = new this.AdmZip(filePath);
+      const zipEntries = zip.getEntries();
+      if (zipEntries.length === 0) {
+        return false;
+      }
+      await this.fs.remove(targetPath);
+      await this.fs.ensureDir(targetPath);
+      zip.extractAllTo(targetPath, true);
+      this.ctx.logger.info(`Extracted data zip for cos uploading to ${targetPath}`);
+      const remotePath = `judger/data/${problemId}/`;
+      const deleteRes = await this.cosHelper.deleteDir(remotePath, {
+        bucket: this.judgerCosConfig.bucket,
+        region: this.judgerCosConfig.region,
+      });
+      if (!deleteRes) {
+        this.ctx.logger.error('Failed to delete old data dir from COS');
+        return false;
+      }
+      await this.cosHelper.uploadDir(targetPath, remotePath, {
+        bucket: this.judgerCosConfig.bucket,
+        region: this.judgerCosConfig.region,
+      });
+      this.ctx.logger.info(`Uploaded data to COS ${remotePath}`);
+
+      // upload release to data-release/
       this.ctx.logger.info('Uploading data release to COS');
       const cosDirBase = `judger/data-release/${problemId}`;
       const remoteFileName = `${Math.floor(Date.now() / 1000)}_${this.utils.misc.randomString({
@@ -313,7 +498,7 @@ export default class JudgerService {
   /**
    * 获取远程评测机语言配置缓存。
    */
-  async getLanguageConfigRemote(): Promise<IMJudgerLanguageConfig> {
+  async getLanguageConfigFromRemoteJudger(): Promise<IMJudgerLanguageConfig> {
     let res: IMJudgerLanguageConfig | null = null;
     const cached = await this._getLanguageConfigCache();
     cached && (res = cached);
@@ -340,7 +525,7 @@ export default class JudgerService {
       this.redisKey.confJudgerLanguages,
     );
     if (!res) {
-      res = await this.getLanguageConfigRemote();
+      res = await this.getLanguageConfigFromRemoteJudger();
     }
     if (!res) {
       throw new Error('Cannot find judger language config');
