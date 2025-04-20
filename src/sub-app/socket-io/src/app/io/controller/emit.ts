@@ -5,6 +5,7 @@ import { ParameterException } from '../../../exceptions/parameter';
 module.exports = (app: Application) => {
   class EmitController extends app.Controller {
     async healthCheck() {
+      console.log(`[healthCheck] from ip:`, this.ctx.ip);
       this.ctx.status = 200;
       this.ctx.body = {
         success: true,
