@@ -354,7 +354,15 @@ export default class JudgerService {
    * @param filePath 题目数据包路径
    * @returns 是否更新成功，如果数据包内文件为空则认为更新失败
    */
-  async updateData(problemId: IProblemModel['problemId'], filePath: string) {
+  async updateData(
+    problemId: IProblemModel['problemId'],
+    filePath: string,
+    commitData?: {
+      name: string;
+      email: string;
+      commitMessage: string;
+    },
+  ) {
     if (!problemId) {
       throw new Error(`InvalidJudgerDataError: ${problemId} is undefined`);
     }
@@ -427,8 +435,8 @@ export default class JudgerService {
       );
 
       // upload an update history file to data-commit/
-      const commitFileName = `${Date.now()}-${problemId}-${remoteFileName}.commit`;
-      const commitFileContent = '';
+      const commitFileName = `${Date.now()}-${problemId}-${remoteFileName}.commit.json`;
+      const commitFileContent = JSON.stringify(commitData || {});
       await this.cosHelper.uploadFile(
         Buffer.from(commitFileContent),
         `judger/data-commit/${commitFileName}`,

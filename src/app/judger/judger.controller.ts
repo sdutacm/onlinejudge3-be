@@ -102,7 +102,21 @@ export default class JudgerController {
       throw new ReqError(Codes.JUDGER_UNSUPPORTED_DATA_FORMAT);
     }
     // TODO check zip file to prevent zip bomb or directory traversal attack
-    const updateRes = await this.service.updateData(problemId, data.filepath);
+    const updateRes = await this.service.updateData(
+      problemId,
+      data.filepath,
+      name && email
+        ? ({
+            name,
+            email,
+            commitMessage,
+          } as {
+            name: string;
+            email: string;
+            commitMessage: string;
+          })
+        : undefined,
+    );
     if (!updateRes) {
       throw new ReqError(Codes.JUDGER_INVALID_DATA);
     }
