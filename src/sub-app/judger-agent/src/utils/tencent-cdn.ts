@@ -9,6 +9,7 @@ import md5 from 'crypto-js/md5';
 import sha256 from 'crypto-js/sha256';
 import config from '../config';
 import { newAbortSignal } from './index';
+import { dataManagerLogger } from './logger';
 
 const finished = promisify(stream.finished);
 const TIMEOUT = 3 * 60 * 1000;
@@ -61,6 +62,7 @@ export class TencentCdnHelper {
 
   async downloadFile(url: string): Promise<Buffer> {
     const usingUrl = this.getAuthUrl(url);
+    dataManagerLogger.info(`Downloading file from ${usingUrl}`);
     const res = await this.axiosInstance({
       method: 'GET',
       url: usingUrl,
@@ -74,6 +76,7 @@ export class TencentCdnHelper {
   async downloadFileTo(url: string, savePath: string): Promise<void> {
     const usingUrl = this.getAuthUrl(url);
     const writer = fs.createWriteStream(savePath);
+    dataManagerLogger.info(`Downloading file from ${usingUrl} to ${savePath}`);
     const res = await this.axiosInstance({
       method: 'GET',
       url: usingUrl,
