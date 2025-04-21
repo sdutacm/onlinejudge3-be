@@ -72,7 +72,7 @@ const server = net.createServer((connection) => {
     }
 
     if (statusMap[problemId]?.status === 'Doing') {
-      logger.info(`[${problemId}]`, 'Added to waiting queue');
+      logger.info(`[${problemId}]`, 'Data is downloading, waiting for it to finish');
       if (!waitingClients[problemId]) {
         waitingClients[problemId] = [];
       }

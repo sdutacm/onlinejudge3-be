@@ -117,3 +117,10 @@ export function getSystemInfo() {
       throw new Error(`Unsupported platform: ${platform}`);
   }
 }
+
+export function newAbortSignal(timeoutMs: number) {
+  const abortController = new AbortController();
+  setTimeout(() => abortController.abort(), timeoutMs || 0);
+
+  return abortController.signal;
+}

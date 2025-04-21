@@ -8,8 +8,10 @@ import type { AxiosInstance } from 'axios';
 import md5 from 'crypto-js/md5';
 import sha256 from 'crypto-js/sha256';
 import config from '../config';
+import { newAbortSignal } from './index';
 
 const finished = promisify(stream.finished);
+const TIMEOUT = 3 * 60 * 1000;
 
 export class TencentCdnHelper {
   private readonly authConfig = config.cdn.auth;
@@ -23,7 +25,7 @@ export class TencentCdnHelper {
       baseURL: config.cdn.cdnOrigin,
       httpAgent,
       httpsAgent,
-      timeout: 5 * 60 * 1000,
+      timeout: TIMEOUT,
       headers: {},
     });
   }
@@ -63,6 +65,7 @@ export class TencentCdnHelper {
       method: 'GET',
       url: usingUrl,
       responseType: 'arraybuffer',
+      signal: newAbortSignal(TIMEOUT),
       validateStatus: (status) => status >= 200 && status < 400,
     });
     return res.data;
@@ -75,6 +78,7 @@ export class TencentCdnHelper {
       method: 'GET',
       url: usingUrl,
       responseType: 'stream',
+      signal: newAbortSignal(TIMEOUT),
       validateStatus: (status) => status >= 200 && status < 400,
     });
     res.data.pipe(writer);
