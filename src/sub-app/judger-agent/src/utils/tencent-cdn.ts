@@ -8,7 +8,7 @@ import type { AxiosInstance } from 'axios';
 import md5 from 'crypto-js/md5';
 import sha256 from 'crypto-js/sha256';
 import config from '../config';
-import { newAbortSignal } from './index';
+import { newAbortSignal, timeout } from './index';
 import { dataManagerLogger } from './logger';
 
 const finished = promisify(stream.finished);
@@ -62,7 +62,7 @@ export class TencentCdnHelper {
 
   async downloadFile(url: string): Promise<Buffer> {
     const usingUrl = this.getAuthUrl(url);
-    dataManagerLogger.info(`Downloading file from ${usingUrl}`);
+    dataManagerLogger.info(`Downloading file from ${config.cdn.cdnOrigin}${usingUrl}`);
     const res = await this.axiosInstance({
       method: 'GET',
       url: usingUrl,
@@ -73,10 +73,12 @@ export class TencentCdnHelper {
     return res.data;
   }
 
-  async downloadFileTo(url: string, savePath: string): Promise<void> {
+  private async downloadFileToImpl(url: string, savePath: string): Promise<void> {
     const usingUrl = this.getAuthUrl(url);
     const writer = fs.createWriteStream(savePath);
-    dataManagerLogger.info(`Downloading file from ${usingUrl} to ${savePath}`);
+    dataManagerLogger.info(
+      `Downloading file from ${config.cdn.cdnOrigin}${usingUrl} to ${savePath}`,
+    );
     const res = await this.axiosInstance({
       method: 'GET',
       url: usingUrl,
@@ -86,6 +88,10 @@ export class TencentCdnHelper {
     });
     res.data.pipe(writer);
     return finished(writer);
+  }
+
+  downloadFileTo(url: string, savePath: string): Promise<void> {
+    return timeout(this.downloadFileToImpl(url, savePath), TIMEOUT);
   }
 }
 
