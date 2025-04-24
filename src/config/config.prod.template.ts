@@ -84,6 +84,10 @@ export default (appInfo: EggAppInfo) => {
 
   //#endregion
 
+  //#region cloudFunctions
+
+  //#endregion
+
   //#region alinode
 
   //#endregion

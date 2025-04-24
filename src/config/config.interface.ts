@@ -48,9 +48,15 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     regionId: 'cn-hangzhou';
     urlBase?: string;
   };
-  scripts: {
+  /** 本地文件系统的外部脚本目录 */
+  scripts?: {
     dirPath: string;
     logPath: string;
+  };
+  cloudFunctions?: {
+    urls: {
+      'cal-rating': string;
+    };
   };
   tencentCloud: {
     secretId: string;
@@ -60,6 +66,10 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
       secretKey: string;
       bucket: string;
       region: string;
+    };
+    scf?: {
+      secretId?: string;
+      secretKey?: string;
     };
   };
 }

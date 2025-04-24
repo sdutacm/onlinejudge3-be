@@ -220,6 +220,12 @@ export default (appInfo: EggAppInfo) => {
   //   logPath: path.join(__dirname, '../../dev-scripts/logs'),
   // };
 
+  // config.cloudFunctions = {
+  //   urls: {
+  //     'cal-rating': 'http://url',
+  //   },
+  // };
+
   config.alinode = {
     appid: '',
     secret: '',

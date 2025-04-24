@@ -12,6 +12,7 @@ import {
   login,
   authPerm,
   authCompetitionRoleOrAuthPerm,
+  authSystemRequest,
 } from '@/lib/decorators/controller.decorator';
 import { CCompetitionMeta } from './competition.meta';
 import { routesBe } from '@/common/routes';
@@ -58,6 +59,7 @@ import {
   IGetAllCompetitionSolutionsForSrkLiteReq,
   IGetCompetitionSpGenshinExplorationUnlockRecordsResp,
   IDoCompetitionSpGenshinExplorationUnlockReq,
+  ICallbackCompetitionRatingPostprocessReq,
 } from '@/common/contracts/competition';
 import {
   ECompetitionUserStatus,
@@ -66,11 +68,7 @@ import {
   EContestRatingStatus,
 } from '@/common/enums';
 import { CCompetitionLogService } from './competitionLog.service';
-import {
-  ECompetitionLogAction,
-  ECompetitionSettingAllowedAuthMethod,
-  ECompetitionEvent,
-} from './competition.enum';
+import { ECompetitionLogAction, ECompetitionSettingAllowedAuthMethod } from './competition.enum';
 import path from 'path';
 import { IAppConfig } from '@/config/config.interface';
 import { IMSolutionServiceLiteSolution } from '../solution/solution.interface';
@@ -86,6 +84,7 @@ import {
 import { CCompetitionEventService } from './competitionEvent.service';
 import { IRatingContestModel } from '../contest/contest.interface';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
+import Axios, { AxiosInstance } from 'axios';
 
 @provide()
 @controller('/')
@@ -129,8 +128,20 @@ export default class CompetitionController {
   @config('scripts')
   scriptsConfig: IAppConfig['scripts'];
 
+  @config('cloudFunctions')
+  cloudFunctionsConfig: IAppConfig['cloudFunctions'];
+
   @inject('PromiseQueue')
   PromiseQueue: CPromiseQueue;
+
+  axiosCloudFunctionInstance?: AxiosInstance;
+
+  constructor(@config('cloudFunctions') cloudFunctionsConfig: IAppConfig['cloudFunctions']) {
+    cloudFunctionsConfig &&
+      (this.axiosCloudFunctionInstance = Axios.create({
+        timeout: 10000,
+      }));
+  }
 
   @route()
   @pagination()
@@ -1341,9 +1352,6 @@ export default class CompetitionController {
     ]);
     // 根据比赛模式判断相应处理逻辑
     if (detail.isRating) {
-      if (!this.scriptsConfig?.dirPath || !this.scriptsConfig?.logPath) {
-        throw new Error('ConfigNotFoundError: scripts');
-      }
       const ranklist = (await this.service.getRanklist(detail, settings, true)).rows;
       const rankData = ranklist.map((row) => ({
         rank: row.rank,
@@ -1356,28 +1364,58 @@ export default class CompetitionController {
           progress: 0,
         }),
       ]);
-      // 调用 calRating 脚本
-      const cmd = `node ${path.join(
-        this.scriptsConfig.dirPath,
-        'calRating.js',
-      )} competition ${competitionId} 2>&1`;
-      ctx.logger.info('exec cmd:', cmd);
-      const _start = Date.now();
-      // exec(cmd, {
-      //   cwd: this.scriptsConfig.dirPath,
-      // });
-      execa
-        .command(cmd, {
-          cwd: this.scriptsConfig.dirPath,
-          shell: true,
+      // 调用云函数 cal-rating
+      if (this.cloudFunctionsConfig) {
+        const url = this.cloudFunctionsConfig.urls['cal-rating'];
+        await this.axiosCloudFunctionInstance!({
+          url,
+          method: 'POST',
+          data: {
+            type: 'competition',
+            id: competitionId,
+          },
+          validateStatus: (status) => status >= 200 && status < 400,
         })
-        .then(() => {
-          ctx.logger.info(`exec cmd "${cmd}" success in ${Date.now() - _start}ms`);
-          this.service.checkCompetitionRatingAchievements(competitionId);
-        })
-        .catch((e) => {
-          ctx.logger.error(`exec cmd "${cmd}" error in ${Date.now() - _start}ms:`, e);
-        });
+          .then((res) => {
+            ctx.logger.info(
+              'call cloud function "cal-rating" success',
+              res.status,
+              res.headers,
+              res.data,
+            );
+            // checkCompetitionRatingAchievements 逻辑无法在此执行
+          })
+          .catch((e) => {
+            ctx.logger.error('exec cloud function "cal-rating" error:', e);
+          });
+      }
+      // fallback：调用 calRating 脚本
+      else {
+        if (!this.scriptsConfig?.dirPath || !this.scriptsConfig?.logPath) {
+          throw new Error('ConfigNotFoundError: scripts');
+        }
+        const cmd = `node ${path.join(
+          this.scriptsConfig.dirPath,
+          'calRating.js',
+        )} competition ${competitionId} 2>&1`;
+        ctx.logger.info('exec cmd:', cmd);
+        const _start = Date.now();
+        // exec(cmd, {
+        //   cwd: this.scriptsConfig.dirPath,
+        // });
+        execa
+          .command(cmd, {
+            cwd: this.scriptsConfig.dirPath,
+            shell: true,
+          })
+          .then(() => {
+            ctx.logger.info(`exec cmd "${cmd}" success in ${Date.now() - _start}ms`);
+            this.service.checkCompetitionRatingAchievements(competitionId);
+          })
+          .catch((e) => {
+            ctx.logger.error(`exec cmd "${cmd}" error in ${Date.now() - _start}ms:`, e);
+          });
+      }
     }
     // 后处理计算成就
     this.service.checkCompetitionAchievements(competitionId);
@@ -1455,6 +1493,14 @@ export default class CompetitionController {
       this.service.clearDetailCache(competitionId),
       this.service.clearCompetitionRanklistCache(competitionId),
     ]);
+  }
+
+  @route()
+  @authSystemRequest()
+  async [routesBe.callbackCompetitionRatingPostprocess.i](ctx: Context): Promise<void> {
+    const req = ctx.request.body as ICallbackCompetitionRatingPostprocessReq;
+    const { competitionId } = req;
+    await this.service.checkCompetitionRatingAchievements(competitionId);
   }
 
   @route()

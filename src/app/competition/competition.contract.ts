@@ -1562,6 +1562,14 @@ const competitionContract = {
     required: ['competitionId'],
   } as defContract.ContractSchema,
 
+  callbackCompetitionRatingPostprocessReq: {
+    properties: {
+      competitionId: { type: 'number', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['competitionId'],
+  } as defContract.ContractSchema,
+
   getCompetitionRanklistReq: {
     properties: {
       competitionId: { type: 'number', minimum: 1 },
