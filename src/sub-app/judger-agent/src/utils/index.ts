@@ -121,7 +121,6 @@ export function getSystemInfo() {
 export function newAbortSignal(timeoutMs: number) {
   const abortController = new AbortController();
   setTimeout(() => {
-    console.log(`Abort signal triggered after ${timeoutMs || 0}ms`);
     abortController.abort();
   }, timeoutMs || 0);
 
