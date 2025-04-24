@@ -12,7 +12,7 @@ import { newAbortSignal, timeout } from './index';
 import { dataManagerLogger } from './logger';
 
 const finished = promisify(stream.finished);
-const TIMEOUT = 3 * 60 * 1000;
+const TIMEOUT = 2 * 60 * 1000;
 
 export class TencentCdnHelper {
   private readonly authConfig = config.cdn.auth;
@@ -86,8 +86,15 @@ export class TencentCdnHelper {
       signal: newAbortSignal(TIMEOUT),
       validateStatus: (status) => status >= 200 && status < 400,
     });
+    writer.on('error', (e) => {
+      dataManagerLogger.error(
+        `Download stream write error, url: ${config.cdn.cdnOrigin}${usingUrl}, err:`,
+        e,
+      );
+      throw new Error(`Stream write error: ${e.message}`);
+    });
     res.data.pipe(writer);
-    return finished(writer);
+    await finished(writer);
   }
 
   downloadFileTo(url: string, savePath: string): Promise<void> {
