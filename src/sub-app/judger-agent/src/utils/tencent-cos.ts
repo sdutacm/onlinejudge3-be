@@ -30,7 +30,6 @@ export class TencentCosHelper implements IDataHelper {
       Region: config.objectStorage.region,
       Key: url,
     });
-    console.log('res', res);
     if (res.statusCode >= 400) {
       throw new Error(`Failed to download COS file: ${res.statusCode} ${res.RequestId}`);
     }
@@ -45,7 +44,6 @@ export class TencentCosHelper implements IDataHelper {
       Key: url,
       Output: fs.createWriteStream(savePath),
     });
-    console.log('res', res);
     if (res.statusCode >= 400) {
       throw new Error(`Failed to download COS file: ${res.statusCode} ${res.RequestId}`);
     }

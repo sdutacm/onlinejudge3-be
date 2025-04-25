@@ -34,9 +34,11 @@ export async function lsDataCases(problemId: number, extraHashDir?: string) {
 
 export async function getLatestDataReleaseIndex(problemId: number) {
   const start = Date.now();
-  const latestIndex = await dataHelper
-    .downloadFile(`${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`)
-    .toString();
+  const latestIndex = (
+    await dataHelper.downloadFile(
+      `${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`,
+    )
+  ).toString();
   const filename = latestIndex.trim();
   const extraHash = path.parse(filename).name;
   dataManagerLogger.info(
