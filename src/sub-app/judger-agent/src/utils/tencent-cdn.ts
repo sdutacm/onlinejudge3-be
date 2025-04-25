@@ -10,15 +10,20 @@ import sha256 from 'crypto-js/sha256';
 import config from '../config';
 import { newAbortSignal, timeout } from './index';
 import { dataManagerLogger } from './logger';
+import { IDataHelper } from './data-helper';
 
 const finished = promisify(stream.finished);
 const TIMEOUT = 2 * 60 * 1000;
 
-export class TencentCdnHelper {
+export class TencentCdnHelper implements IDataHelper {
   private readonly authConfig = config.cdn.auth;
   private readonly axiosInstance: AxiosInstance;
 
   constructor() {
+    if (config.cdn.provider !== 'TencentCloud') {
+      throw new Error('Tencent CDN is not configured');
+    }
+
     const httpAgent = new http.Agent({ keepAlive: true });
     const httpsAgent = new https.Agent({ keepAlive: true });
 

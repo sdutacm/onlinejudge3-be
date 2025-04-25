@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import net from 'net';
 import AdmZip from 'adm-zip';
 import config from '../config';
-import { tencentCdnHelper } from './tencent-cdn';
+import { dataHelper } from './data-helper';
 import { dataManagerLogger, judgerAgentLogger } from './logger';
 import type { IDataReleaseResult } from '../typings';
 
@@ -34,11 +34,9 @@ export async function lsDataCases(problemId: number, extraHashDir?: string) {
 
 export async function getLatestDataReleaseIndex(problemId: number) {
   const start = Date.now();
-  const latestIndex = (
-    await tencentCdnHelper.downloadFile(
-      `${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`,
-    )
-  ).toString();
+  const latestIndex = await dataHelper
+    .downloadFile(`${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`)
+    .toString();
   const filename = latestIndex.trim();
   const extraHash = path.parse(filename).name;
   dataManagerLogger.info(
@@ -54,7 +52,7 @@ export async function downloadDataRelease(problemId: number, filename: string) {
   const archiveTempPath = path.join(tempDir, `${problemId}_${filename}`);
   dataManagerLogger.info(`[${problemId}]`, `Downloading data release "${filename}"`);
   let start = Date.now();
-  await tencentCdnHelper.downloadFileTo(
+  await dataHelper.downloadFileTo(
     `${config.judgerData.remoteSource.basePath}/${problemId}/${filename}`,
     archiveTempPath,
   );

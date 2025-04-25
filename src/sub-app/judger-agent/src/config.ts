@@ -16,6 +16,9 @@ const judgerDataUseRemoteRelease = process.env.JUDGER_USE_REMOTE_DATA_RELEASE ==
 const judgerDataManagerSocketPath =
   process.env.JUDGER_DATA_MANAGER_SOCKET_PATH || '/tmp/judger-agent/data-manager.sock';
 const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
+const judgerDataRemoteSourceType = process.env.JUDGER_DATA_REMOTE_SOURCE_TYPE as
+  | 'CDN'
+  | 'ObjectStorage';
 
 const cdn = {
   provider: 'TencentCloud',
@@ -31,6 +34,17 @@ const cdn = {
     signParam: process.env.CDN_TENCENT_AUTH_SIGN_PARAM || 'sign',
     timestampParam: process.env.CDN_TENCENT_AUTH_TIMESTAMP_PARAM || 't',
     timestampRadix: parseInt(process.env.CDN_TENCENT_AUTH_TIMESTAMP_RADIX || '10', 10),
+  },
+};
+
+const objectStorage = {
+  provider: 'TencentCloud',
+  domain: process.env.COS_DOMAIN || '{Bucket}.cos.{Region}.myqcloud.com',
+  bucket: process.env.COS_BUCKET,
+  region: process.env.COS_REGION,
+  auth: {
+    secretId: process.env.COS_SECRET_ID,
+    secretKey: process.env.COS_SECRET_KEY,
   },
 };
 
@@ -54,7 +68,7 @@ const config = {
     dataDir: judgerDataDir,
     useRemoteDataRelease: judgerDataUseRemoteRelease,
     remoteSource: {
-      type: 'CDN',
+      type: judgerDataRemoteSourceType,
       basePath: '/judger/data-release',
     },
     dataManagerSocketPath: judgerDataManagerSocketPath,
@@ -63,6 +77,7 @@ const config = {
     address: judgerGrpcAddress,
   },
   cdn,
+  objectStorage,
 };
 
 export default config;
