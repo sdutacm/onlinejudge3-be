@@ -51,23 +51,33 @@ export async function getLatestDataReleaseIndex(problemId: number) {
 export async function downloadDataRelease(problemId: number, filename: string) {
   const tempDir = path.join(os.tmpdir(), 'judger-agent');
   await fs.ensureDir(tempDir);
-  const archiveTempPath = path.join(tempDir, `${problemId}_${filename}`);
+  const extraHash = path.parse(filename).name;
+  const saveDir = path.join(config.judgerData.dataDir, problemId.toString(), extraHash);
+  const readyMarkFilePath = path.join(saveDir, '.ready');
+  if (await fs.pathExists(readyMarkFilePath)) {
+    dataManagerLogger.info(
+      `[${problemId}]`,
+      `Data release "${extraHash}" is already downloaded, skipped`,
+    );
+    return;
+  }
+
   dataManagerLogger.info(`[${problemId}]`, `Downloading data release "${filename}"`);
   let start = Date.now();
+  const archiveTempPath = path.join(tempDir, `${problemId}_${filename}`);
   await getSingletonDataHelper().downloadFileTo(
     `${config.judgerData.remoteSource.basePath}/${problemId}/${filename}`,
     archiveTempPath,
   );
   dataManagerLogger.info(`[${problemId}]`, `Downloaded data release in ${Date.now() - start}ms`);
   // extract to data dir
-  const extraHash = path.parse(filename).name;
-  const saveDir = path.join(config.judgerData.dataDir, problemId.toString(), extraHash);
   dataManagerLogger.info(`[${problemId}]`, `Extracting "${archiveTempPath}" to "${saveDir}"`);
   start = Date.now();
   await fs.ensureDir(saveDir);
   const zip = new AdmZip(archiveTempPath);
   await promisify(zip.extractAllToAsync)(saveDir, true);
   await fs.unlink(archiveTempPath);
+  await fs.ensureFile(readyMarkFilePath);
   dataManagerLogger.info(`[${problemId}]`, `Extracted in ${Date.now() - start}ms`);
   dataManagerLogger.info(`[${problemId}]`, `Data release "${extraHash}" is ready`);
 }
