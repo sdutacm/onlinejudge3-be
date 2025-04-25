@@ -7,16 +7,21 @@ export interface IDataHelper {
   downloadFileTo(url: string, savePath: string): Promise<void>;
 }
 
-export function getDataHelper(): IDataHelper {
+let singletonDataHelper: IDataHelper;
+
+export function getSingletonDataHelper(): IDataHelper {
+  if (singletonDataHelper) {
+    return singletonDataHelper;
+  }
   if (config.judgerData.remoteSource.type === 'CDN' && config.cdn.provider === 'TencentCloud') {
-    return new TencentCdnHelper();
+    singletonDataHelper = new TencentCdnHelper();
+    return singletonDataHelper;
   } else if (
     config.judgerData.remoteSource.type === 'ObjectStorage' &&
     config.objectStorage.provider === 'TencentCloud'
   ) {
-    return new TencentCosHelper();
+    singletonDataHelper = new TencentCosHelper();
+    return singletonDataHelper;
   }
   throw new Error('Invalid data helper configuration');
 }
-
-export const dataHelper = getDataHelper();

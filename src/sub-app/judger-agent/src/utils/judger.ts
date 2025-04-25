@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import net from 'net';
 import AdmZip from 'adm-zip';
 import config from '../config';
-import { dataHelper } from './data-helper';
+import { getSingletonDataHelper } from './data-helper';
 import { dataManagerLogger, judgerAgentLogger } from './logger';
 import type { IDataReleaseResult } from '../typings';
 
@@ -35,7 +35,7 @@ export async function lsDataCases(problemId: number, extraHashDir?: string) {
 export async function getLatestDataReleaseIndex(problemId: number) {
   const start = Date.now();
   const latestIndex = (
-    await dataHelper.downloadFile(
+    await getSingletonDataHelper().downloadFile(
       `${config.judgerData.remoteSource.basePath}/${problemId}/latest.txt`,
     )
   ).toString();
@@ -54,7 +54,7 @@ export async function downloadDataRelease(problemId: number, filename: string) {
   const archiveTempPath = path.join(tempDir, `${problemId}_${filename}`);
   dataManagerLogger.info(`[${problemId}]`, `Downloading data release "${filename}"`);
   let start = Date.now();
-  await dataHelper.downloadFileTo(
+  await getSingletonDataHelper().downloadFileTo(
     `${config.judgerData.remoteSource.basePath}/${problemId}/${filename}`,
     archiveTempPath,
   );
