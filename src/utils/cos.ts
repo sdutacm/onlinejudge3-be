@@ -24,6 +24,7 @@ export default class CosHelper {
       this.cos = new COS({
         SecretId: tencentCloud.cos.secretId,
         SecretKey: tencentCloud.cos.secretKey,
+        Domain: tencentCloud.cos.domain,
       });
     }
   }

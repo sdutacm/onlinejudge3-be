@@ -64,6 +64,7 @@ export interface IAppConfig extends PowerPartial<EggAppConfig> {
     cos?: {
       secretId: string;
       secretKey: string;
+      domain?: string;
       bucket: string;
       region: string;
     };
