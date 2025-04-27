@@ -1123,6 +1123,7 @@ export default class CompetitionController {
             ESolutionResult.JG,
             ESolutionResult.CE,
             ESolutionResult.SE,
+            ESolutionResult.NLF,
           ].includes(s.result) && s.createdAt.getTime() < detail.endAt.getTime(),
       );
       for (const solution of solutions) {

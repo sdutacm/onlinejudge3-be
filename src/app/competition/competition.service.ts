@@ -1675,6 +1675,7 @@ export default class CompetitionService {
             ESolutionResult.JG,
             ESolutionResult.CE,
             ESolutionResult.SE,
+            ESolutionResult.NLF,
           ].includes(solution.result)
         ) {
           // 非有效提交，忽略
@@ -2002,6 +2003,7 @@ export default class CompetitionService {
           ESolutionResult.CNL,
           ESolutionResult.CE,
           ESolutionResult.SE,
+          ESolutionResult.NLF,
         ].includes(s.result),
     );
     const acSolutions = solutions.filter((s) => s.result === ESolutionResult.AC);

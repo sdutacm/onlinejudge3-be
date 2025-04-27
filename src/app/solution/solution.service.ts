@@ -1004,6 +1004,7 @@ export default class SolutionService {
                 { [Op.ne]: ESolutionResult.JG },
                 { [Op.ne]: ESolutionResult.CE },
                 { [Op.ne]: ESolutionResult.SE },
+                { [Op.ne]: ESolutionResult.NLF },
               ],
             },
           },
@@ -1076,6 +1077,7 @@ export default class SolutionService {
                 { [Op.ne]: ESolutionResult.JG },
                 { [Op.ne]: ESolutionResult.CE },
                 { [Op.ne]: ESolutionResult.SE },
+                { [Op.ne]: ESolutionResult.NLF },
               ],
             },
           },
@@ -1994,6 +1996,7 @@ export default class SolutionService {
                   ESolutionResult.RPD,
                   ESolutionResult.CNL,
                   ESolutionResult.SE,
+                  ESolutionResult.NLF,
                 ].includes(r),
             );
           if (uniqResults.length >= 5) {
@@ -2214,6 +2217,7 @@ export default class SolutionService {
             ESolutionResult.RPD,
             ESolutionResult.CNL,
             ESolutionResult.SE,
+            ESolutionResult.NLF,
           ].includes(s.result),
       );
       let solutionCountBeforeAC = 0;
@@ -2379,6 +2383,7 @@ export default class SolutionService {
           [
             ESolutionResult.CE,
             ESolutionResult.SE,
+            ESolutionResult.NLF,
             ESolutionResult.WT,
             ESolutionResult.JG,
             ESolutionResult.RPD,
@@ -2435,6 +2440,7 @@ export default class SolutionService {
           [
             ESolutionResult.CE,
             ESolutionResult.SE,
+            ESolutionResult.NLF,
             ESolutionResult.WT,
             ESolutionResult.JG,
             ESolutionResult.RPD,

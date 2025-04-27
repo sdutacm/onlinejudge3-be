@@ -1217,9 +1217,13 @@ export default class ContestService {
           continue;
         }
         if (
-          [ESolutionResult.WT, ESolutionResult.JG, ESolutionResult.CE, ESolutionResult.SE].includes(
-            solution.result,
-          )
+          [
+            ESolutionResult.WT,
+            ESolutionResult.JG,
+            ESolutionResult.CE,
+            ESolutionResult.SE,
+            ESolutionResult.NLF,
+          ].includes(solution.result)
         ) {
           // 非有效提交，忽略
           continue;

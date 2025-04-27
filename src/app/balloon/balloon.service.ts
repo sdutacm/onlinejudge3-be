@@ -187,6 +187,7 @@ export default class BalloonService {
               ESolutionResult.WT,
               ESolutionResult.JG,
               ESolutionResult.SE,
+              ESolutionResult.NLF,
             ].includes(solution.result)
           ) {
             break;
