@@ -11,6 +11,15 @@ module.exports = (app: Application) => {
     );
 
     app.config.io.path && app.io.path(app.config.io.path);
+    app.io.on('connection', (socket: any) => {
+      socket.on('disconnect', (reason: any) => {
+        console.log('socket disconnect:', reason);
+      });
+
+      socket.on('error', (err: any) => {
+        console.error('socket error:', err);
+      });
+    });
 
     console.log('✅ Sub App socket.io launched');
   });
