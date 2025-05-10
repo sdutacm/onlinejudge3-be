@@ -1,4 +1,4 @@
-import { Context, config, controller, get, provide } from 'midway';
+import { Context, controller, get, provide } from 'midway';
 import { routesBe } from '@/common/routes/be.route';
 
 @provide()
@@ -6,23 +6,32 @@ import { routesBe } from '@/common/routes/be.route';
 export class HomeController {
   @get('/')
   public index(ctx: Context): void {
+    const publicRoutes = Object.keys(routesBe)
+      .filter((routeName) => !routesBe[routeName].private)
+      .map((routeName) => {
+        // @ts-ignore
+        const route = routesBe[routeName];
+        return {
+          module: route.module,
+          id: route.i,
+          method: route.method,
+          url: route.url,
+          description: route.description,
+          contract: route.contract,
+        };
+      });
     ctx.body = {
       success: true,
       data: {
         desc: `OnlineJudge3 API`,
+        tips:
+          'For contract definition and return code, please refer to https://github.com/sdutacm/onlinejudge3-common',
         sys: {
           node: process.versions.node,
         },
         api: {
-          count: Object.keys(routesBe).length,
-          rows: Object.keys(routesBe).map((routeName) => {
-            // @ts-ignore
-            const route = routesBe[routeName];
-            return {
-              method: route.method,
-              url: route.url,
-            };
-          }),
+          count: publicRoutes.length,
+          rows: publicRoutes,
         },
       },
     };
