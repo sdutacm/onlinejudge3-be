@@ -77,6 +77,11 @@ export async function downloadDataRelease(problemId: number, filename: string) {
   const zip = new AdmZip(archiveTempPath);
   await promisify(zip.extractAllToAsync)(saveDir, true);
   await fs.unlink(archiveTempPath);
+  const spjFilePath = path.join(saveDir, 'spj'); // TODO read judge.yaml
+  if (await fs.pathExists(spjFilePath)) {
+    await fs.chmod(spjFilePath, 0o755);
+    dataManagerLogger.info(`[${problemId}]`, `Set SPJ file "${spjFilePath}" to executable`);
+  }
   await fs.ensureFile(readyMarkFilePath);
   dataManagerLogger.info(`[${problemId}]`, `Extracted in ${Date.now() - start}ms`);
   dataManagerLogger.info(`[${problemId}]`, `Data release "${extraHash}" is ready`);
