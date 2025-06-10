@@ -420,6 +420,7 @@ export default class UserController {
    * - verified
    *
    * 如果非管理，则以下字段不会返回：
+   * - username（当搜索条件中的 username 未完全与结果匹配时）
    * - permission
    * - verified
    * - lastIp
@@ -441,7 +442,9 @@ export default class UserController {
       const list = ctx.list as IMUserServiceGetListRes;
       if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
         list.rows.forEach((d) => {
-          delete d.username;
+          if (ctx.request.body.username !== d.username) {
+            delete d.username;
+          }
           delete d.permission;
           delete d.verified;
           delete d.lastIp;
