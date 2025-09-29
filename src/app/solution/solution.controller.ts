@@ -562,9 +562,10 @@ export default class SolutionController {
   @route()
   async [routesBe.rejudgeSolution.i](ctx: Context): Promise<IRejudgeSolutionResp> {
     const data = ctx.request.body as IRejudgeSolutionReq;
+    ctx.logger.info('[rejudgeSolution] req', data);
     const hasPermission = ctx.helper.checkPerms(EPerm.RejudgeSolution);
     const solutionWithIds = await this.service.findAllSolutionWithIds(data);
-    ctx.logger.info('[rejudgeSolution] req', data, 'solution num:', solutionWithIds.length);
+    ctx.logger.info('[rejudgeSolution] solution num:', solutionWithIds.length);
     ctx.logger.info('[rejudgeSolution] hasPermission:', hasPermission);
     let solutions = solutionWithIds.filter((sln) => {
       if (hasPermission) {
