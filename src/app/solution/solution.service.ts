@@ -2303,7 +2303,7 @@ export default class SolutionService {
       const messageId = await this.ctx.app.judgerMqProducer.send({
         data: Buffer.from(encoded),
       });
-      this.ctx.logger.info('Sent to judge queue, messageId:', messageId);
+      this.ctx.logger.info('Sent to judge queue, messageId:', messageId.toString());
       return messageId;
     } catch (e) {
       this.ctx.logger.error('Send to judge queue failed:', e);
