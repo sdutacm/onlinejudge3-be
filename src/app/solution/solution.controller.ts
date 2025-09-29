@@ -564,6 +564,8 @@ export default class SolutionController {
     const data = ctx.request.body as IRejudgeSolutionReq;
     const hasPermission = ctx.helper.checkPerms(EPerm.RejudgeSolution);
     const solutionWithIds = await this.service.findAllSolutionWithIds(data);
+    ctx.logger.info('[rejudgeSolution] req', data, 'solution num:', solutionWithIds.length);
+    ctx.logger.info('[rejudgeSolution] hasPermission:', hasPermission);
     let solutions = solutionWithIds.filter((sln) => {
       if (hasPermission) {
         return true;
@@ -584,6 +586,10 @@ export default class SolutionController {
       }
       return false;
     });
+    ctx.logger.info(
+      '[rejudgeSolution] solutions after filter:',
+      solutions.length > 100 ? `[${solutions.slice(0, 10)}...${solutions.slice(-10)}]` : solutions,
+    );
 
     const problemIds = this.lodash.uniq(solutions.map((s) => s.problemId));
     const relativeProblems = await this.problemService.getRelative(problemIds, null);
