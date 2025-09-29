@@ -41,6 +41,7 @@ class AppBootHook implements IBoot {
         topic: `persistent://${this.app.config.pulsar.tenant}/${this.app.config.pulsar.namespace}/${this.app.config.judger.mqJudgeQueueTopic}`,
         batchingEnabled: false,
       });
+      this.logInfo('Judger MQ producer created');
     }
 
     this.logInfo('✅ App launched');

@@ -2294,11 +2294,21 @@ export default class SolutionService {
       this.ctx.logger.error('No judger MQ producer');
       return;
     }
-    const encoded = await this.utils.judger.encodeJudgeQueueMessage(options);
-    const messageId = await this.ctx.app.judgerMqProducer?.send({
-      data: Buffer.from(encoded),
-    });
-    return messageId;
+    try {
+      this.ctx.logger.info('Sending to judge queue:', {
+        ...options,
+        code: `str(${options.code.length})`,
+      });
+      const encoded = await this.utils.judger.encodeJudgeQueueMessage(options);
+      const messageId = await this.ctx.app.judgerMqProducer.send({
+        data: Buffer.from(encoded),
+      });
+      this.ctx.logger.info('Sent to judge queue, messageId:', messageId);
+      return messageId;
+    } catch (e) {
+      this.ctx.logger.error('Send to judge queue failed:', e);
+      throw e;
+    }
   }
 
   /**
