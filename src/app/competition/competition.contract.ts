@@ -1161,7 +1161,7 @@ const competitionContract = {
       info: {
         type: 'object',
         properties: {
-          nickname: { type: 'string', maxLength: 10 },
+          nickname: { type: 'string', maxLength: 12 },
           subname: { type: 'string' },
           realName: { type: 'string' },
           organization: { type: 'string' },
@@ -1215,7 +1215,7 @@ const competitionContract = {
       info: {
         type: 'object',
         properties: {
-          nickname: { type: 'string', maxLength: 10 },
+          nickname: { type: 'string', maxLength: 12 },
           subname: { type: 'string' },
           realName: { type: 'string' },
           organization: { type: 'string' },
