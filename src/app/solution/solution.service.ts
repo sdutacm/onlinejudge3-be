@@ -2476,4 +2476,22 @@ export default class SolutionService {
       _sql3Cost,
     ]);
   }
+
+  getTimeMemLimitScale(language: string) {
+    switch (language) {
+      case 'Python':
+      case 'Java':
+      case 'JavaScript':
+      case 'TypeScript':
+        return {
+          timeLimit: 2,
+          memoryLimit: 1,
+        };
+      default:
+        return {
+          timeLimit: 1,
+          memoryLimit: 1,
+        };
+    }
+  }
 }

@@ -517,14 +517,15 @@ export default class SolutionController {
     } catch (e) {
       ctx.logger.error('[submitSolution] append competition log or event error:', e);
     }
+    const limitScale = this.service.getTimeMemLimitScale(language);
     this.service.sendToJudgeQueue({
       judgeInfoId,
       solutionId: newId,
       problem: {
         problemId,
         revision: problem.revision,
-        timeLimit: problem.timeLimit,
-        memoryLimit: problem.memoryLimit,
+        timeLimit: problem.timeLimit * limitScale.timeLimit,
+        memoryLimit: problem.memoryLimit * limitScale.memoryLimit,
         spj: problem.spj,
       },
       user: {
@@ -653,15 +654,18 @@ export default class SolutionController {
       );
 
       await Promise.all(
-        chunk.map((s) =>
-          this.service.sendToJudgeQueue({
+        chunk.map((s) => {
+          const limitScale = this.service.getTimeMemLimitScale(
+            this.utils.judger.convertOJLanguageToRiver(s.language) || '',
+          );
+          return this.service.sendToJudgeQueue({
             judgeInfoId: judgeInfoIdMap.get(s.solutionId)!,
             solutionId: s.solutionId,
             problem: {
               problemId: s.problemId,
               revision: relativeProblems[s.problemId]!.revision,
-              timeLimit: relativeProblems[s.problemId]!.timeLimit,
-              memoryLimit: relativeProblems[s.problemId]!.memoryLimit,
+              timeLimit: relativeProblems[s.problemId]!.timeLimit * limitScale.timeLimit,
+              memoryLimit: relativeProblems[s.problemId]!.memoryLimit * limitScale.memoryLimit,
               spj: relativeProblems[s.problemId]!.spj,
             },
             user: {
@@ -670,8 +674,8 @@ export default class SolutionController {
             competition: s.competitionId ? { competitionId: s.competitionId } : undefined,
             language: this.utils.judger.convertOJLanguageToRiver(s.language) || '',
             code: codeMap.get(s.solutionId) || '',
-          }),
-        ),
+          });
+        }),
       );
     }
 
