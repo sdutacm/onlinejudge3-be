@@ -1442,7 +1442,9 @@ export default class CompetitionController {
       if (latestRatings.length > 0) {
         // 判断是不是最后一个结算评分的比赛
         if (competitionId !== latestRating.competitionId) {
-          throw new ReqError(Codes.NOT_LATEST_RANKED);
+          throw new ReqError(Codes.NOT_LATEST_RANKED, {
+            competitionId: latestRating.competitionId,
+          });
         }
         // 回滚 rating
         const curRatingUntil = latestRating.ratingUntil;
