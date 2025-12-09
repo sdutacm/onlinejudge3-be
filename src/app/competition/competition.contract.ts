@@ -1587,7 +1587,7 @@ const competitionContract = {
         items: {
           type: 'object',
           properties: {
-            rank: { type: 'number' },
+            rank: { type: ['number', 'null'] },
             user: {
               type: 'object',
               properties: {

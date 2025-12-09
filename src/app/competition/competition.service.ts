@@ -1627,7 +1627,7 @@ export default class CompetitionService {
         const userId = +_userId;
         const user = relativeUsers[userId];
         rankMap.set(userId, {
-          rank: -1,
+          rank: null,
           user: {
             userId,
             username: user.username,
@@ -1635,6 +1635,8 @@ export default class CompetitionService {
             avatar: user.avatar,
             bannerImage: user.bannerImage || '',
             rating: user.rating || 0,
+            unofficialParticipation:
+              participantUserIdMap.get(userId)?.unofficialParticipation || false,
             oldRating: userRatingChangeInfo[userId]?.oldRating,
             newRating: userRatingChangeInfo[userId]?.newRating,
           },
@@ -1749,17 +1751,18 @@ export default class CompetitionService {
         }
         return a.time - b.time;
       });
-      if (ranklist.length) {
+      const officialRanklist = ranklist.filter((r) => !r.user.unofficialParticipation);
+      if (officialRanklist.length) {
         // 计算并列排名
-        ranklist[0].rank = 1;
-        for (let i = 1; i < ranklist.length; ++i) {
+        officialRanklist[0].rank = 1;
+        for (let i = 1; i < officialRanklist.length; ++i) {
           if (
-            ranklist[i].score === ranklist[i - 1].score &&
-            ranklist[i].time === ranklist[i - 1].time
+            officialRanklist[i].score === officialRanklist[i - 1].score &&
+            officialRanklist[i].time === officialRanklist[i - 1].time
           ) {
-            ranklist[i].rank = ranklist[i - 1].rank;
+            officialRanklist[i].rank = officialRanklist[i - 1].rank;
           } else {
-            ranklist[i].rank = i + 1;
+            officialRanklist[i].rank = i + 1;
           }
         }
       }

@@ -405,8 +405,9 @@ export interface IMCompetitionRanklistProblemResultStat {
 }
 
 export interface IMCompetitionRanklistRow {
-  rank: number; // 排名。score 和 time 都相等时 rank 并列
+  rank: number | null; // 排名。score 和 time 都相等时 rank 并列
   user: IMCompetitionRelativeUser & {
+    unofficialParticipation: boolean;
     oldRating?: number;
     newRating?: number;
   };

@@ -1353,11 +1353,14 @@ export default class CompetitionController {
     ]);
     // 根据比赛模式判断相应处理逻辑
     if (detail.isRating) {
-      const ranklist = (await this.service.getRanklist(detail, settings, true)).rows;
-      const rankData = ranklist.map((row) => ({
-        rank: row.rank,
-        userId: row.user.userId,
-      }));
+      const ranklistRows = (await this.service.getRanklist(detail, settings, true)).rows;
+      // 只计算正式选手
+      const rankData = ranklistRows
+        .filter((row) => row.rank !== null)
+        .map((row) => ({
+          rank: row.rank,
+          userId: row.user.userId,
+        }));
       await Promise.all([
         this.service.setRankData(competitionId, rankData),
         this.service.setRatingStatus(competitionId, {
