@@ -242,7 +242,9 @@ export default class GroupController {
       (m) => hasGroupAdminPerm || m.status === EGroupMemberStatus.normal,
     );
     members.forEach((m) => {
-      delete m.user?.username;
+      if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
+        delete m.user?.username;
+      }
       if (!hasGroupAdminPerm) {
         delete m.status;
       }

@@ -40,9 +40,11 @@ export default class PostController {
     },
     afterGetList: (ctx) => {
       const list = ctx.list as IMPostServiceGetListRes;
-      list.rows.forEach((d) => {
-        delete d.user?.username;
-      });
+      if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
+        list.rows.forEach((d) => {
+          delete d.user?.username;
+        });
+      }
     },
   })
   @respList()
@@ -52,7 +54,9 @@ export default class PostController {
   @id()
   @getDetail(undefined, {
     afterGetDetail: (ctx) => {
-      delete ctx.detail?.user?.username;
+      if (!ctx.helper.checkPerms(EPerm.ReadUser)) {
+        delete ctx.detail?.user?.username;
+      }
     },
   })
   @respDetail()
