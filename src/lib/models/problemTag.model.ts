@@ -7,6 +7,7 @@ import {
   ForeignKey,
   AllowNull,
   CreatedAt,
+  Default,
 } from 'sequelize-typescript';
 import { providerWrapper } from 'midway';
 import ProblemModel from './problem.model';
@@ -53,6 +54,22 @@ export default class ProblemTagModel extends Model<ProblemTagModel> {
   })
   @ForeignKey(() => TagModel)
   tagId: number;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column({
+    field: 'is_aigc',
+    type: DataType.BOOLEAN,
+  })
+  isAigc: boolean;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'ai_author',
+    type: DataType.STRING(32),
+  })
+  aiAuthor: string;
 
   @AllowNull(false)
   @Column({

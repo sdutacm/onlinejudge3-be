@@ -17,8 +17,8 @@ import {
   ICreateProblemResp,
   ICreateProblemReq,
   IUpdateProblemDetailReq,
-  ISetProblemTagsReq,
 } from '@/common/contracts/problem';
+import { IMProblemServiceSetProblemTagsOpt } from './problem.interface';
 import { ILodash } from '@/utils/libs/lodash';
 import { CContestService } from '../contest/contest.service';
 import { CPromiseQueue } from '@/utils/libs/promise-queue';
@@ -109,8 +109,8 @@ export default class ProblemController {
   @getDetail(null)
   async [routesBe.setProblemTags.i](ctx: Context): Promise<void> {
     const problemId = ctx.id!;
-    const { tagIds } = ctx.request.body as ISetProblemTagsReq;
-    await this.service.setProblemTags(problemId, tagIds);
+    const { tags } = ctx.request.body as { tags: IMProblemServiceSetProblemTagsOpt };
+    await this.service.setProblemTags(problemId, tags);
     await this.service.clearDetailCache(problemId);
   }
 }

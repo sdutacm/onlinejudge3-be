@@ -21,13 +21,13 @@ import {
   IMProblemServiceCreateRes,
   IMProblemServiceUpdateOpt,
   IMProblemServiceUpdateRes,
+  IMProblemServiceSetProblemTagsOpt,
 } from './problem.interface';
 import { TTagModel } from '@/lib/models/tag.model';
 import { Op, literal } from 'sequelize';
 import { IUtils } from '@/utils';
 import { ILodash } from '@/utils/libs/lodash';
 import { TProblemTagModel } from '@/lib/models/problemTag.model';
-import { ITagModel } from '../tag/tag.interface';
 
 export type CProblemService = ProblemService;
 
@@ -37,6 +37,8 @@ const problemLiteFields: Array<TMProblemLiteFields> = [
   'source',
   'authors',
   'difficulty',
+  'difficultyAigc',
+  'difficultyAiAuthor',
   'createdAt',
   'updatedAt',
   'accepted',
@@ -56,6 +58,8 @@ const problemDetailFields: Array<TMProblemDetailFields> = [
   'timeLimit',
   'memoryLimit',
   'difficulty',
+  'difficultyAigc',
+  'difficultyAiAuthor',
   'createdAt',
   'updatedAt',
   'accepted',
@@ -101,6 +105,22 @@ export default class ProblemService {
     },
   };
 
+  private _formatProblemTags<T extends { tags?: any[] }>(plain: T): T {
+    plain.tags?.forEach((tag) => {
+      const relation = tag.ProblemTagModel || {};
+      tag.isAigc = relation.isAigc ?? false;
+      tag.aiAuthor = relation.aiAuthor ?? '';
+      delete tag.ProblemTagModel;
+    });
+    return plain;
+  }
+
+  private _formatProblemDetail<T extends Partial<IProblemModel> & { tags?: any[] }>(plain: T): T {
+    plain.difficultyAigc = plain.difficultyAigc ?? 0;
+    plain.difficultyAiAuthor = plain.difficultyAiAuthor ?? '';
+    return this._formatProblemTags(plain);
+  }
+
   /**
    * 获取详情缓存。
    * 如果缓存存在且值为 null，则返回 `''`；如果未找到缓存，则返回 `null`
@@ -111,7 +131,8 @@ export default class ProblemService {
   ): Promise<IMProblemDetail | null | ''> {
     return this.ctx.helper
       .redisGet<IMProblemDetail>(this.meta.detailCacheKey, [problemId])
-      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'updatedAt']));
+      .then((res) => this.utils.misc.processDateFromJson(res, ['createdAt', 'updatedAt']))
+      .then((res) => (res ? this._formatProblemDetail(res) : res));
   }
 
   /**
@@ -157,13 +178,16 @@ export default class ProblemService {
         [Op.in]: opts.problemIds,
       };
     }
-    let include: any[] = [
+    const include: any[] = [
       {
         model: this.tagModel,
         where: {
           hidden: false,
         },
         required: false,
+        through: {
+          attributes: ['isAigc', 'aiAuthor'],
+        },
       },
     ];
     if (Array.isArray(opts.tagIds) && opts.tagIds.length > 0) {
@@ -206,9 +230,7 @@ export default class ProblemService {
         ...r,
         rows: r.rows.map((d) => {
           const plain = d.get({ plain: true }) as IMProblemLite;
-          // @ts-ignore
-          plain.tags?.forEach((t) => delete t.ProblemTagModel);
-          return plain;
+          return this._formatProblemDetail(plain);
         }),
       }));
   }
@@ -241,15 +263,16 @@ export default class ProblemService {
                 hidden: false,
               },
               required: false,
+              through: {
+                attributes: ['isAigc', 'aiAuthor'],
+              },
             },
           ],
         })
         .then((d) => {
           if (d) {
             const plain = d.get({ plain: true }) as IMProblemDetail;
-            // @ts-ignore
-            plain.tags?.forEach((t) => delete t.ProblemTagModel);
-            return plain;
+            return this._formatProblemDetail(plain);
           }
           return d;
         });
@@ -300,15 +323,16 @@ export default class ProblemService {
                 hidden: false,
               },
               required: false,
+              through: {
+                attributes: ['isAigc', 'aiAuthor'],
+              },
             },
           ],
         })
         .then((r) =>
           r.map((d) => {
             const plain = d.get({ plain: true }) as IMProblemDetail;
-            // @ts-ignore
-            plain.tags?.forEach((t) => delete t.ProblemTagModel);
-            return plain;
+            return this._formatProblemDetail(plain);
           }),
         );
       for (const d of dbRes) {
@@ -350,15 +374,16 @@ export default class ProblemService {
               hidden: false,
             },
             required: false,
+            through: {
+              attributes: ['isAigc', 'aiAuthor'],
+            },
           },
         ],
       })
       .then((d) => {
         if (d) {
           const plain = d.get({ plain: true }) as IMProblemDetail;
-          // @ts-ignore
-          plain.tags?.forEach((t) => delete t.ProblemTagModel);
-          return plain;
+          return this._formatProblemDetail(plain);
         }
         return d;
       });
@@ -424,21 +449,26 @@ export default class ProblemService {
   /**
    * 设置题目标签。
    * @param problemId problemId
-   * @param tagIds tagIds
+   * @param tags tags
    */
   async setProblemTags(
     problemId: IProblemModel['problemId'],
-    tagIds: ITagModel['tagId'][],
+    tags: IMProblemServiceSetProblemTagsOpt,
   ): Promise<void> {
     await this.problemTagModel.destroy({
       where: {
         problemId,
       },
     });
+    if (tags.length === 0) {
+      return;
+    }
     await this.problemTagModel.bulkCreate(
-      tagIds.map((tagId) => ({
+      tags.map((tag) => ({
         problemId,
-        tagId,
+        tagId: tag.tagId,
+        ...(tag.isAigc !== undefined ? { isAigc: tag.isAigc } : {}),
+        ...(tag.aiAuthor !== undefined ? { aiAuthor: tag.aiAuthor } : {}),
         createdAt: new Date(),
       })),
     );

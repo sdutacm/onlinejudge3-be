@@ -245,6 +245,22 @@ export default class ProblemModel extends Model<ProblemModel> implements IProble
   difficulty: number;
 
   @AllowNull(false)
+  @Default(0)
+  @Column({
+    field: 'difficulty_aigc',
+    type: DataType.INTEGER,
+  })
+  difficultyAigc: number;
+
+  @AllowNull(false)
+  @Default('')
+  @Column({
+    field: 'difficulty_ai_author',
+    type: DataType.STRING(32),
+  })
+  difficultyAiAuthor: string;
+
+  @AllowNull(false)
   @Default('')
   @Column({
     field: 'sp_config',

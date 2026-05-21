@@ -27,6 +27,8 @@ export interface IProblemModel {
   display: boolean;
   spj: boolean;
   difficulty: number;
+  difficultyAigc: number;
+  difficultyAiAuthor: string;
   spConfig: any;
   revision: number;
   createdAt: Date;
@@ -42,6 +44,8 @@ export type TMProblemLiteFields = Extract<
   | 'source'
   | 'authors'
   | 'difficulty'
+  | 'difficultyAigc'
+  | 'difficultyAiAuthor'
   | 'createdAt'
   | 'updatedAt'
   | 'accepted'
@@ -63,6 +67,8 @@ export type TMProblemDetailFields = Extract<
   | 'timeLimit'
   | 'memoryLimit'
   | 'difficulty'
+  | 'difficultyAigc'
+  | 'difficultyAiAuthor'
   | 'createdAt'
   | 'updatedAt'
   | 'accepted'
@@ -73,11 +79,16 @@ export type TMProblemDetailFields = Extract<
   | 'revision'
 >;
 
+export type IMProblemTag = ITagModel & {
+  isAigc: boolean;
+  aiAuthor: string;
+};
+
 export type IMProblemLite = Pick<IProblemModel, TMProblemLiteFields> & {
-  tags: ITagModel[];
+  tags: IMProblemTag[];
 };
 export type IMProblemDetail = Pick<IProblemModel, TMProblemDetailFields> & {
-  tags: ITagModel[];
+  tags: IMProblemTag[];
 };
 export type IMProblemListPagination = defService.ServiceListOpt<TProblemModelFields>;
 export type IMProblemFullListPagination = defService.ServiceFullListOpt<TProblemModelFields>;
@@ -128,6 +139,8 @@ export interface IMProblemServiceCreateOpt {
   display?: IProblemModel['display'];
   spj?: IProblemModel['spj'];
   difficulty?: IProblemModel['difficulty'];
+  difficultyAigc?: IProblemModel['difficultyAigc'];
+  difficultyAiAuthor?: IProblemModel['difficultyAiAuthor'];
   spConfig?: IProblemModel['spConfig'];
 }
 
@@ -149,8 +162,18 @@ export interface IMProblemServiceUpdateOpt {
   display?: IProblemModel['display'];
   spj?: IProblemModel['spj'];
   difficulty?: IProblemModel['difficulty'];
+  difficultyAigc?: IProblemModel['difficultyAigc'];
+  difficultyAiAuthor?: IProblemModel['difficultyAiAuthor'];
   spConfig?: IProblemModel['spConfig'];
 }
 
 export type IMProblemServiceUpdateRes = boolean;
+//#endregion
+
+//#region service.setProblemTags
+export type IMProblemServiceSetProblemTagsOpt = Array<{
+  tagId: ITagModel['tagId'];
+  isAigc?: IMProblemTag['isAigc'];
+  aiAuthor?: IMProblemTag['aiAuthor'];
+}>;
 //#endregion
