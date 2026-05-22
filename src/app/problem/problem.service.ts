@@ -107,10 +107,12 @@ export default class ProblemService {
 
   private _formatProblemTags<T extends { tags?: any[] }>(plain: T): T {
     plain.tags?.forEach((tag) => {
-      const relation = tag.ProblemTagModel || {};
-      tag.isAigc = relation.isAigc ?? false;
-      tag.aiAuthor = relation.aiAuthor ?? '';
-      delete tag.ProblemTagModel;
+      const relation = tag.ProblemTagModel;
+      if (relation) {
+        tag.isAigc = relation.isAigc ?? false;
+        tag.aiAuthor = relation.aiAuthor ?? '';
+        delete tag.ProblemTagModel;
+      }
     });
     return plain;
   }
