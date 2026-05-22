@@ -314,6 +314,7 @@ const problemContract = {
             tagId: { type: 'number', minimum: 1 },
             isAigc: { type: 'boolean' },
             aiAuthor: { type: 'string', maxLength: 32 },
+            hidden: { type: 'boolean' },
           },
           additionalProperties: false,
           required: ['tagId'],
