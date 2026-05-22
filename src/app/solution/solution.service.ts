@@ -226,9 +226,11 @@ export default class SolutionService {
       [solutionId],
       data,
       data
-        ? data.result === ESolutionResult.WT || data.result === ESolutionResult.JG
+        ? data.result === ESolutionResult.WT ||
+          data.result === ESolutionResult.JG ||
+          data.result === ESolutionResult.RPD
           ? 1
-          : this.durations.cacheDetailMedium
+          : this.durations.cacheDetailVeryShort
         : this.durations.cacheDetailNull,
     );
   }
@@ -1657,6 +1659,10 @@ export default class SolutionService {
         },
       },
     );
+    await Promise.all([
+      this.clearSolutionJudgeInfoCache(judgeInfoId),
+      this.clearDetailCache(solutionId),
+    ]);
     const currentJudgeStatus = await this.getSolutionJudgeStatus(judgeInfoId);
     if (currentJudgeStatus && currentJudgeStatus.eventTimestampUs > eventTimestampUs) {
       return;

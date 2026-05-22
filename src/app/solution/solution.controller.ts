@@ -575,7 +575,7 @@ export default class SolutionController {
         sln.competitionId &&
         ctx.helper.checkCompetitionRole(sln.competitionId, [
           ECompetitionUserRole.admin,
-          ECompetitionUserRole.participant,
+          ECompetitionUserRole.principal,
           ECompetitionUserRole.judge,
         ])
       ) {

@@ -11,11 +11,12 @@ const pulsarListenerName = process.env.PULSAR_LISTENER_NAME || undefined;
 const ojApiBaseUrl = process.env.OJ_API_BASE_URL || 'http://127.0.0.1:7001';
 const ojApiSystemAuthKey = process.env.OJ_API_SYSTEM_AUTH_KEY || '';
 
+const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
+
 const judgerDataDir = process.env.JUDGER_DATA_DIR || '/data/judger';
 const judgerDataUseRemoteRelease = process.env.JUDGER_USE_REMOTE_DATA_RELEASE === '1';
 const judgerDataManagerSocketPath =
   process.env.JUDGER_DATA_MANAGER_SOCKET_PATH || '/tmp/judger-agent/data-manager.sock';
-const judgerGrpcAddress = process.env.JUDGER_GRPC_ADDRESS || 'ipv4:127.0.0.1:4003';
 const judgerDataRemoteSourceType = process.env.JUDGER_DATA_REMOTE_SOURCE_TYPE as
   | 'CDN'
   | 'ObjectStorage';
