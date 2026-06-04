@@ -50,6 +50,7 @@ const setContract = {
               type: 'object',
               properties: {
                 userId: { type: 'number' },
+                username: { type: 'string' },
                 nickname: { type: 'string' },
                 avatar: { type: ['string', 'null'] },
                 bannerImage: { type: 'string' },
@@ -88,6 +89,7 @@ const setContract = {
         type: 'object',
         properties: {
           userId: { type: 'number' },
+          username: { type: 'string' },
           nickname: { type: 'string' },
           avatar: { type: ['string', 'null'] },
           bannerImage: { type: 'string' },

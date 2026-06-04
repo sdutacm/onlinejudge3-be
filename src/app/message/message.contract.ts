@@ -55,7 +55,7 @@ const messageContract = {
                 bannerImage: { type: 'string' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage'],
             },
             to: {
               type: 'object',
@@ -67,7 +67,7 @@ const messageContract = {
                 bannerImage: { type: 'string' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage'],
             },
             title: { type: 'string' },
             content: { type: 'string' },

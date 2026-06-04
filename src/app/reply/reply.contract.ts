@@ -65,7 +65,7 @@ const replyContract = {
                 bannerImage: { type: 'string' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage'],
             },
             content: { type: 'string' },
             createdAt: { type: 'string', format: 'date-time', description: 'YYYY-MM-DD HH:mm:ss' },

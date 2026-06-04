@@ -77,7 +77,7 @@ const solutionContract = {
                 type: { type: 'number' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage', 'rating'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage', 'rating'],
             },
             contest: {
               type: 'object',
@@ -257,7 +257,7 @@ const solutionContract = {
           type: { type: 'number' },
         },
         additionalProperties: false,
-        required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage', 'rating'],
+        required: ['userId', 'nickname', 'avatar', 'bannerImage', 'rating'],
       },
       contest: {
         type: 'object',
@@ -445,7 +445,7 @@ const solutionContract = {
             type: { type: 'number' },
           },
           additionalProperties: false,
-          required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage', 'rating'],
+          required: ['userId', 'nickname', 'avatar', 'bannerImage', 'rating'],
         },
         contest: {
           type: 'object',

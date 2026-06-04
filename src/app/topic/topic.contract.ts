@@ -56,7 +56,7 @@ const topicContract = {
                 bannerImage: { type: 'string' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage'],
             },
             problem: {
               type: 'object',
@@ -103,7 +103,7 @@ const topicContract = {
           bannerImage: { type: 'string' },
         },
         additionalProperties: false,
-        required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+        required: ['userId', 'nickname', 'avatar', 'bannerImage'],
       },
       problem: {
         type: 'object',

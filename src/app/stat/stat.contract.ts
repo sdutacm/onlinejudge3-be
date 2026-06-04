@@ -36,7 +36,7 @@ const statContract = {
                 bannerImage: { type: 'string' },
               },
               additionalProperties: false,
-              required: ['userId', 'username', 'nickname', 'avatar', 'bannerImage'],
+              required: ['userId', 'nickname', 'avatar', 'bannerImage'],
             },
             accepted: { type: 'number' },
           },

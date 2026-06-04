@@ -602,7 +602,6 @@ const userContract = {
           additionalProperties: true,
           required: [
             'userId',
-            'username',
             'nickname',
             'avatar',
             'bannerImage',
@@ -653,7 +652,6 @@ const userContract = {
           additionalProperties: true,
           required: [
             'userId',
-            'username',
             'nickname',
             'avatar',
             'bannerImage',
@@ -725,7 +723,6 @@ const userContract = {
                 additionalProperties: true,
                 required: [
                   'userId',
-                  'username',
                   'nickname',
                   'avatar',
                   'bannerImage',
